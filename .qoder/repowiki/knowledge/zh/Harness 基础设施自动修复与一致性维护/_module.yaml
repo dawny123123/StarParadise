@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: qoder_harness_flow/harness_doctor
+title: Harness 基础设施自动修复与一致性维护
+scope:
+    - qoder-harness-flow/harness-doctor/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,186 @@
+{
+  "designSystemApproved": false,
+  "activePage": "pc-dashboard.html",
+  "version": 1,
+  "createdAt": "2026-05-25T03:04:27.417Z",
+  "updatedAt": "2026-05-25T03:30:20.220Z",
+  "frames": [
+    {
+      "id": "miniprogram-screens",
+      "kind": "html-file",
+      "title": "Miniprogram Screens",
+      "fileName": "miniprogram-screens.html",
+      "x": 0,
+      "y": 0,
+      "width": 375,
+      "height": 812,
+      "lockedAspectRatio": false,
+      "lockedSize": false,
+      "status": "draft",
+      "createdAt": "2026-05-25T03:11:47.879Z",
+      "updatedAt": "2026-05-25T03:15:22.076Z"
+    },
+    {
+      "id": "pc-dashboard",
+      "kind": "html-file",
+      "title": "Pc Dashboard",
+      "fileName": "pc-dashboard.html",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 900,
+      "lockedAspectRatio": false,
+      "lockedSize": false,
+      "status": "active",
+      "createdAt": "2026-05-25T03:09:41.569Z",
+      "updatedAt": "2026-05-25T03:15:10.362Z"
+    }
+  ],
+  "activeFrameId": "pc-dashboard",
+  "tweaks": [
+    {
+      "control": "preset",
+      "group": "外观",
+      "label": "外观模式",
+      "presetOptions": [
+        {
+          "label": "浅色线框",
+          "patches": [
+            {
+              "value": "#F5F5F3",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#4A4A4A",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#6B6B6B",
+              "variable": "--seed-primary"
+            },
+            {
+              "value": "#FFFFFF",
+              "variable": "--seed-surface"
+            },
+            {
+              "value": "#9E9E9E",
+              "variable": "--seed-muted"
+            },
+            {
+              "value": "#E0E0E0",
+              "variable": "--seed-border"
+            },
+            {
+              "value": "#E8E8E8",
+              "variable": "--seed-page-bg"
+            }
+          ],
+          "value": "light"
+        },
+        {
+          "label": "深色线框",
+          "patches": [
+            {
+              "value": "#1A1A1A",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#E8E8E8",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#A0A0A0",
+              "variable": "--seed-primary"
+            },
+            {
+              "value": "#2A2A2A",
+              "variable": "--seed-surface"
+            },
+            {
+              "value": "#777777",
+              "variable": "--seed-muted"
+            },
+            {
+              "value": "#3A3A3A",
+              "variable": "--seed-border"
+            },
+            {
+              "value": "#111111",
+              "variable": "--seed-page-bg"
+            }
+          ],
+          "value": "dark"
+        },
+        {
+          "label": "温暖亲子色",
+          "patches": [
+            {
+              "value": "#F8F8F0",
+              "variable": "--seed-bg"
+            },
+            {
+              "value": "#725D42",
+              "variable": "--seed-fg"
+            },
+            {
+              "value": "#19C8B9",
+              "variable": "--seed-primary"
+            },
+            {
+              "value": "#F7F3DF",
+              "variable": "--seed-surface"
+            },
+            {
+              "value": "#9F927D",
+              "variable": "--seed-muted"
+            },
+            {
+              "value": "#E8DFC8",
+              "variable": "--seed-border"
+            },
+            {
+              "value": "#EDE8D8",
+              "variable": "--seed-page-bg"
+            }
+          ],
+          "value": "cozy"
+        }
+      ],
+      "value": "light",
+      "variable": "--appearance-preset"
+    },
+    {
+      "control": "slider",
+      "group": "形状",
+      "label": "圆角尺度",
+      "max": 28,
+      "min": 4,
+      "step": 2,
+      "unit": "px",
+      "value": "16px",
+      "variable": "--seed-radius"
+    },
+    {
+      "control": "slider",
+      "group": "形状",
+      "label": "卡片圆角",
+      "max": 32,
+      "min": 8,
+      "step": 2,
+      "unit": "px",
+      "value": "20px",
+      "variable": "--radius-card"
+    },
+    {
+      "control": "slider",
+      "group": "形状",
+      "label": "按钮胶囊形",
+      "max": 50,
+      "min": 8,
+      "step": 2,
+      "unit": "px",
+      "value": "50px",
+      "variable": "--radius-pill"
+    }
+  ]
+}

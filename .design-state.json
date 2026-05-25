@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-25T03:21:10.030Z",
+  "execution": {
+    "status": "ready_to_present",
+    "lastLintCheckedAt": "2026-05-25T03:18:27.592Z",
+    "lastLintSummary": {
+      "p0": 0,
+      "p1": 0,
+      "p2": 0,
+      "fileCount": 1,
+      "checkedAt": "2026-05-25T03:18:27.592Z"
+    },
+    "tweaksStatus": "provided",
+    "tweaksCount": 4,
+    "nudgeControlSummary": {
+      "total": 4,
+      "color": 0,
+      "nonColor": 4,
+      "slider": 3,
+      "select": 0,
+      "lightTheme": 1,
+      "darkTheme": 1
+    },
+    "buildStatus": "not_applicable",
+    "noBuildReason": "HTML artifacts do not have a build step — they are static single-file wireframe prototypes.",
+    "completedAt": "2026-05-25T03:21:10.030Z"
+  },
+  "designPlan": {
+    "status": "approved",
+    "enteredAt": "2026-05-25T03:04:27.443Z",
+    "approvedAt": "2026-05-25T03:06:31.300Z",
+    "approvedPlanHash": "718f755b26d69cb7deef47e3e1dd889e2b3e528c793789e4dd773d96b0a3aab6"
+  }
+}

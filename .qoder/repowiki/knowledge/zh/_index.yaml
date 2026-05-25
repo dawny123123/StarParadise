@@ -1,0 +1,33 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: Q0DeR-MaG1C-BrAnCh-Fo2-NoN-GiT-Or-No-C0MmIt
+exported_at: "2026-05-25T03:40:47Z"
+modules:
+    qoder_harness_flow/harness_creator:
+        dir_name: AI Agent 基础设施脚手架生成器
+        title: AI Agent 基础设施脚手架生成器
+        scope:
+            - qoder-harness-flow/harness-creator/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    qoder_harness_flow/harness_doctor:
+        dir_name: Harness 基础设施自动修复与一致性维护
+        title: Harness 基础设施自动修复与一致性维护
+        scope:
+            - qoder-harness-flow/harness-doctor/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    qoder_harness_flow/harness_evolver:
+        dir_name: Harness 进化与知识精炼引擎
+        title: Harness 进化与知识精炼引擎
+        scope:
+            - qoder-harness-flow/harness-evolver/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

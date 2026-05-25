@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-25T03:04:27.424Z",
+  "brief": {
+    "artifactType": "UI prototype wireframe",
+    "targetPlatform": [
+      "responsive",
+      "mobile",
+      "desktop"
+    ],
+    "audience": "北京妈妈管理3个孩子（老二初一、老三小学三年级、老四6岁）的日常学习任务打卡和积分奖励",
+    "businessGoal": "帮助妈妈高效管理三个孩子的个性化学习任务，通过积分激励机制培养孩子的学习习惯，支持PC端全面管理和微信小程序端便捷日常打卡",
+    "children": [
+      {
+        "name": "老二",
+        "age": "13岁 初一",
+        "focus": "各学科提分，如英语每天背10个单词=1元"
+      },
+      {
+        "name": "老三",
+        "age": "8岁 小学三年级",
+        "focus": "提升记忆力，每天写50个字以上=1元"
+      },
+      {
+        "name": "老四",
+        "age": "6岁",
+        "focus": "每天背1首诗=1元现金，阶段积累买礼物"
+      }
+    ],
+    "coreFeatures": [
+      "每日打卡录入（一键确认完成）",
+      "积分/金额统计（每人独立账户）",
+      "任务管理（每个孩子不同任务规则和奖励标准）",
+      "奖励兑换（老四的礼物目标进度）",
+      "数据可视化（连续打卡、周/月完成率、趋势图）",
+      "PC端完整管理 + 微信小程序便捷日常打卡"
+    ],
+    "userRoles": "仅妈妈一人管理，孩子不需要登录",
+    "locale": "zh-CN"
+  },
+  "output": {
+    "target": "html",
+    "componentLibrary": "none",
+    "previewStrategy": "Generate a Canvas HTML workspace file after generation tools are enabled."
+  },
+  "artifacts": [
+    {
+      "path": "pc-dashboard.html",
+      "action": "create",
+      "purpose": "PC端管理后台线框原型，包含仪表盘总览、每日打卡、任务管理、积分记录、奖励管理、数据统计等核心页面",
+      "requirements": [
+        "仪表盘首页展示三个孩子今日打卡状态、连续打卡天数、本周完成率",
+        "打卡录入页支持对每个孩子逐一确认今日任务完成情况",
+        "任务管理页可为每个孩子设置不同的任务项和奖励标准",
+        "积分/余额页展示每个孩子的累计金额和消费记录",
+        "老四专属的礼物目标进度展示",
+        "数据统计页包含周/月打卡日历热力图和完成率趋势",
+        "侧边栏导航，清晰的页面切换",
+        "线框图风格：灰白色调+结构线条+圆角卡片"
+      ]
+    },
+    {
+      "path": "miniprogram-screens.html",
+      "action": "create",
+      "purpose": "微信小程序端线框原型，展示手机端日常打卡和查看的核心流程",
+      "requirements": [
+        "首页展示今日三个孩子的打卡状态卡片",
+        "快速打卡流程：选择孩子→确认任务完成→提交",
+        "个人记录页查看每个孩子的打卡历史和余额",
+        "底部TabBar导航（首页/打卡/记录/我的）",
+        "手机尺寸375x812展示",
+        "微信小程序风格的顶部导航栏和交互模式",
+        "线框图风格与PC端保持一致的设计语言"
+      ]
+    }
+  ],
+  "designDirection": {
+    "fidelity": "wireframe",
+    "styleSource": "cozy-kids",
+    "visualTone": [
+      "温暖",
+      "亲子",
+      "简洁",
+      "圆润",
+      "易用"
+    ],
+    "wireframeGuidance": "使用灰白色调的结构化线框图，圆角卡片容器，清晰的层次结构。保留Cozy Kids的圆润形态感但不上色，用灰度区分层次。每个孩子用不同的灰度标识区分。"
+  },
+  "structure": {
+    "screens": [
+      "PC-仪表盘总览",
+      "PC-每日打卡录入",
+      "PC-任务规则管理",
+      "PC-积分余额记录",
+      "PC-奖励与礼物目标",
+      "PC-数据统计报表",
+      "小程序-首页今日状态",
+      "小程序-快速打卡",
+      "小程序-打卡记录",
+      "小程序-个人中心"
+    ],
+    "sections": [
+      "顶部导航/状态栏",
+      "孩子选择器/切换",
+      "任务卡片列表",
+      "打卡确认交互",
+      "积分/金额汇总面板",
+      "礼物目标进度条",
+      "日历热力图",
+      "完成率趋势图"
+    ]
+  },
+  "interaction": {
+    "primaryFlow": "妈妈打开系统 → 查看今日三个孩子状态 → 逐一为完成任务的孩子打卡确认 → 系统自动累加积分/金额 → 查看统计趋势和老四的礼物目标进度",
+    "states": [
+      "今日未打卡/已打卡状态",
+      "任务完成/未完成标记",
+      "连续打卡中断提醒",
+      "礼物目标达成庆祝",
+      "空状态（无任务时的提示）"
+    ]
+  },
+  "quality": {
+    "responsive": true,
+    "accessibility": true,
+    "lintRequired": true,
+    "acceptanceCriteria": [
+      "PC端和小程序端的线框图清晰展示所有核心页面和交互流程",
+      "三个孩子的不同任务类型和激励方式明确区分",
+      "打卡操作流程简洁直观，妈妈可在1分钟内完成日常打卡",
+      "数据展示层次清晰，快速了解每个孩子的学习进展",
+      "老四的礼物目标机制清晰展现",
+      "线框图排版规整、无文字溢出或控件遮挡",
+      "Design quality check has P0=0 and all P1 issues are fixed or explicitly waived."
+    ]
+  },
+  "resources": {
+    "skill": {
+      "id": "dashboard",
+      "title": "dashboard",
+      "rationale": "mode matches prototype; design intelligence favors dashboard/data workflow",
+      "alternatives": [
+        "web-prototype",
+        "wireframe-sketch",
+        "saas-landing"
+      ]
+    },
+    "styleReference": {
+      "primary": "cozy-kids",
+      "inspiration": [
+        "friendly",
+        "education-platform"
+      ],
+      "rationale": "preview language overlaps brief; child-friendly learning fit"
+    },
+    "requiredReads": [
+      {
+        "kind": "skill",
+        "id": "dashboard",
+        "reason": "Selected Canvas skill checklist."
+      },
+      {
+        "kind": "design-system",
+        "id": "cozy-kids",
+        "reason": "Primary style reference."
+      },
+      {
+        "kind": "craft",
+        "id": "anti-ai-slop",
+        "reason": "Baseline AI-slop guardrail for all Canvas design artifacts."
+      },
+      {
+        "kind": "craft",
+        "id": "typography",
+        "reason": "Baseline typography quality rule for visual execution."
+      },
+      {
+        "kind": "craft",
+        "id": "color",
+        "reason": "Baseline color quality rule for visual execution."
+      },
+      {
+        "kind": "protocol",
+        "id": "design-mode-runtime",
+        "reason": "Design Plan Mode execution and runtime contract."
+      },
+      {
+        "kind": "protocol",
+        "id": "skill-protocol",
+        "reason": "Skill metadata and resource selection contract."
+      }
+    ]
+  },
+  "risks": [
+    "线框图需要清晰展示PC端和小程序端两套不同尺寸和交互模式的界面",
+    "三个孩子的差异化任务和激励规则需要在UI中清晰表达而不混乱",
+    "老四的礼物目标兑换机制需要独立于日常积分体现"
+  ],
+  "abstract": "为您设计一套儿童学习激励打卡系统的完整线框原型，覆盖PC端管理后台和微信小程序端日常打卡两个平台。系统围绕您的三个孩子（老二英语单词、老三练字、老四背诗）的个性化任务进行管理，每个孩子独立积分账户，老四还有专属的礼物目标进度追踪。设计采用温暖圆润的亲子风格线框图，PC端提供仪表盘总览、任务管理、数据统计等全功能管理，小程序端专注快速日常打卡。请审核页面规划和交互流程是否覆盖了您日常管理的所有场景。"
+}

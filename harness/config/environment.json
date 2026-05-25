@@ -1,0 +1,55 @@
+{
+  "runtime": {
+    "language": "javascript",
+    "version": "18+",
+    "build_command": "cd star-park/pc-admin && npm run build",
+    "dev_command": "cd star-park/server && npm run dev",
+    "test_command": "echo 'No tests configured yet'"
+  },
+  "databases": [
+    {
+      "type": "sqlite",
+      "env_vars": {},
+      "docker": null,
+      "test_alternative": "In-memory via better-sqlite3"
+    }
+  ],
+  "services": [],
+  "secrets": [],
+  "test_environment": {
+    "env_vars": {
+      "NODE_ENV": "test",
+      "PORT": "3002"
+    }
+  },
+  "functional_scenarios": [
+    {
+      "name": "health_check",
+      "description": "验证后端服务启动并且健康端点正确响应",
+      "prerequisites": [],
+      "steps": [
+        "启动后端服务 (cd star-park/server && npm start)",
+        "等待服务就绪 (GET /api/health 返回 200)",
+        "验证健康响应包含 status: ok"
+      ],
+      "expected_outcome": "后端服务正常运行"
+    },
+    {
+      "name": "checkin_flow",
+      "description": "创建打卡记录并验证奖励计算",
+      "prerequisites": ["sqlite"],
+      "steps": [
+        "GET /api/children -> 获取孩子列表",
+        "GET /api/tasks?child_id=1 -> 获取任务列表",
+        "POST /api/checkins {child_id, task_id, checkin_date} -> 201",
+        "GET /api/stats/:childId -> 验证统计数据更新"
+      ],
+      "expected_outcome": "打卡记录创建成功，统计数据正确更新"
+    }
+  ],
+  "scripts": {
+    "setup": "harness/scripts/setup-env.sh",
+    "start": "harness/scripts/start-server.sh",
+    "teardown": "harness/scripts/teardown-env.sh"
+  }
+}

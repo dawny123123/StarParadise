@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="canvas:width" content="375" />
+  <meta name="canvas:height" content="812" />
+  <title>星星乐园 - 微信小程序端</title>
+  <style>
+    /* === Wireframe Seed Tokens === */
+    :root {
+      --seed-bg: #F5F5F3;
+      --seed-fg: #4A4A4A;
+      --seed-primary: #6B6B6B;
+      --seed-accent: #888888;
+      --seed-surface: #FFFFFF;
+      --seed-radius: 16px;
+      --seed-muted: #9E9E9E;
+      --seed-border: #E0E0E0;
+      --seed-card-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      --seed-child-1: #7B7B7B;
+      --seed-child-2: #9B9B9B;
+      --seed-child-3: #ABABAB;
+      --radius-pill: 50px;
+      --radius-card: 20px;
+      --radius-small: 12px;
+      --font-display: 'Nunito', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+      --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+      --motion-base: 0.25s;
+      --seed-page-bg: #E8E8E8;
+      --seed-frame-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.1);
+      --seed-btn-shadow: #555555;
+      --seed-btn-shadow-disabled: #CCCCCC;
+      --seed-badge-done: #EAEAEA;
+      --seed-annotation-bg: rgba(74, 74, 74, 0.9);
+      --seed-success-bg: #E8E8E8;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--seed-page-bg);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px;
+      gap: 24px;
+      flex-wrap: wrap;
+      min-height: 100vh;
+    }
+
+    /* Phone frame */
+    .phone-frame {
+      width: 375px;
+      height: 812px;
+      background: var(--seed-bg);
+      border-radius: calc(var(--seed-radius) * 2.5);
+      overflow: hidden;
+      position: relative;
+      box-shadow: var(--seed-frame-shadow);
+      flex-shrink: 0;
+      display: block;
+    }
+
+    .phone-frame .screen-label {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--seed-muted);
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 44px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 24px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--seed-fg);
+    }
+
+    .status-bar .time { font-size: 14px; font-weight: 700; }
+    .status-bar .icons { display: flex; gap: 4px; }
+    .status-bar .icons svg { width: 16px; height: 16px; fill: var(--seed-fg); }
+
+    /* WeChat nav bar */
+    .wx-navbar {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 0 16px;
+    }
+
+    .wx-navbar .nav-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--seed-fg);
+      letter-spacing: -0.01em;
+    }
+
+    .wx-navbar .nav-back {
+      position: absolute;
+      left: 16px;
+      width: 24px;
+      height: 24px;
+    }
+
+    .wx-navbar .nav-back svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--seed-fg);
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Screen content */
+    .screen-content {
+      height: calc(812px - 44px - 44px - 56px);
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* Tab bar */
+    .tab-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: var(--seed-surface);
+      border-top: 1px solid var(--seed-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding-bottom: 4px;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 10px;
+      color: var(--seed-muted);
+      font-weight: 500;
+    }
+
+    .tab-item.active {
+      color: var(--seed-fg);
+      font-weight: 600;
+    }
+
+    .tab-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    /* === Shared Component Styles === */
+    .card {
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      box-shadow: var(--seed-card-shadow);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    /* === Screen 1: Home === */
+    .home-greeting {
+      margin-bottom: 16px;
+    }
+
+    .home-greeting h2 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .home-greeting p {
+      font-size: 13px;
+      color: var(--seed-muted);
+    }
+
+    .child-status-card {
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      box-shadow: var(--seed-card-shadow);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .child-status-card .child-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--seed-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--seed-muted);
+      flex-shrink: 0;
+    }
+
+    .child-status-card .child-info {
+      flex: 1;
+    }
+
+    .child-status-card .child-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .child-status-card .child-info p {
+      font-size: 12px;
+      color: var(--seed-muted);
+    }
+
+    .child-status-card .status-badge {
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .status-badge.done {
+      background: var(--seed-badge-done);
+      color: var(--seed-fg);
+    }
+
+    .status-badge.pending {
+      background: transparent;
+      border: 1.5px dashed var(--seed-border);
+      color: var(--seed-muted);
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .summary-item {
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--seed-surface);
+      border-radius: var(--radius-small);
+      box-shadow: var(--seed-card-shadow);
+    }
+
+    .summary-item .s-value {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .summary-item .s-label {
+      font-size: 11px;
+      color: var(--seed-muted);
+      margin-top: 2px;
+    }
+
+    /* === Screen 2: Check-in === */
+    .checkin-child-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .child-tab {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: var(--radius-pill);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--seed-surface);
+      border: 1.5px solid var(--seed-border);
+      color: var(--seed-muted);
+    }
+
+    .child-tab.active {
+      background: var(--seed-fg);
+      color: white;
+      border-color: var(--seed-fg);
+    }
+
+    .checkin-task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .checkin-task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--seed-card-shadow);
+    }
+
+    .checkin-task-item .ck-checkbox {
+      width: 24px;
+      height: 24px;
+      border-radius: 8px;
+      border: 2px solid var(--seed-border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .checkin-task-item .ck-checkbox.checked {
+      background: var(--seed-primary);
+      border-color: var(--seed-primary);
+    }
+
+    .checkin-task-item .ck-checkbox svg {
+      width: 14px;
+      height: 14px;
+      stroke: white;
+      fill: none;
+      stroke-width: 2.5;
+    }
+
+    .checkin-task-item .ck-text {
+      flex: 1;
+    }
+
+    .checkin-task-item .ck-text .ck-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .checkin-task-item .ck-text .ck-desc {
+      font-size: 12px;
+      color: var(--seed-muted);
+      margin-top: 2px;
+    }
+
+    .checkin-task-item .ck-reward {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--seed-primary);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-pill);
+      border: none;
+      background: var(--seed-primary);
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 4px 0 0 var(--seed-btn-shadow);
+      text-align: center;
+    }
+
+    .btn-disabled {
+      background: var(--seed-border);
+      color: var(--seed-muted);
+      box-shadow: 0 4px 0 0 var(--seed-btn-shadow-disabled);
+    }
+
+    /* Success state */
+    .success-state {
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .success-state .success-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--seed-success-bg);
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .success-state .success-icon svg {
+      width: 32px;
+      height: 32px;
+      stroke: var(--seed-fg);
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .success-state h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .success-state p {
+      font-size: 13px;
+      color: var(--seed-muted);
+    }
+
+    /* === Screen 3: Records === */
+    .records-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      background: var(--seed-surface);
+      border-radius: var(--radius-pill);
+      padding: 3px;
+      box-shadow: var(--seed-card-shadow);
+    }
+
+    .record-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-pill);
+      color: var(--seed-muted);
+    }
+
+    .record-tab.active {
+      background: var(--seed-fg);
+      color: white;
+    }
+
+    .record-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .record-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--seed-card-shadow);
+    }
+
+    .record-item .rec-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--seed-primary);
+      flex-shrink: 0;
+    }
+
+    .record-item .rec-info {
+      flex: 1;
+    }
+
+    .record-item .rec-info .rec-task {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .record-item .rec-info .rec-date {
+      font-size: 12px;
+      color: var(--seed-muted);
+      margin-top: 2px;
+    }
+
+    .record-item .rec-amount {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .record-item .rec-amount.positive { color: var(--seed-fg); }
+    .record-item .rec-amount.negative { color: var(--seed-muted); }
+
+    /* Balance display */
+    .balance-card {
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      padding: 20px;
+      text-align: center;
+      box-shadow: var(--seed-card-shadow);
+      margin-bottom: 16px;
+    }
+
+    .balance-card .balance-label {
+      font-size: 12px;
+      color: var(--seed-muted);
+      margin-bottom: 4px;
+    }
+
+    .balance-card .balance-value {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .balance-card .balance-sub {
+      font-size: 12px;
+      color: var(--seed-muted);
+      margin-top: 4px;
+    }
+
+    /* Gift progress mini */
+    .gift-progress-mini {
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      box-shadow: var(--seed-card-shadow);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .gift-mini-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--seed-bg);
+      border-radius: var(--radius-small);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .gift-mini-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--seed-muted);
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .gift-mini-info {
+      flex: 1;
+    }
+
+    .gift-mini-info .gm-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .gift-mini-info .gm-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--seed-border);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+    }
+
+    .gift-mini-info .gm-bar-fill {
+      height: 100%;
+      background: var(--seed-primary);
+      border-radius: var(--radius-pill);
+    }
+
+    .gift-mini-info .gm-text {
+      font-size: 11px;
+      color: var(--seed-muted);
+      margin-top: 4px;
+    }
+
+    /* === Screen 4: Profile === */
+    .profile-header {
+      text-align: center;
+      padding: 20px;
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--seed-card-shadow);
+      margin-bottom: 16px;
+    }
+
+    .profile-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--seed-bg);
+      margin: 0 auto 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-avatar svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--seed-muted);
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .profile-name {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .profile-desc {
+      font-size: 12px;
+      color: var(--seed-muted);
+      margin-top: 4px;
+    }
+
+    .profile-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: var(--seed-surface);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      box-shadow: var(--seed-card-shadow);
+    }
+
+    .profile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--seed-bg);
+    }
+
+    .profile-menu-item:last-child { border-bottom: none; }
+
+    .profile-menu-item svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--seed-muted);
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .profile-menu-item span {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .profile-menu-item .arrow {
+      font-size: 16px;
+      color: var(--seed-border);
+    }
+
+    /* Screen annotation */
+    .screen-annotation {
+      position: absolute;
+      bottom: 64px;
+      left: 16px;
+      right: 16px;
+      padding: 8px 12px;
+      background: var(--seed-annotation-bg);
+      color: white;
+      font-size: 11px;
+      border-radius: 8px;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+  </style>
+</head>
+<body>
+  <main data-component="MiniProgramScreens" data-od-id="miniprogram-main">
+
+  <!-- Screen 1: Home (首页) -->
+  <article class="phone-frame" data-component="HomeScreen" data-od-id="mp-home">
+    <span class="screen-label">首页 · 今日状态</span>
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 13v-2"/></svg>
+      </div>
+    </div>
+    <div class="wx-navbar">
+      <span class="nav-title">星星乐园</span>
+    </div>
+    <div class="screen-content">
+      <div class="home-greeting">
+        <h2>今天也要加油呀</h2>
+        <p>2026年5月25日 · 已完成 2/3 个打卡</p>
+      </div>
+
+      <div class="child-status-card">
+        <div class="child-avatar">二</div>
+        <div class="child-info">
+          <h4>老二</h4>
+          <p>英语10词 · 数学1套 · 语文阅读</p>
+        </div>
+        <span class="status-badge done">已打卡</span>
+      </div>
+
+      <div class="child-status-card">
+        <div class="child-avatar">三</div>
+        <div class="child-info">
+          <h4>老三</h4>
+          <p>练字50字</p>
+        </div>
+        <span class="status-badge pending">待打卡</span>
+      </div>
+
+      <div class="child-status-card">
+        <div class="child-avatar">四</div>
+        <div class="child-info">
+          <h4>老四</h4>
+          <p>背诗1首</p>
+        </div>
+        <span class="status-badge done">已打卡</span>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-item">
+          <div class="s-value">22</div>
+          <div class="s-label">最长连续</div>
+        </div>
+        <div class="summary-item">
+          <div class="s-value">87%</div>
+          <div class="s-label">本周完成</div>
+        </div>
+        <div class="summary-item">
+          <div class="s-value">¥230</div>
+          <div class="s-label">总积累</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tab-bar" data-component="TabBar">
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span>首页</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>打卡</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+        <span>记录</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>我的</span>
+      </div>
+    </nav>
+  </article>
+
+  <!-- Screen 2: Check-in (打卡) -->
+  <article class="phone-frame" data-component="CheckinScreen" data-od-id="mp-checkin">
+    <span class="screen-label">打卡 · 快速确认</span>
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 13v-2"/></svg>
+      </div>
+    </div>
+    <div class="wx-navbar">
+      <span class="nav-title">每日打卡</span>
+    </div>
+    <div class="screen-content">
+      <div class="checkin-child-selector">
+        <div class="child-tab">老二</div>
+        <div class="child-tab active">老三</div>
+        <div class="child-tab">老四</div>
+      </div>
+
+      <p class="section-title">老三的今日任务</p>
+
+      <div class="checkin-task-list">
+        <div class="checkin-task-item">
+          <div class="ck-checkbox checked">
+            <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div class="ck-text">
+            <div class="ck-name">每日练字</div>
+            <div class="ck-desc">写50个字以上</div>
+          </div>
+          <span class="ck-reward">+1元</span>
+        </div>
+
+        <div class="checkin-task-item">
+          <div class="ck-checkbox"></div>
+          <div class="ck-text">
+            <div class="ck-name">朗读课文</div>
+            <div class="ck-desc">大声朗读1篇课文</div>
+          </div>
+          <span class="ck-reward">+0.5元</span>
+        </div>
+      </div>
+
+      <button class="btn-submit">确认打卡 · 今日获得 1元</button>
+
+      <div style="margin-top: 20px; padding: 14px; background: var(--seed-surface); border-radius: var(--radius-card); box-shadow: var(--seed-card-shadow);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-size: 12px; color: var(--seed-muted);">老三连续打卡</div>
+            <div style="font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">8天</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 12px; color: var(--seed-muted);">本月累计</div>
+            <div style="font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">¥18</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tab-bar">
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span>首页</span>
+      </div>
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>打卡</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+        <span>记录</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>我的</span>
+      </div>
+    </nav>
+  </article>
+
+  <!-- Screen 3: Records (记录) -->
+  <article class="phone-frame" data-component="RecordsScreen" data-od-id="mp-records">
+    <span class="screen-label">记录 · 积分明细</span>
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 13v-2"/></svg>
+      </div>
+    </div>
+    <div class="wx-navbar">
+      <span class="nav-title">打卡记录</span>
+    </div>
+    <div class="screen-content">
+      <div class="checkin-child-selector">
+        <div class="child-tab">老二</div>
+        <div class="child-tab">老三</div>
+        <div class="child-tab active">老四</div>
+      </div>
+
+      <div class="balance-card">
+        <div class="balance-label">老四累计获得</div>
+        <div class="balance-value">¥45</div>
+        <div class="balance-sub">本月 +12元 · 已用 ¥30</div>
+      </div>
+
+      <div class="gift-progress-mini">
+        <div class="gift-mini-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+        </div>
+        <div class="gift-mini-info">
+          <div class="gm-name">目标：粉色小书包 ¥100</div>
+          <div class="gm-bar"><div class="gm-bar-fill" style="width: 45%"></div></div>
+          <div class="gm-text">已攒 ¥45 · 还差 ¥55</div>
+        </div>
+      </div>
+
+      <p class="section-title">打卡明细</p>
+
+      <div class="record-list">
+        <div class="record-item">
+          <div class="rec-dot" style="background: var(--seed-child-3)"></div>
+          <div class="rec-info">
+            <div class="rec-task">背诵《咏鹅》</div>
+            <div class="rec-date">今天 08:30</div>
+          </div>
+          <span class="rec-amount positive">+1元</span>
+        </div>
+        <div class="record-item">
+          <div class="rec-dot" style="background: var(--seed-child-3)"></div>
+          <div class="rec-info">
+            <div class="rec-task">背诵《静夜思》</div>
+            <div class="rec-date">昨天 08:15</div>
+          </div>
+          <span class="rec-amount positive">+1元</span>
+        </div>
+        <div class="record-item">
+          <div class="rec-dot" style="background: var(--seed-child-3)"></div>
+          <div class="rec-info">
+            <div class="rec-task">背诵《春晓》</div>
+            <div class="rec-date">前天 09:00</div>
+          </div>
+          <span class="rec-amount positive">+1元</span>
+        </div>
+        <div class="record-item">
+          <div class="rec-dot" style="background: var(--seed-border)"></div>
+          <div class="rec-info">
+            <div class="rec-task">兑换 小兔毛绒玩偶</div>
+            <div class="rec-date">5月1日</div>
+          </div>
+          <span class="rec-amount negative">-30元</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tab-bar">
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span>首页</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>打卡</span>
+      </div>
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+        <span>记录</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>我的</span>
+      </div>
+    </nav>
+  </article>
+
+  <!-- Screen 4: Profile (我的) -->
+  <article class="phone-frame" data-component="ProfileScreen" data-od-id="mp-profile">
+    <span class="screen-label">我的 · 设置管理</span>
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="icons">
+        <svg viewBox="0 0 24 24"><path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="1" y="6" width="18" height="12" rx="2"/><path d="M23 13v-2"/></svg>
+      </div>
+    </div>
+    <div class="wx-navbar">
+      <span class="nav-title">我的</span>
+    </div>
+    <div class="screen-content">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="profile-name">妈妈</div>
+        <div class="profile-desc">管理3个孩子的学习打卡</div>
+      </div>
+
+      <div class="profile-menu">
+        <div class="profile-menu-item">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>孩子管理</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="profile-menu-item">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          <span>任务规则</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="profile-menu-item">
+          <svg viewBox="0 0 24 24"><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/></svg>
+          <span>礼物目标设置</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="profile-menu-item">
+          <svg viewBox="0 0 24 24"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          <span>数据统计</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="profile-menu-item">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <span>提醒设置</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="profile-menu-item">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68 1.65 1.65 0 0010 3.17V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span>系统设置</span>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tab-bar">
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span>首页</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        <span>打卡</span>
+      </div>
+      <div class="tab-item">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+        <span>记录</span>
+      </div>
+      <div class="tab-item active">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>我的</span>
+      </div>
+    </nav>
+  </article>
+
+  </main>
+</body>
+</html>

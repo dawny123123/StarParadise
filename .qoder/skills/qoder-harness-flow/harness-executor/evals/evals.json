@@ -1,0 +1,685 @@
+{
+  "skill_name": "harness-executor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我注意到 harness/eval/scorer.go 里的 ScoreStyle 函数一直返回 1.0，是个 TODO 占位。请实现一个基础的代码风格评分逻辑：检查文件是否有 package 注释、导出函数是否有 doc comment、以及命名是否符合 Go 规范（驼峰命名）。评分范围 0-1。",
+      "expected_output": "Agent 应该：1) 读取 AGENTS.md 了解项目结构；2) 读取相关 design/reference 文档了解 eval 系统设计；3) 读取 QUALITY.md 了解代码规范；4) 实现 ScoreStyle 函数；5) 添加相应测试；6) 运行 validate.py + verify.py 完整验证管线",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should run detect_harness.py first",
+          "pattern": "detect_harness"
+        },
+        {
+          "type": "file_read",
+          "description": "Should read AGENTS.md for navigation",
+          "file": "AGENTS.md"
+        },
+        {
+          "type": "validation",
+          "description": "Should run static validation pipeline",
+          "pattern": "validate.py"
+        },
+        {
+          "type": "runtime_verification",
+          "description": "Should run runtime verification (verify.py) as part of validation pipeline",
+          "pattern": "verify\\.py"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "harness/cleanup/tasks.go 里的 detectDeadCode 函数用的是简单字符串搜索，会产生很多误报。帮我改成基于 AST 的分析，用 go/parser 和 go/ast 来检测真正未被引用的导出函数。需要保持原来的接口不变。",
+      "expected_output": "Agent 应该：1) 读取 AGENTS.md 和架构文档了解层级约束；2) 阅读 cleanup/tasks.go 的现有实现；3) 基于 AST 重写 detectDeadCode；4) 确保 CleanupTask 接口不变；5) 运行完整验证管线（validate + verify）确认通过",
+      "files": [],
+      "assertions": [
+        {
+          "type": "file_read",
+          "description": "Should read ARCHITECTURE.md",
+          "file": "docs/ARCHITECTURE.md"
+        },
+        {
+          "type": "validation",
+          "description": "Should validate changes",
+          "pattern": "validate.py"
+        },
+        {
+          "type": "runtime_verification",
+          "description": "Should run verify.py after validate.py",
+          "pattern": "verify\\.py"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "docs/references/hooks.md 里列出的 hook 类型和实际代码不一致，有些新加的 hook 没有被文档记录。请同步文档和代码，同时检查 harness 其他文档是否也有类似的 drift 问题，如果有也一并修复。",
+      "expected_output": "Agent 应该：1) 读取 AGENTS.md 作为导航；2) 读取 hooks 相关的代码实现和文档；3) 识别 drift 问题；4) 修复文档使其与代码一致；5) 检查其他文档是否也有类似问题；6) 运行 lint 和 build 验证",
+      "files": [],
+      "assertions": [
+        {
+          "type": "file_read",
+          "description": "Should read AGENTS.md",
+          "file": "AGENTS.md"
+        },
+        {
+          "type": "validation",
+          "description": "Should run validation",
+          "pattern": "validate.py"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "我有一个已有的 Python 项目 (FastAPI web service)，在 ~/projects/my-api/ 下，没有任何 harness 基础设施，只有普通的 src/、tests/ 和 pyproject.toml。帮我给这个项目的 /users 端点加一个分页功能，支持 page 和 page_size 参数。",
+      "expected_output": "Agent 应该：1) 运行 detect_harness.py 发现没有 harness；2) 自动调用 harness-creator 建立基础设施；3) 然后基于新建的 harness 文档了解项目架构；4) 实现分页功能；5) 添加测试；6) 运行 validate.py + verify.py 完整管线验证",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should detect no harness first",
+          "pattern": "(detect_harness|AGENTS.md.*MISSING|no harness)"
+        },
+        {
+          "type": "skill_call",
+          "description": "CRITICAL: Should invoke harness-creator skill to bootstrap",
+          "skill": "harness-creator"
+        },
+        {
+          "type": "file_created",
+          "description": "harness-creator should create AGENTS.md",
+          "file": "AGENTS.md"
+        },
+        {
+          "type": "continuation",
+          "description": "Should continue with original task after bootstrap (not re-invoke harness-executor)"
+        },
+        {
+          "type": "validation",
+          "description": "Should validate via pipeline",
+          "pattern": "validate.py"
+        },
+        {
+          "type": "runtime_verification",
+          "description": "Should run verify.py — FastAPI is a server, runtime check is critical",
+          "pattern": "verify\\.py"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "这个 TypeScript 项目（Next.js）没有 AGENTS.md 也没有 harness 目录。我要把现有的 REST API 改造成 tRPC，涉及路由层、类型定义和前端调用。这是个比较大的重构。",
+      "expected_output": "Agent 应该：1) 检测无 harness → 自动 bootstrap；2) 创建正式执行计划；3) 请求用户审批；4) 用 worktree 隔离执行；5) 完整验证（validate + Verifier subagent）",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should detect missing harness",
+          "pattern": "(detect_harness|AGENTS.md.*MISSING)"
+        },
+        {
+          "type": "skill_call",
+          "description": "CRITICAL: Should invoke harness-creator for bootstrap",
+          "skill": "harness-creator"
+        },
+        {
+          "type": "user_approval",
+          "description": "Should request user approval for major refactor"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should use worktree isolation for major refactor",
+          "pattern": "worktree"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Must spawn Verifier subagent for functional verification",
+          "pattern": "(Verifier|verification-report|agents/verifier\\.md)"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "帮我在这个 Go 项目里加一个简单的健康检查接口 /health，返回 200 OK 就行。项目已经有完整的 harness 设施。",
+      "expected_output": "Agent 应该：1) 检测到 harness 存在；2) 直接执行修改；3) 运行 validate + Verifier subagent 完整验证",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should run detection",
+          "pattern": "detect_harness"
+        },
+        {
+          "type": "no_skill_call",
+          "description": "Should NOT invoke harness-creator (harness already exists)",
+          "skill": "harness-creator"
+        },
+        {
+          "type": "validation",
+          "description": "Should validate changes",
+          "pattern": "validate.py"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Must spawn Verifier subagent — adding a /health endpoint is exactly what functional verification tests",
+          "pattern": "(Verifier|verification-report|agents/verifier\\.md)"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "这个 Go 项目需要重构整体架构，涉及拆分大文件、修复跨层依赖、接入还没 wiring 的子系统（hook、session、mcp）。项目已经有 harness 设施（AGENTS.md, docs/, scripts/）。之前有过类似的层级依赖修复经验，记录在 harness/memory 里。",
+      "expected_output": "Agent 应该：1) 检测 harness 存在；2) 检查有无被中断的任务；3) 查询 memory；4) 创建执行计划；5) 初始化 task state；6) 请求用户审批；7) 每个 phase 完成后 checkpoint；8) 完整验证（validate + Verifier subagent）；9) 完成时记录 lessons",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should check for interrupted tasks at start",
+          "pattern": "task_state.py list"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should query memory for prior lessons (inline read from harness/memory/)",
+          "pattern": "(harness/memory|episodes)"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should initialize task state with phases",
+          "pattern": "task_state.py init.*--tasks"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should checkpoint after phase completion",
+          "pattern": "task_state.py checkpoint"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Must spawn Verifier subagent before completing task",
+          "pattern": "(Verifier|verification-report|agents/verifier\\.md)"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should record lessons on completion",
+          "pattern": "task_state.py complete.*--lessons"
+        },
+        {
+          "type": "user_approval",
+          "description": "Should request user approval for major refactor"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "上次在这个项目重构 message queue 的时候被中断了，我记得做到一半，Task 2 完成了但 Task 3 还没开始。帮我继续完成。项目有完整 harness 和之前的 task state。",
+      "expected_output": "Agent 应该：1) 检测 harness 存在；2) task_state.py list 发现 in_progress 任务；3) task_state.py show 读取完整状态；4) 从 Task 3 继续执行；5) 完整验证（validate + Verifier subagent）；6) checkpoint + complete with lessons",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should detect interrupted task",
+          "pattern": "task_state.py list"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should read full task state",
+          "pattern": "task_state.py show"
+        },
+        {
+          "type": "no_restart",
+          "description": "Should NOT start from Task 1 — should resume from Task 3"
+        },
+        {
+          "type": "decision_respect",
+          "description": "Should read and follow key_decisions from context.json"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Must spawn Verifier subagent in completion phase",
+          "pattern": "(Verifier|verification-report|agents/verifier\\.md)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should checkpoint progress",
+          "pattern": "task_state.py checkpoint"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should complete with lessons",
+          "pattern": "task_state.py complete.*--lessons"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "帮我给这个 Go 项目的 provider 包添加 retry 逻辑和指数退避。项目有完整 harness 设施，而且 memory 里有之前处理 provider 相关问题的经验记录。大概改 3 个文件。",
+      "expected_output": "Agent 应该：1) 检测 harness 存在；2) 查询 memory 找到 provider 相关的经验；3) 创建计划文件；4) 初始化 task state；5) 执行修改；6) 运行 validate + Verifier subagent 完整管线；7) 完成时记录新 lessons",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should query memory about provider",
+          "pattern": "memory_query.py search.*(provider|retry)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should init task state",
+          "pattern": "task_state.py init"
+        },
+        {
+          "type": "memory_influenced",
+          "description": "Implementation should reference or incorporate lessons from memory query results"
+        },
+        {
+          "type": "validation",
+          "description": "Should validate changes",
+          "pattern": "validate.py"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Must spawn Verifier subagent as part of validation pipeline",
+          "pattern": "(Verifier|verification-report|agents/verifier\\.md)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should complete with lessons",
+          "pattern": "task_state.py complete.*--lessons"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "帮我修复这个 Go API 服务里 /api/v1/users 接口返回的分页 metadata 不正确的 bug。total_count 字段总是返回 0。项目已有完整 harness 设施和 verify.json 配置。就改一两行代码。",
+      "expected_output": "Agent 应该：1) 定位 bug 并修复；2) 运行完整验证管线（validate + Verifier subagent）。即使改动很小，functional verification 仍是必需的——静态测试可能不覆盖这个分页 metadata 的返回值，但 Verifier subagent 的端点测试会直接检查 API 返回。",
+      "files": [],
+      "assertions": [
+        {
+          "type": "validation",
+          "description": "Should run static validation",
+          "pattern": "validate.py"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Must spawn Verifier subagent even for small bug fix — the endpoint test directly validates this fix",
+          "pattern": "(Verifier|verification-report|agents/verifier\\.md)"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "这个 Node.js Express 项目需要把用户认证从 session-based 改成 JWT。改动涉及 middleware、login/logout 路由和 token 验证逻辑。项目有 harness 设施，verify.json 里配了 login 和 protected-route 的端点测试。",
+      "expected_output": "Agent 应该：1) 创建计划；2) 实现 JWT 改造；3) 运行完整验证管线（validate + Verifier subagent）。Verifier subagent 在这里特别重要：改了认证逻辑后，设计的功能场景能直接验证新的 JWT 流程是否正常工作。",
+      "files": [],
+      "assertions": [
+        {
+          "type": "validation",
+          "description": "Should run static validation",
+          "pattern": "validate.py"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Must spawn Verifier subagent — auth changes need functional verification against designed scenarios",
+          "pattern": "(Verifier|verification-report|agents/verifier\\.md)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should complete with lessons",
+          "pattern": "task_state.py complete.*--lessons"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "帮我给这个 FastAPI 项目添加订单创建 API (POST /api/orders)，需要验证用户登录、检查库存、扣减库存、创建订单记录。项目有完整 harness 设施和 environment.json 配置（有 postgres 和 redis）。",
+      "expected_output": "Agent 应该：1) 创建计划并初始化 task state；2) 实现订单创建逻辑；3) Step 5.1: 设计 2-5 个任务特定的功能验证场景（如：创建订单成功、库存不足拒绝、未登录拒绝、订单数据持久化验证）；4) Step 5.2: 启动 Verifier subagent 执行设计的功能场景",
+      "files": [],
+      "assertions": [
+        {
+          "type": "scenario_design",
+          "description": "CRITICAL: Should design task-specific functional scenarios (mentions verify_order, scenarios, or similar)",
+          "pattern": "(task_specific_scenarios|verify_order|scenario.*order)"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Should spawn Verifier subagent for functional verification",
+          "pattern": "(Verifier.*agent|agents/verifier\\.md|verification-report\\.json)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should complete with lessons after all verification passes",
+          "pattern": "task_state.py complete.*--lessons"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "帮我修改这个 Go 项目的用户注册逻辑，添加邮箱格式校验和密码强度检查。项目有完整 harness 设施，environment.json 里配置了 postgres 数据库和一些通用的 functional_scenarios。",
+      "expected_output": "Agent 应该：1) 实现邮箱和密码校验逻辑；2) Step 5.1: 基于 environment.json 的数据库配置和任务目标，设计校验相关场景（有效邮箱通过、无效邮箱拒绝、弱密码拒绝、强密码通过）；3) Verifier subagent 执行任务场景 + 预定义场景",
+      "files": [],
+      "assertions": [
+        {
+          "type": "scenario_design",
+          "description": "CRITICAL: Should design validation-specific scenarios (email, password)",
+          "pattern": "(verify_email|verify_password|validation.*scenario|invalid.*email|weak.*password)"
+        },
+        {
+          "type": "environment_usage",
+          "description": "Should reference environment.json for database context",
+          "pattern": "(environment\\.json|postgres|requires.*postgres)"
+        },
+        {
+          "type": "functional_verification",
+          "description": "Should spawn Verifier subagent with both predefined AND task-specific scenarios",
+          "pattern": "(task_specific_scenarios|Pre-defined.*environment\\.json|verifier.*subagent|Verifier|verification-report)"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "帮我在这个 TypeScript Express 项目添加商品搜索 API (GET /api/products/search)，支持按名称、类别、价格范围搜索，返回分页结果。项目有 harness 但 environment.json 里没有配置 functional_scenarios（空数组）。",
+      "expected_output": "Agent 应该：1) 即使 environment.json 没有预定义场景，仍然必须设计任务特定场景；2) Step 5.1: 设计搜索相关场景（按名称搜索、按价格范围、分页验证、无结果返回空数组）；3) Verifier subagent 执行设计的场景（即使没有预定义场景）。关键：functional_scenarios 为空不能成为跳过功能验证的理由",
+      "files": [],
+      "assertions": [
+        {
+          "type": "scenario_design",
+          "description": "CRITICAL: Should design task-specific scenarios even when predefined scenarios are empty",
+          "pattern": "(verify_search|search.*scenario|task_specific_scenarios.*search)"
+        },
+        {
+          "type": "functional_verification",
+          "description": "CRITICAL: Should spawn Verifier even with empty predefined scenarios — task-specific scenarios make it mandatory",
+          "pattern": "(Verifier|verification-report|functional.*verification)"
+        },
+        {
+          "type": "no_skip",
+          "description": "Should NOT skip functional verification due to empty predefined scenarios",
+          "anti_pattern": "(skip.*functional|no.*scenarios.*skip)"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "这个 Python Flask 项目需要添加管理员删除用户的功能 (DELETE /api/admin/users/{id})，只有 admin 角色才能访问。项目有 harness 设施，environment.json 配了 postgres 和 redis（用于 session）。Medium 任务。",
+      "expected_output": "Agent 应该设计权限相关的验证场景：1) admin 可以删除用户；2) 普通用户无法删除（403）；3) 未登录无法删除（401）；4) 删除后用户确实从数据库移除。这些场景需要利用 environment.json 中的 postgres（验证删除）和 redis（session/auth）。",
+      "files": [],
+      "assertions": [
+        {
+          "type": "scenario_design",
+          "description": "CRITICAL: Should design permission/auth scenarios (admin, 403, 401)",
+          "pattern": "(verify_admin|admin.*delete|403|401|permission.*scenario|unauthorized)"
+        },
+        {
+          "type": "environment_usage",
+          "description": "Should use environment context (postgres for persistence check, redis for auth)",
+          "pattern": "(requires.*postgres|requires.*redis|environment.*postgres|environment.*redis)"
+        },
+        {
+          "type": "side_effect_check",
+          "description": "Should verify side effects (user actually deleted from DB)",
+          "pattern": "(verify.*persist|GET.*users.*404|deleted.*database|side.?effect)"
+        },
+        {
+          "type": "functional_verification",
+          "description": "Should spawn Verifier with auth-focused scenarios",
+          "pattern": "(Verifier|verification-report)"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "这个 Go 项目要给 internal/handler 包的 CreateUser 函数添加邮箱唯一性检查。只改一个文件，不创建新文件，不涉及跨层依赖。项目有完整 harness 设施。",
+      "expected_output": "Agent 应该：1) 输出 Task Classification 决策表格；2) 所有 5 条 Trivial 标准都满足 → 分类为 Trivial；3) 使用 --complexity trivial --trivial-reason 初始化 task state；4) 跳过 plan 文件直接执行；5) 仍然完成 validate + Verifier 完整验证管线",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Must output Task Classification table with all 5 criteria",
+          "pattern": "Task Classification|Meets Trivial"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should init with trivial complexity",
+          "pattern": "task_state.py init.*--complexity.*trivial.*--trivial-reason"
+        },
+        {
+          "type": "no_plan",
+          "description": "Should NOT create a plan file for trivial task",
+          "anti_pattern": "exec-specs/"
+        },
+        {
+          "type": "functional_verification",
+          "description": "Must still run Verifier even for trivial tasks",
+          "pattern": "(Verifier|verification-report)"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "这个 Go 项目需要重构认证模块，从 session-based 改成 JWT，涉及 6 个文件和中间件修改。项目有完整 harness 设施。这是个大改动。",
+      "expected_output": "Agent 应该：1) Task Classification → Complex；2) 创建 plan + 用户审批；3) 使用 git worktree 隔离执行；4) 用 opus/codex 模型执行；5) Cross-Model Review 必须执行（涉及安全/auth）；6) 完整验证管线",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Must classify as Complex",
+          "pattern": "(Classification.*Complex|--complexity.*complex)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should use worktree isolation",
+          "pattern": "worktree"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Must run cross-model review (auth change)",
+          "pattern": "(Cross-Review|reviewer\\.md|reviewer.*agent)"
+        },
+        {
+          "type": "user_approval",
+          "description": "Must get user approval for complex task"
+        },
+        {
+          "type": "functional_verification",
+          "description": "Must spawn Verifier",
+          "pattern": "(Verifier|verification-report)"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "这个 Go 项目需要在 internal/types 包里创建一个新的 order.go 文件，定义 Order 类型，然后在 internal/handler 里创建 order_handler.go 使用它。项目有完整 harness 设施。",
+      "expected_output": "Agent 应该：1) 使用 verify_action.py 预验证 'create file internal/types/order.go' 和 'create file internal/handler/order_handler.go'；2) 预验证 handler → types 的 import 是否合法（L3 import L0 = 合法）；3) 正常执行 + 完整验证",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should pre-verify file creation",
+          "pattern": "verify_action.py.*create file"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should pre-verify import legality",
+          "pattern": "verify_action.py.*import"
+        },
+        {
+          "type": "functional_verification",
+          "description": "Must run verification",
+          "pattern": "(Verifier|verification-report)"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "帮我给这个 Go 项目添加用户头像上传功能，需要支持图片格式校验、大小限制、存储到对象存储。项目有完整 harness 设施。我说的比较模糊，需要你帮我把需求细化。",
+      "expected_output": "Agent 应该：1) 分类为 Standard 或 Complex；2) 先自己分析代码理解现有结构；3) 通过 AskUserQuestion 或文本交互主动询问需求细节（支持哪些格式？大小上限？用哪个对象存储？）；4) 根据用户回复写 plan；5) 获得 plan 审批后执行。关键：不能在需求不清的情况下直接写 plan",
+      "files": [],
+      "assertions": [
+        {
+          "type": "user_interaction",
+          "description": "CRITICAL: Must proactively ask user for requirement details before writing plan",
+          "pattern": "(AskUserQuestion|format|格式|size|大小|存储|storage|S3|OSS|Scope|Design)"
+        },
+        {
+          "type": "analysis_first",
+          "description": "Should analyze codebase before asking questions",
+          "pattern": "(AGENTS\\.md|ARCHITECTURE|handler|internal)"
+        },
+        {
+          "type": "plan_created",
+          "description": "Should create spec after clarification",
+          "pattern": "exec-specs/"
+        },
+        {
+          "type": "user_approval",
+          "description": "Should request plan approval",
+          "pattern": "(Approve|approve|审批|approved)"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "帮我给这个 Python FastAPI 项目重构数据库连接池。目前用的是同步连接，要改成 async。涉及 5 个文件。项目有完整 harness 设施，memory 里有之前数据库相关的经验。这个改动比较大，我需要你跟我确认清楚再动手。",
+      "expected_output": "Agent 应该：1) 分类为 Complex（5 个文件 + 架构级变更）；2) 内联读取 memory；3) 进行 2-3 轮交互确认：Round 1 确认范围和影响的文件，Round 2 确认技术选型（asyncpg vs databases vs SQLAlchemy async），Round 3 确认迁移策略和风险；4) 写 plan + 用户审批；5) worktree 隔离执行",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should classify as Complex",
+          "pattern": "(Classification.*Complex|--complexity.*complex)"
+        },
+        {
+          "type": "user_interaction",
+          "description": "CRITICAL: Should have multi-round interaction (2+ rounds)",
+          "pattern": "(AskUserQuestion|Scope|Design|Risks|approach|选型)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should read memory for prior database experience",
+          "pattern": "(harness/memory|episodes)"
+        },
+        {
+          "type": "plan_created",
+          "description": "Should create detailed spec after interaction",
+          "pattern": "exec-specs/"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should use worktree for complex task",
+          "pattern": "worktree"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "帮我给这个 Go 项目添加 WebSocket 支持，包括连接管理和消息广播。项目有完整 harness 设施。涉及 3 个文件修改和 1 个新文件创建。",
+      "expected_output": "Agent 应该：1) 分类为 Standard；2) 输出 Code Analysis Report（Dependency Map + Impact Radius）；3) 创建的 plan 文件必须包含四段式格式（背景、Task N、验证方式、涉及文件汇总）；4) Task 包含 Before/After 代码对比；5) task_state.py init 使用 --complexity standard；6) checkpoint/complete 时 validate_plan_content 检查通过",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Plan file must contain 背景 section",
+          "pattern": "背景"
+        },
+        {
+          "type": "tool_call",
+          "description": "Plan file must contain Task N with Before/After",
+          "pattern": "(Task \\d|Before|After)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should init with standard complexity",
+          "pattern": "task_state.py init.*--complexity.*standard"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should output Code Analysis Report before interaction",
+          "pattern": "(Code Analysis Report|Dependency Map|Impact Radius)"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "prompt": "这个 Go 项目正在执行一个 Standard 任务，plan 里的涉及文件汇总列了 internal/handler/user.go 和 internal/service/user.go。但执行过程中发现还需要修改 internal/config/settings.go（不在 plan 涉及文件汇总中）。checkpoint 时应该检测到 scope drift。",
+      "expected_output": "Agent 应该：1) checkpoint 时 detect_scope_drift 检测到 settings.go 不在 plan 涉及文件汇总中；2) 输出 scope drift warning 但不阻断 checkpoint；3) context.json 的 deviations 数组记录了这个偏差",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: checkpoint should output scope drift warning",
+          "pattern": "(SCOPE DRIFT|scope drift|Scope drift)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Drift should NOT block checkpoint (warning only)",
+          "pattern": "Checkpoint saved"
+        },
+        {
+          "type": "state_check",
+          "description": "context.json should record deviation",
+          "pattern": "deviations"
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "prompt": "这个 Go 项目需要分 3 个 Task 重构事件系统：Task 1 定义类型，Task 2 实现处理器，Task 3 迁移调用方。每个 Task 必须 checkpoint 后才能继续下一个。项目有完整 harness 设施。",
+      "expected_output": "Agent 应该：1) Plan 包含 3 个 Task 各自的 Before/After 代码对比；2) 每个 Task 完成后调用 task_state.py checkpoint；3) complete 命令前所有 Task 都已 checkpoint；4) Executor subagent prompt 包含 task-specific scope（不是全部文件）",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should checkpoint each task",
+          "pattern": "task_state.py checkpoint.*--task-num"
+        },
+        {
+          "type": "tool_call",
+          "description": "Plan must have Before/After per task",
+          "pattern": "(Before|After)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Plan must have 验证方式 section",
+          "pattern": "验证方式"
+        },
+        {
+          "type": "tool_call",
+          "description": "Executor prompt should contain task-specific scope",
+          "pattern": "(Current Task|Scope for this task)"
+        },
+        {
+          "type": "functional_verification",
+          "description": "Must verify after all phases complete",
+          "pattern": "(Verifier|verification-report)"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "prompt": "帮我重构这个 Python 项目的错误处理机制，从裸 except 改成结构化异常层级。项目有完整 harness 设施。先分析代码再跟我讨论方案，不要直接动手。",
+      "expected_output": "Agent 应该：1) Step 2.2 输出结构化的 Code Analysis Report（包含 Dependency Map、Impact Radius、Unknowns & Risks）；2) Round 1/2 的 AskUserQuestion 引用了分析结果（如 'Based on my code analysis'）；3) Plan 的 Dependency Analysis 或 Risk Assessment section 基于 Code Analysis Report 的内容",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should output Code Analysis Report with Dependency Map",
+          "pattern": "(Code Analysis Report|Dependency Map)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should output Impact Radius in analysis",
+          "pattern": "Impact Radius"
+        },
+        {
+          "type": "user_interaction",
+          "description": "Questions should reference code analysis results",
+          "pattern": "(Based on my code analysis|Dependency Map|analysis above|Impact Radius above)"
+        },
+        {
+          "type": "plan_created",
+          "description": "Plan should contain Risk Assessment based on analysis",
+          "pattern": "Risk Assessment"
+        }
+      ]
+    }
+  ]
+}

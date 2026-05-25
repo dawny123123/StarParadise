@@ -1,0 +1,7 @@
+
+# ─── Harness runtime artifacts (regenerated automatically; do NOT commit) ───
+# Note: harness/, scripts/, docs/, AGENTS.md, Makefile are project assets
+# and SHOULD be committed. Only the paths below are runtime-only.
+harness/.analysis/
+harness/tasks/current
+harness/trace/skill-backups/

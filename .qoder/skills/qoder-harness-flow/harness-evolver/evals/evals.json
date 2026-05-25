@@ -1,0 +1,191 @@
+{
+  "skill_name": "harness-evolver",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "这个 Go 项目有完整 harness 设施，过去两周执行了 8 个任务，harness/trace/failures/ 下有不少失败记录，harness/memory/ 里也有事件和流程记录。帮我分析一下 harness 的健康状况，看看有没有什么可以改进的。",
+      "expected_output": "Agent 应该：1) 检测 harness 存在；2) 评估数据可用性（failure count, episode count）；3) 运行 harness_critic.py 分析失败模式；4) 按 P0-P3 分级展示建议；5) P0 自动修复；6) P1 通过 AskUserQuestion 确认；7) 运行验证确保改动安全；8) 输出完整报告",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should assess data availability before analysis",
+          "pattern": "(harness/trace/failures|harness/memory|FAILURE_COUNT|EPISODE_COUNT)"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should run Critic analysis",
+          "pattern": "harness_critic.py"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should run Refiner in dry-run first",
+          "pattern": "harness_refiner.py.*--dry-run"
+        },
+        {
+          "type": "user_question",
+          "description": "Should ask user confirmation for P1 fixes",
+          "pattern": "(AskUserQuestion|P1.*fix|confirm)"
+        },
+        {
+          "type": "validation",
+          "description": "Should validate changes after refining",
+          "pattern": "(make lint-arch|make build)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这个 Python 项目有 harness 但还没有执行过任何任务，harness/memory/ 是空的，harness/trace/failures/ 也是空的。请运行 evolver 看看。",
+      "expected_output": "Agent 应该：1) 检测 harness 存在；2) 评估数据可用性发现全部为 0；3) 报告 'No execution data found yet — run some tasks with harness-executor first'；4) 优雅退出不执行任何分析",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should check data availability",
+          "pattern": "(FAILURE_COUNT|EPISODE_COUNT|harness/memory)"
+        },
+        {
+          "type": "graceful_exit",
+          "description": "Should exit gracefully when no data found",
+          "pattern": "(No execution data|no data|nothing to evolve|run some tasks)"
+        },
+        {
+          "type": "no_analysis",
+          "description": "Should NOT run critic or refiner when no data exists",
+          "anti_pattern": "(harness_critic.py|harness_refiner.py)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "这个项目完全没有 harness，没有 AGENTS.md，也没有 harness/ 目录。请运行 evolver。",
+      "expected_output": "Agent 应该：1) 检测 harness 不存在；2) 报告 'No harness found, nothing to evolve'；3) 建议先用 harness-creator 初始化；4) 不执行任何分析",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should detect harness existence",
+          "pattern": "(test -d harness|HARNESS_EXISTS)"
+        },
+        {
+          "type": "graceful_exit",
+          "description": "Should exit when no harness found",
+          "pattern": "(No harness found|nothing to evolve|harness-creator)"
+        },
+        {
+          "type": "no_modification",
+          "description": "Should NOT create any files or directories",
+          "anti_pattern": "(mkdir|touch|write)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "这个 TypeScript 项目有完整 harness，Critic 分析发现了 3 个 P0 建议（lint-deps 缺失新包的层级映射）和 2 个 P1 建议。请执行进化流程。P0 需要自动修复，P1 需要我确认。",
+      "expected_output": "Agent 应该：1) 运行 Critic；2) 解析出 P0 和 P1；3) P0 直接用 Refiner 修复（不问用户）；4) P1 通过 AskUserQuestion 展示详情并等待确认；5) 应用确认的修复；6) 运行 make lint-arch + make build 验证；7) 如果验证失败自动回滚",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should run Refiner for P0 automatically",
+          "pattern": "harness_refiner.py.*--priority P0"
+        },
+        {
+          "type": "user_question",
+          "description": "CRITICAL: Should ask user for P1 confirmation",
+          "pattern": "(AskUserQuestion|P1.*confirm|Apply.*P1)"
+        },
+        {
+          "type": "validation",
+          "description": "CRITICAL: Should validate after applying fixes",
+          "pattern": "(make lint-arch|make build)"
+        },
+        {
+          "type": "rollback_ready",
+          "description": "Should have rollback mechanism if validation fails",
+          "pattern": "(git checkout|rollback|roll.?back)"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "harness-executor 刚完成了第 3 个任务，自动触发了 evolver。请以 incremental 模式运行进化分析，只看最近 7 天的数据。",
+      "expected_output": "Agent 应该：1) 识别为 auto-triggered 模式；2) 使用 incremental scope（--since 7d）；3) 运行 Critic + Refiner 流程；4) 静默运行，只报告改进；5) 不主动询问用户（除非有 P1+ 建议）；6) 输出精简报告",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should use incremental scope with --since flag",
+          "pattern": "(--since 7d|incremental|SCOPE.*incremental)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should run critic analysis",
+          "pattern": "harness_critic.py"
+        },
+        {
+          "type": "report",
+          "description": "Should output evolution report",
+          "pattern": "(Evolution Report|improvements|report)"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "这个项目的 harness/memory/episodes/ 下有大量超过 90 天的旧数据（约 200 个文件），占用了不少空间。请清理过期的事件记录。",
+      "expected_output": "Agent 应该：1) 检查内存状态（memory_query.py stats）；2) 识别超过 90 天的 episodic memory；3) 创建 tar.gz 备份到 harness/trace/；4) 验证备份完整性；5) 删除过期文件；6) 报告清理结果。关键：必须先备份再删除",
+      "files": [],
+      "assertions": [
+        {
+          "type": "tool_call",
+          "description": "Should check memory status first",
+          "pattern": "memory_query.py stats"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should create backup BEFORE deleting",
+          "pattern": "(tar -czf|backup|memory-backup)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should delete stale files after backup",
+          "pattern": "(find.*-mtime.*-delete|rm.*episodes)"
+        },
+        {
+          "type": "safety",
+          "description": "Should NOT delete knowledge memory",
+          "anti_pattern": "(knowledge.*delete)"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "这个项目的 Critic 分析后 Refiner 应用了 P0 修复，但修改后 make lint-arch 失败了。请确保进化改动被正确回滚。",
+      "expected_output": "Agent 应该：1) 运行 Critic + Refiner P0 修复；2) 运行 make lint-arch 验证；3) 发现验证失败；4) 自动回滚被修改的文件（git checkout）；5) 记录回滚事件到 harness/trace/failures/；6) 报告回滚结果。关键：进化失败绝不能破坏现有系统",
+      "files": [],
+      "assertions": [
+        {
+          "type": "validation",
+          "description": "Should run validation after refining",
+          "pattern": "make lint-arch"
+        },
+        {
+          "type": "tool_call",
+          "description": "CRITICAL: Should rollback on validation failure",
+          "pattern": "(git checkout|rollback|Rolled back)"
+        },
+        {
+          "type": "tool_call",
+          "description": "Should record the failure event",
+          "pattern": "(harness/trace/failures|evolution_rollback|evolution_validation_failure)"
+        },
+        {
+          "type": "safety",
+          "description": "Should NOT leave broken changes in place",
+          "anti_pattern": "(skip.*rollback|ignore.*failure)"
+        }
+      ]
+    }
+  ]
+}
