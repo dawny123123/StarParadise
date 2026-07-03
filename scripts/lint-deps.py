@@ -31,17 +31,19 @@ LAYERS = {
     2: [
         "star-park/server/src/index",
     ],
-    # Layer 3: 前端 API/组件/路由/Store —— 仅依赖 npm 包
+    # Layer 3: 前端 API/组件/路由/Store/样式 —— 仅依赖 npm 包
     3: [
         "star-park/miniprogram/src/api/index",
         "star-park/miniprogram/src/components/ChildCard",
         "star-park/miniprogram/src/components/TaskItem",
+        "star-park/miniprogram/src/components/PointsModal",
         "star-park/pc-admin/src/api/index",
         "star-park/pc-admin/src/components/ChildCard",
         "star-park/pc-admin/src/components/Layout",
         "star-park/pc-admin/src/components/SideNav",
         "star-park/pc-admin/src/router/index",
         "star-park/pc-admin/src/stores/app",
+        "star-park/pc-admin/src/styles/main",
     ],
     # Layer 4: 前端页面/视图 —— 依赖 L3
     4: [
@@ -49,6 +51,8 @@ LAYERS = {
         "star-park/miniprogram/src/pages/checkin/index",
         "star-park/miniprogram/src/pages/profile/index",
         "star-park/miniprogram/src/pages/records/index",
+        "star-park/miniprogram/src/pages/rewards/index",
+        "star-park/miniprogram/src/pages/wallet/index",
         "star-park/pc-admin/src/views/Dashboard",
         "star-park/pc-admin/src/views/Goals",
         "star-park/pc-admin/src/views/Checkin",

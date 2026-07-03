@@ -18,13 +18,15 @@ graph TD
     C --> D[首页 index]
     C --> E[打卡 checkin]
     C --> F[记录 records]
-    C --> G[我的 profile]
-    D --> H[API 客户端]
-    E --> H
-    F --> H
-    G --> H
-    D --> I[ChildCard 组件]
-    E --> J[TaskItem 组件]
+    C --> G[奖励 rewards]
+    C --> H[我的 profile]
+    D --> I[API 客户端]
+    E --> I
+    F --> I
+    G --> I
+    H --> I
+    D --> J[ChildCard 组件]
+    E --> K[TaskItem 组件]
 ```
 
 > 来源：`star-park/miniprogram/src/pages.json`, `star-park/miniprogram/src/main.js`
@@ -36,6 +38,7 @@ graph TD
 | ChildCard | `components/ChildCard.vue` | 孩子信息卡片 |
 | TaskItem | `components/TaskItem.vue` | 任务项组件 |
 | api | `api/index.js` | uni.request 封装 |
+| rewards | `pages/rewards/index.vue` | 奖励查看页面 |
 
 > 来源：`star-park/miniprogram/src/components/`, `star-park/miniprogram/src/api/index.js`
 

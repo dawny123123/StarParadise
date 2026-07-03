@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "每日打卡",
+  "usingComponents": {
+    "task-item": "../../components/TaskItem",
+    "points-modal": "../../components/PointsModal"
+  }
+}

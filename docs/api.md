@@ -160,11 +160,42 @@
 | child_id | number | 是 | 关联孩子 ID |
 | title | string | 是 | 奖励名称 |
 | target_amount | number | 是 | 目标金额 |
+| description | string | 否 | 奖励描述 |
+| reward_unit | string | 否 | 奖励单位（默认"元"，可选"积分"） |
 
 ### 更新/删除奖励目标
 
 - **路径**: `/api/rewards/:id`
 - **方法**: PUT / DELETE
+
+### 兑换奖励
+
+- **路径**: `/api/rewards/:id/redeem`
+- **方法**: POST
+- **说明**: 兑换已达成的奖励，根据 reward_unit 扣减对应余额
+
+#### 前置条件
+
+- 奖励的 `is_achieved` 必须为 1（已达成）
+- 奖励的 `redeemed_at` 必须为空（未兑换）
+
+#### 响应
+
+```json
+{
+  "id": 1,
+  "title": "新玩具",
+  "redeemed_at": "2026-05-25T12:00:00.000Z",
+  "message": "兑换成功"
+}
+```
+
+#### 错误响应
+
+| 状态码 | 说明 |
+|--------|------|
+| 400 | 奖励未达成或已兑换 |
+| 404 | 奖励不存在 |
 
 ### 获取统计数据
 

@@ -1,33 +1,127 @@
 # 知识卡导出索引文件
 schema_version: 1
 locale: zh-CN
-branch: Q0DeR-MaG1C-BrAnCh-Fo2-NoN-GiT-Or-No-C0MmIt
-exported_at: "2026-05-25T03:40:47Z"
+branch: main
+exported_at: "2026-05-26T03:07:48Z"
 modules:
-    qoder_harness_flow/harness_creator:
-        dir_name: AI Agent 基础设施脚手架生成器
-        title: AI Agent 基础设施脚手架生成器
+    "":
+        dir_name: 星星乐园全栈协同与质量保障中枢
+        title: 星星乐园全栈协同与质量保障中枢
         scope:
-            - qoder-harness-flow/harness-creator/
+            - .canvas-meta.json
+            - .design-state.json
+            - .design.json
+            - .gitignore
+            - AGENTS.md
+            - Makefile
+            - miniprogram-screens.html
+            - pc-dashboard.html
+            - outputs/
+        source_files: []
+        children:
+            - star_park_server
+            - scripts
+            - star_park_miniprogram
+            - harness
+            - docs
+            - star_park_pc_admin
+        depends_on: []
+        related_to: []
+    docs:
+        dir_name: 项目文档与规范中心
+        title: 项目文档与规范中心
+        scope:
+            - docs/
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    qoder_harness_flow/harness_doctor:
-        dir_name: Harness 基础设施自动修复与一致性维护
-        title: Harness 基础设施自动修复与一致性维护
+    harness:
+        dir_name: 自动化开发与验证基础设施
+        title: 自动化开发与验证基础设施
         scope:
-            - qoder-harness-flow/harness-doctor/
+            - harness/
         source_files: []
         children: []
         depends_on: []
-        related_to: []
-    qoder_harness_flow/harness_evolver:
-        dir_name: Harness 进化与知识精炼引擎
-        title: Harness 进化与知识精炼引擎
+        related_to:
+            - path: scripts
+    scripts:
+        dir_name: 自动化验证与质量保障脚本
+        title: 自动化验证与质量保障脚本
         scope:
-            - qoder-harness-flow/harness-evolver/
+            - scripts/
         source_files: []
         children: []
         depends_on: []
+        related_to:
+            - path: harness
+    star_park_miniprogram:
+        dir_name: 星星乐园小程序前端应用
+        title: 星星乐园小程序前端应用
+        scope:
+            - star-park/miniprogram/
+        source_files: []
+        children:
+            - star_park_miniprogram/core_features
+            - star_park_miniprogram/shared_infra
+            - star_park_miniprogram/user_assets
+        depends_on: []
         related_to: []
+    star_park_miniprogram/core_features:
+        dir_name: 儿童打卡与成长追踪核心功能
+        title: 儿童打卡与成长追踪核心功能
+        scope:
+            - star-park/miniprogram/src/pages/index/
+            - star-park/miniprogram/src/pages/checkin/
+            - star-park/miniprogram/src/pages/records/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: star_park_miniprogram/user_assets
+    star_park_miniprogram/shared_infra:
+        dir_name: 小程序共享基础设施与通用组件
+        title: 小程序共享基础设施与通用组件
+        scope:
+            - star-park/miniprogram/src/api/
+            - star-park/miniprogram/src/components/
+            - star-park/miniprogram/src/static/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: star_park_server
+    star_park_miniprogram/user_assets:
+        dir_name: 用户资产与个人中心模块
+        title: 用户资产与个人中心模块
+        scope:
+            - star-park/miniprogram/src/pages/wallet/
+            - star-park/miniprogram/src/pages/rewards/
+            - star-park/miniprogram/src/pages/profile/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: star_park_miniprogram/core_features
+    star_park_pc_admin:
+        dir_name: 星星乐园 PC 管理后台
+        title: 星星乐园 PC 管理后台
+        scope:
+            - star-park/pc-admin/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: star_park_server
+    star_park_server:
+        dir_name: 星星乐园后端服务
+        title: 星星乐园后端服务
+        scope:
+            - star-park/server/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: star_park_pc_admin
+            - path: star_park_miniprogram/shared_infra

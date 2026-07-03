@@ -1,0 +1,12 @@
+{
+  "name": "star-park",
+  "version": "1.0.0",
+  "description": "星星乐园 - 家庭激励管理系统",
+  "private": true,
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../pc-admin && npm install && cd ../miniprogram && npm install",
+    "start:server": "cd server && npm start",
+    "start:pc": "cd pc-admin && npm run dev",
+    "start:mini": "cd miniprogram && npm run dev:h5"
+  }
+}

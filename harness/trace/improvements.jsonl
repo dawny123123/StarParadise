@@ -1,0 +1,2 @@
+{"timestamp":"2026-05-25T09:10:55Z","type":"skill_nudge","pattern":"StarParadise全栈功能开发：DB→API→管理后台→小程序","confidence":0.7,"draft_path":"harness/drafts/skills/star-park-fullstack-feature/SKILL.md"}
+{"timestamp":"2026-05-26T02:20:39Z","type":"doc_sync","files_checked":7,"docs_updated":["docs/design-docs/server.md","docs/api.md","docs/design-docs/miniprogram.md"],"docs_skipped":[],"trigger_episodes":["reward-management-2026-05-25","奖励管理功能完善-20260525-1644"]}

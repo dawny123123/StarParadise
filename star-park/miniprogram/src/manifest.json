@@ -1,0 +1,30 @@
+{
+  "name": "星星乐园",
+  "appid": "",
+  "description": "家庭激励管理系统 - 微信小程序端",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wxa55816418e3bcdfa",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "enhance": true,
+      "postcss": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "h5": {
+    "devServer": {
+      "port": 5173,
+      "proxy": {
+        "/api": {
+          "target": "http://localhost:3001",
+          "changeOrigin": true
+        }
+      }
+    }
+  }
+}

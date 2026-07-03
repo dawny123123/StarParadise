@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: star_park_miniprogram/user_assets
+title: 用户资产与个人中心模块
+scope:
+    - star-park/miniprogram/src/pages/wallet/
+    - star-park/miniprogram/src/pages/rewards/
+    - star-park/miniprogram/src/pages/profile/
+source_files: []
+depends_on: []
+related_to:
+    - path: star_park_miniprogram/core_features

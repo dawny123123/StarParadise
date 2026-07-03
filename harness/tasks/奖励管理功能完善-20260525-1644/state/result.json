@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "files_changed": [
+    "star-park/server/src/database.js",
+    "star-park/server/src/routes/rewards.js",
+    "star-park/pc-admin/src/api/index.js",
+    "star-park/pc-admin/src/views/Rewards.vue"
+  ],
+  "files_created": [
+    "star-park/miniprogram/src/pages/rewards/index.vue",
+    "star-park/miniprogram/src/api/index.js",
+    "star-park/miniprogram/src/pages.json"
+  ],
+  "summary": "全端奖励管理功能完善：DB迁移(3列)+API完善(兑换端点)+管理后台Rewards.vue重写(编辑/兑换/筛选/状态区分)+小程序新页面(rewards/index.vue)。全部验证通过(build/lint/功能测试)。修复了SQL双引号→单引号的bug。",
+  "completed_at": "2026-05-25T17:09:32.863029"
+}

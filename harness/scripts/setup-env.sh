@@ -17,6 +17,11 @@ if [ ! -d "star-park/pc-admin/node_modules" ]; then
   echo "安装管理后台依赖..."
   cd star-park/pc-admin && npm install && cd ../..
 fi
+
+if [ ! -d "star-park/miniprogram/node_modules" ]; then
+  echo "安装小程序依赖..."
+  cd star-park/miniprogram && npm install && cd ../..
+fi
 # --- END PARAMETERIZED ---
 
 echo "✓ 环境就绪"

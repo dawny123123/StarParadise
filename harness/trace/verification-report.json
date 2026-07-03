@@ -1,0 +1,70 @@
+{
+  "task_id": "奖励管理功能完善-20260525-1644",
+  "server": {
+    "started": true,
+    "url": "http://localhost:3001",
+    "seed_initialized": true
+  },
+  "layer_1_per_task": "pass",
+  "layer_2_project_build": "pass",
+  "layer_2_project_lint": "pass",
+  "layer_3_global_verification": "pass",
+  "layer_4_functional": "pass",
+  "task_specific_scenarios": [
+    {
+      "name": "创建奖励含description和reward_unit",
+      "status": "pass",
+      "steps": [
+        {
+          "request": {"method": "POST", "url": "http://localhost:3001/api/rewards", "body": {"child_id":1,"title":"新玩具","target_amount":50,"description":"变形金刚","reward_unit":"元"}},
+          "response": {"status": 201, "body_contains": {"description":"变形金刚","reward_unit":"元"}}
+        }
+      ]
+    },
+    {
+      "name": "兑换已达成奖励",
+      "status": "pass",
+      "steps": [
+        {
+          "request": {"method": "PUT", "url": "http://localhost:3001/api/rewards/14", "body": {"is_achieved":1,"current_amount":1}},
+          "response": {"status": 200, "body_contains": {"is_achieved":1}}
+        },
+        {
+          "request": {"method": "POST", "url": "http://localhost:3001/api/rewards/14/redeem", "body": {}},
+          "response": {"status": 200, "body_contains": {"redeemed_at":"2026-05-25 17:03:50"}}
+        }
+      ]
+    },
+    {
+      "name": "交易记录验证",
+      "status": "pass",
+      "steps": [
+        {
+          "request": {"method": "GET", "url": "http://localhost:3001/api/children/1/transactions?type=money"},
+          "response": {"status": 200, "body_contains": {"type":"redeem","amount":1}}
+        }
+      ]
+    },
+    {
+      "name": "重复兑换拦截",
+      "status": "pass",
+      "steps": [
+        {
+          "request": {"method": "POST", "url": "http://localhost:3001/api/rewards/14/redeem"},
+          "response": {"status": 400, "body_contains": {"error":"奖励已兑换，不能重复兑换"}}
+        }
+      ]
+    },
+    {
+      "name": "未达成奖励兑换拦截",
+      "status": "pass",
+      "steps": [
+        {
+          "request": {"method": "POST", "url": "http://localhost:3001/api/rewards/13/redeem"},
+          "response": {"status": 400, "body_contains": {"error":"奖励目标尚未达成，无法兑换"}}
+        }
+      ]
+    }
+  ],
+  "summary": "所有验证层级通过，5个场景全部pass，HTTP证据完整"
+}

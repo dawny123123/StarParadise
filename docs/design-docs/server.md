@@ -50,6 +50,7 @@ graph TD
 | rewards | `/api/rewards` | POST | 创建奖励目标 |
 | rewards | `/api/rewards/:id` | PUT | 更新奖励目标 |
 | rewards | `/api/rewards/:id` | DELETE | 删除奖励目标 |
+| rewards | `/api/rewards/:id/redeem` | POST | 兑换奖励（事务保护） |
 | stats | `/api/stats/:childId` | GET | 获取统计数据 |
 | stats | `/api/dashboard` | GET | 获取仪表盘数据 |
 | points | `/api/points` | GET | 获取积分记录 |
@@ -65,7 +66,7 @@ graph TD
 | children 表 | `database.js` | 19-26 | 孩子基本信息 |
 | tasks 表 | `database.js` | 28-37 | 任务定义 |
 | checkins 表 | `database.js` | 39-49 | 打卡记录 |
-| rewards 表 | `database.js` | 51-60 | 奖励目标 |
+| rewards 表 | `database.js` | 51-60 | 奖励目标（含description/reward_unit/redeemed_at） |
 | transactions 表 | `database.js` | 62-70 | 金钱交易记录 |
 | points 表 | `database.js` | 72-79 | 积分记录 |
 
@@ -90,6 +91,25 @@ sequenceDiagram
 ```
 
 > 来源：`star-park/server/src/routes/checkins.js:31-87`
+
+### 3.2 奖励兑换流程
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Rewards as rewards 路由
+    participant DB as SQLite
+
+    Client->>Rewards: POST /api/rewards/:id/redeem
+    Rewards->>DB: 验证 is_achieved=1 且 redeemed_at IS NULL
+    Rewards->>DB: BEGIN TRANSACTION
+    Rewards->>DB: UPDATE rewards SET redeemed_at=now
+    Rewards->>DB: UPDATE children SET balance/points_balance -= cost
+    Rewards->>DB: COMMIT
+    Rewards-->>Client: 返回兑换结果
+```
+
+> 来源：`star-park/server/src/routes/rewards.js`
 
 ## 4 配置
 

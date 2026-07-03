@@ -1,0 +1,54 @@
+{
+  "pages": [
+    { "path": "pages/index/index", "style": { "navigationBarTitleText": "星星乐园" } },
+    { "path": "pages/checkin/index", "style": { "navigationBarTitleText": "每日打卡" } },
+    { "path": "pages/records/index", "style": { "navigationBarTitleText": "打卡记录" } },
+    { "path": "pages/wallet/index", "style": { "navigationBarTitleText": "我的钱包" } },
+    { "path": "pages/profile/index", "style": { "navigationBarTitleText": "我的" } },
+    { "path": "pages/rewards/index", "style": { "navigationBarTitleText": "奖励目标" } }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "星星乐园",
+    "navigationBarBackgroundColor": "#F8F8F0",
+    "backgroundColor": "#F8F8F0"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#19C8B9",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/checkin/index",
+        "text": "打卡",
+        "iconPath": "static/tabbar/checkin.png",
+        "selectedIconPath": "static/tabbar/checkin-active.png"
+      },
+      {
+        "pagePath": "pages/records/index",
+        "text": "记录",
+        "iconPath": "static/tabbar/records.png",
+        "selectedIconPath": "static/tabbar/records-active.png"
+      },
+      {
+        "pagePath": "pages/wallet/index",
+        "text": "钱包",
+        "iconPath": "static/tabbar/wallet.png",
+        "selectedIconPath": "static/tabbar/wallet-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "static/tabbar/profile.png",
+        "selectedIconPath": "static/tabbar/profile-active.png"
+      }
+    ]
+  }
+}

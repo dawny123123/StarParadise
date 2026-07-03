@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: qoder_harness_flow/harness_creator
-title: AI Agent 基础设施脚手架生成器
-scope:
-    - qoder-harness-flow/harness-creator/
-source_files: []
-depends_on: []
-related_to: []

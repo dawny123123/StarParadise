@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/checkin/index",
+    "pages/records/index",
+    "pages/wallet/index",
+    "pages/profile/index",
+    "pages/rewards/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "星星乐园",
+    "navigationBarBackgroundColor": "#F8F8F0",
+    "backgroundColor": "#F8F8F0"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#19C8B9",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/checkin/index",
+        "text": "打卡",
+        "iconPath": "static/tabbar/checkin.png",
+        "selectedIconPath": "static/tabbar/checkin-active.png"
+      },
+      {
+        "pagePath": "pages/records/index",
+        "text": "记录",
+        "iconPath": "static/tabbar/records.png",
+        "selectedIconPath": "static/tabbar/records-active.png"
+      },
+      {
+        "pagePath": "pages/wallet/index",
+        "text": "钱包",
+        "iconPath": "static/tabbar/wallet.png",
+        "selectedIconPath": "static/tabbar/wallet-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的",
+        "iconPath": "static/tabbar/profile.png",
+        "selectedIconPath": "static/tabbar/profile-active.png"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

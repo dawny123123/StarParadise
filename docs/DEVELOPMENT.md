@@ -30,11 +30,18 @@ npm run start:mini
 
 | 命令 | 说明 | 持续时间 |
 |------|------|----------|
-| `make build` | 构建管理后台和小程序 | ~30s |
+| `make build` | 构建管理后台 | ~30s |
 | `make test` | 运行测试 | ~5s |
-| `make lint` | 运行所有 linter | ~10s |
 | `make lint-arch` | 运行架构 linter | ~5s |
+| `make lint` | 运行所有 linter | ~10s |
 | `make verify` | 运行端到端验证 | ~15s |
+| `make api-doc` | 生成/更新 API 接口文档 | ~5s |
+| `make check-db` | DDL/Entity 一致性检查 | ~3s |
+| `make api-test` | 运行 API 接口测试 | ~10s |
+| `make check-conventions` | 编码规范检查 | ~3s |
+| `make setup-env` | 设置开发环境 | ~30s |
+| `make start-server` | 启动后端服务器 | ~5s |
+| `make teardown-env` | 清理环境 | ~2s |
 
 ## 4 各子项目命令
 

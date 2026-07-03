@@ -1,0 +1,62 @@
+{
+  "task_id": "奖励管理功能完善-20260525-1644",
+  "task": "全端完善奖励管理：DB迁移+API完善+管理后台重写+小程序新增奖励页面",
+  "timestamp": "2026-05-25T16:56:02.380505",
+  "started_at": "2026-05-25T16:44:05.773893",
+  "completed_at": "2026-05-25T16:56:02.380505",
+  "duration_minutes": 12,
+  "complexity": "complex",
+  "status": "completed",
+  "outcome": "success",
+  "spec_path": "docs/exec-specs/reward-management",
+  "modules_touched": ["server", "pc-admin", "miniprogram"],
+  "layers_touched": ["L0", "L1", "L2", "L3", "L4", "L5"],
+  "files_changed": [
+    "star-park/server/src/database.js",
+    "star-park/server/src/routes/rewards.js",
+    "star-park/pc-admin/src/api/index.js",
+    "star-park/pc-admin/src/views/Rewards.vue",
+    "star-park/miniprogram/src/api/index.js",
+    "star-park/miniprogram/src/pages.json"
+  ],
+  "files_created": [
+    "star-park/miniprogram/src/pages/rewards/index.vue"
+  ],
+  "friction": {
+    "takeovers": 0,
+    "corrections": 0,
+    "retries": 0
+  },
+  "lessons": {
+    "decisions": [
+      "使用try/catch迁移模式与已有children.points_balance一致",
+      "兑换API使用db.transaction()保证原子性",
+      "根据reward_unit区分扣减金钱余额或积分余额",
+      "兑换前验证is_achieved=1且redeemed_at为空",
+      "编辑时禁止切换孩子(防止数据错乱)",
+      "小程序奖励页面仅查看不包含兑换操作"
+    ],
+    "conventions": [
+      "redeemReward(id)调用POST /api/rewards/:id/redeem",
+      "兑换确认显示扣减金额和单位",
+      "已兑换奖励灰化+已达成奖励绿色背景+庆祝标识",
+      "页面风格与现有records/index.vue保持一致",
+      "进度条使用SCSS变量与uni.scss一致"
+    ],
+    "pitfalls": [],
+    "patterns": [
+      "全栈功能开发遵循DB→API→pc-admin→miniprogram的自底向上顺序",
+      "DB迁移使用try/catch ALTER TABLE模式确保幂等性",
+      "兑换操作使用事务保护保证数据一致性"
+    ]
+  },
+  "task_profile": {
+    "subtasks_total": 5,
+    "subtasks_completed": 5,
+    "cross_module": true,
+    "cross_layer": true,
+    "new_files_created": 1,
+    "existing_files_modified": 6
+  },
+  "source": "bootstrapped_from_checkpoints"
+}

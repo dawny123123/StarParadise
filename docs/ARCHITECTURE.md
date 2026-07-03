@@ -28,6 +28,7 @@ graph TD
         PC_COMP[pc-admin/src/components/]
         PC_ROUTER[pc-admin/src/router/]
         PC_STORE[pc-admin/src/stores/]
+        PC_STYLES[pc-admin/src/styles/]
     end
     subgraph "Layer 2 — 后端入口"
         SRV_INDEX[server/src/index.js]
@@ -48,11 +49,12 @@ graph TD
     MP_MAIN --> MP_PAGES
     MP_PAGES --> MP_API
     MP_PAGES --> MP_COMP
-    PC_MAIN --> PC_VIEWS
     PC_VIEWS --> PC_API
     PC_VIEWS --> PC_COMP
+    PC_MAIN --> PC_VIEWS
     PC_MAIN --> PC_ROUTER
     PC_MAIN --> PC_STORE
+    PC_MAIN --> PC_STYLES
     SRV_INDEX --> SRV_CHILDREN
     SRV_INDEX --> SRV_TASKS
     SRV_INDEX --> SRV_CHECKINS
@@ -77,9 +79,9 @@ graph TD
 | L0 | `server/src/database.js`, `server/src/seed.js` | 仅标准库 + npm 包 | L1, L2, L3, L4, L5 |
 | L1 | `server/src/routes/*` | L0, 标准库 + npm 包 | L2, L3, L4, L5 |
 | L2 | `server/src/index.js` | L0, L1, 标准库 + npm 包 | L3, L4, L5 |
-| L3 | `miniprogram/src/api/`, `miniprogram/src/components/`, `pc-admin/src/api/`, `pc-admin/src/components/`, `pc-admin/src/router/`, `pc-admin/src/stores/` | 标准库 + npm 包 | L0, L1, L2, L4（同子项目） |
+| L3 | `miniprogram/src/api/`, `miniprogram/src/components/`, `pc-admin/src/api/`, `pc-admin/src/components/`, `pc-admin/src/router/`, `pc-admin/src/stores/`, `pc-admin/src/styles/` | 标准库 + npm 包 | L0, L1, L2, L4, L5 |
 | L4 | `miniprogram/src/pages/`, `pc-admin/src/views/` | L3, 标准库 + npm 包 | L0, L1, L2, L5 |
-| L5 | `miniprogram/src/main.js`, `pc-admin/src/main.js` | L3, L4, 标准库 + npm 包 | L0, L1, L2 |
+| L5 | `miniprogram/src/main.js`, `miniprogram/src/App.vue`, `pc-admin/src/main.js`, `pc-admin/src/App.vue` | L3, L4, 标准库 + npm 包 | L0, L1, L2 |
 
 > 由以下强制执行：`scripts/lint-deps.py`
 

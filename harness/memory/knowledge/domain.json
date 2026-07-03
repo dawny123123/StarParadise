@@ -1,0 +1,24 @@
+{
+  "topic": "domain",
+  "category": "domain",
+  "facts": [
+    "使用try/catch迁移模式与已有children.points_balance一致",
+    "兑换API使用db.transaction()保证原子性",
+    "根据reward_unit区分扣减金钱余额或积分余额",
+    "兑换前验证is_achieved=1且redeemed_at为空",
+    "小程序奖励页面仅查看不包含兑换操作",
+    "redeemReward(id)调用POST /api/rewards/:id/redeem",
+    "兑换确认显示扣减金额和单位",
+    "已兑换奖励灰化+已达成奖励绿色背景+庆祝标识",
+    "页面风格与现有records/index.vue保持一致",
+    "进度条使用SCSS变量与uni.scss一致",
+    "全栈功能开发遵循DB→API→pc-admin→miniprogram的自底向上顺序",
+    "DB迁移使用try/catch ALTER TABLE模式确保幂等性",
+    "兑换操作使用事务保护保证数据一致性"
+  ],
+  "sources": [
+    "task:奖励管理功能完善-20260525-1644"
+  ],
+  "created": "2026-05-25T17:11:52.268179",
+  "updated": "2026-05-25T17:11:52.268179"
+}

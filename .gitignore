@@ -1,4 +1,9 @@
 
+# ─── 环境变量（含 PAT 等敏感凭据，禁止提交） ───
+.env
+.env.*
+!.env.example
+
 # ─── Harness runtime artifacts (regenerated automatically; do NOT commit) ───
 # Note: harness/, scripts/, docs/, AGENTS.md, Makefile are project assets
 # and SHOULD be committed. Only the paths below are runtime-only.

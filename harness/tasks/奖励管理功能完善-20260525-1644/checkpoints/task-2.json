@@ -1,0 +1,40 @@
+{
+  "task_num": 2,
+  "summary": "POST支持description/reward_unit，PUT支持description/reward_unit更新，新增POST /api/rewards/:id/redeem兑换端点（含事务保护）",
+  "timestamp": "2026-05-25T16:49:07.697841",
+  "context_snapshot": {
+    "completed": [
+      "Task 1: rewards表新增description/reward_unit/redeemed_at三列，使用try/catch ALTER TABLE迁移模式",
+      "Task 2: POST支持description/reward_unit，PUT支持description/reward_unit更新，新增POST /api/rewards/:id/redeem兑换端点（含事务保护）"
+    ],
+    "current": "Task 3",
+    "remaining": [
+      "Task 2",
+      "Task 3",
+      "Task 4",
+      "Task 5"
+    ],
+    "key_decisions": [
+      "使用try/catch迁移模式与已有children.points_balance一致",
+      "兑换API使用db.transaction()保证原子性",
+      "根据reward_unit区分扣减金钱余额或积分余额",
+      "兑换前验证is_achieved=1且redeemed_at为空"
+    ],
+    "files_modified": [
+      "star-park/server/src/routes/rewards.js",
+      "star-park/server/src/database.js"
+    ],
+    "files_created": [],
+    "deviations": [],
+    "task_checkpoints": {
+      "1": {
+        "summary": "rewards表新增description/reward_unit/redeemed_at三列，使用try/catch ALTER TABLE迁移模式",
+        "timestamp": "2026-05-25T16:47:12.899629"
+      },
+      "2": {
+        "summary": "POST支持description/reward_unit，PUT支持description/reward_unit更新，新增POST /api/rewards/:id/redeem兑换端点（含事务保护）",
+        "timestamp": "2026-05-25T16:49:07.697690"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: star_park_pc_admin
+title: 星星乐园 PC 管理后台
+scope:
+    - star-park/pc-admin/
+source_files: []
+depends_on: []
+related_to:
+    - path: star_park_server

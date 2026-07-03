@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "星星乐园",
+  "usingComponents": {
+    "child-card": "../../components/ChildCard"
+  }
+}

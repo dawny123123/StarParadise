@@ -1,0 +1,56 @@
+{
+  "task_num": 4,
+  "summary": "Rewards.vue全面重写：新增孩子筛选tabs、编辑对话框、兑换确认操作、达成/兑换状态视觉区分",
+  "timestamp": "2026-05-25T16:52:00.110452",
+  "context_snapshot": {
+    "completed": [
+      "Task 1: rewards表新增description/reward_unit/redeemed_at三列，使用try/catch ALTER TABLE迁移模式",
+      "Task 2: POST支持description/reward_unit，PUT支持description/reward_unit更新，新增POST /api/rewards/:id/redeem兑换端点（含事务保护）",
+      "Task 3: pc-admin API客户端新增redeemReward导出函数",
+      "Task 4: Rewards.vue全面重写：新增孩子筛选tabs、编辑对话框、兑换确认操作、达成/兑换状态视觉区分"
+    ],
+    "current": "Task 5",
+    "remaining": [
+      "Task 2",
+      "Task 3",
+      "Task 4",
+      "Task 5"
+    ],
+    "key_decisions": [
+      "使用try/catch迁移模式与已有children.points_balance一致",
+      "兑换API使用db.transaction()保证原子性",
+      "根据reward_unit区分扣减金钱余额或积分余额",
+      "兑换前验证is_achieved=1且redeemed_at为空",
+      "redeemReward(id)调用POST /api/rewards/:id/redeem",
+      "编辑时禁止切换孩子(防止数据错乱)",
+      "兑换确认显示扣减金额和单位",
+      "已兑换奖励灰化+已达成奖励绿色背景+庆祝标识"
+    ],
+    "files_modified": [
+      "star-park/pc-admin/src/api/index.js",
+      "star-park/pc-admin/src/views/Rewards.vue",
+      "star-park/server/src/routes/rewards.js",
+      "star-park/server/src/database.js"
+    ],
+    "files_created": [],
+    "deviations": [],
+    "task_checkpoints": {
+      "1": {
+        "summary": "rewards表新增description/reward_unit/redeemed_at三列，使用try/catch ALTER TABLE迁移模式",
+        "timestamp": "2026-05-25T16:47:12.899629"
+      },
+      "2": {
+        "summary": "POST支持description/reward_unit，PUT支持description/reward_unit更新，新增POST /api/rewards/:id/redeem兑换端点（含事务保护）",
+        "timestamp": "2026-05-25T16:49:07.697690"
+      },
+      "3": {
+        "summary": "pc-admin API客户端新增redeemReward导出函数",
+        "timestamp": "2026-05-25T16:49:58.137697"
+      },
+      "4": {
+        "summary": "Rewards.vue全面重写：新增孩子筛选tabs、编辑对话框、兑换确认操作、达成/兑换状态视觉区分",
+        "timestamp": "2026-05-25T16:52:00.110307"
+      }
+    }
+  }
+}
