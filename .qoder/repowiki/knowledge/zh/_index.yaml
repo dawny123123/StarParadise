@@ -3,11 +3,11 @@ schema_version: 1
 locale: zh-CN
 branch: main
 nodes_managed: true
-exported_at: "2026-07-03T10:27:30Z"
+exported_at: "2026-08-01T07:54:23Z"
 modules:
     "":
-        dir_name: StarParadise 星星乐园全栈 Monorepo
-        title: StarParadise 星星乐园全栈 Monorepo
+        dir_name: StarParadise 星星乐园 Monorepo（后端 + PC 管理端 + 小程序）
+        title: StarParadise 星星乐园 Monorepo（后端 + PC 管理端 + 小程序）
         scope: []
         source_files: []
         children:
@@ -20,8 +20,8 @@ modules:
         depends_on: []
         related_to: []
     docs:
-        dir_name: 项目文档与执行规范
-        title: 项目文档与执行规范
+        dir_name: StarParadise 项目文档与可执行需求规范
+        title: StarParadise 项目文档与可执行需求规范
         scope:
             - docs/
         source_files: []
@@ -38,8 +38,8 @@ modules:
         depends_on: []
         related_to: []
     scripts:
-        dir_name: CI_CD 与代码质量验证脚本集
-        title: CI/CD 与代码质量验证脚本集
+        dir_name: 开发期验证与质量检查脚本集
+        title: 开发期验证与质量检查脚本集
         scope:
             - scripts/
         source_files: []
@@ -48,8 +48,8 @@ modules:
         related_to:
             - path: star_park_server
     star_park_miniprogram:
-        dir_name: 星星乐园微信小程序（UniApp 多端应用）
-        title: 星星乐园微信小程序（UniApp 多端应用）
+        dir_name: 星星乐园小程序（UniApp 多端应用）
+        title: 星星乐园小程序（UniApp 多端应用）
         scope:
             - star-park/miniprogram/
         source_files: []
@@ -60,8 +60,8 @@ modules:
         depends_on: []
         related_to: []
     star_park_miniprogram/core_features:
-        dir_name: 儿童打卡与成长追踪核心功能
-        title: 儿童打卡与成长追踪核心功能
+        dir_name: 核心功能页面（首页仪表盘、打卡执行、记录查询）
+        title: 核心功能页面（首页仪表盘、打卡执行、记录查询）
         scope:
             - star-park/miniprogram/src/pages/index/
             - star-park/miniprogram/src/pages/checkin/
@@ -94,8 +94,8 @@ modules:
         depends_on: []
         related_to: []
     star_park_pc_admin:
-        dir_name: 星星乐园 PC 管理后台前端
-        title: 星星乐园 PC 管理后台前端
+        dir_name: 星星乐园 PC 端管理后台（Vue3 + Vite）
+        title: 星星乐园 PC 端管理后台（Vue3 + Vite）
         scope:
             - star-park/pc-admin/
         source_files: []
@@ -104,8 +104,8 @@ modules:
         related_to:
             - path: star_park_server
     star_park_server:
-        dir_name: 星星乐园后端服务（Express + SQLite）
-        title: 星星乐园后端服务（Express + SQLite）
+        dir_name: 星星乐园后端服务（Express + SQLite REST API）
+        title: 星星乐园后端服务（Express + SQLite REST API）
         scope:
             - star-park/server/
         source_files: []

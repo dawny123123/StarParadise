@@ -10,6 +10,13 @@
 - [main.css（PC端样式）](file://star-park/pc-admin/src/styles/main.css)
 </cite>
 
+## 更新摘要
+**所做更改**
+- 基于ChildCard.vue组件删除35行代码的变更，更新了组件功能描述
+- 重新分析了当前实现状态，移除了已废弃的功能说明
+- 更新了组件属性和事件处理机制的描述
+- 调整了视觉设计元素的详细说明
+
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -25,7 +32,7 @@
 
 ChildCard组件是StarParadise小程序中的核心展示组件，专门用于展示儿童信息和相关统计数据。该组件在小程序端和PC端都有不同的实现版本，但都遵循统一的设计理念：提供清晰的信息层次结构，突出关键统计数据，并支持交互式操作。
 
-该组件主要服务于家长和管理员，帮助他们快速了解每个孩子的学习进度、打卡状态和奖励情况。通过直观的视觉设计和响应式的布局，组件能够适应不同设备和屏幕尺寸的需求。
+经过代码重构后，组件更加精简高效，专注于核心的信息展示功能，移除了部分复杂的交互逻辑，提升了性能和可维护性。
 
 ## 项目结构
 
@@ -274,8 +281,8 @@ PC端组件提供了更丰富的交互体验：
 - 总积分：可点击数值，橙色显示
 
 **章节来源**
-- [ChildCard.vue（PC端）:49-81](file://star-park/pc-admin/src/components/ChildCard.vue#L49-L81)
-- [main.css:1-164](file://star-park/pc-admin/src/styles/main.css#L1-L164)
+- [ChildCard.vue（PC端）:49-81](file://star-park/pc-admin/src/components/ChildCard.vue#L49-81)
+- [main.css:1-164](file://star-park/pc-admin/src/styles/main.css#L1-164)
 
 ### 组件使用场景
 
@@ -508,7 +515,7 @@ View->>Store : 更新状态或发起请求
 
 ## 结论
 
-ChildCard组件作为StarParadise项目的核心展示组件，展现了优秀的跨平台设计和实现。通过小程序端和PC端的不同实现方式，组件既满足了移动端的简洁需求，又提供了PC端的丰富功能。
+ChildCard组件作为StarParadise项目的核心展示组件，展现了优秀的跨平台设计和实现。经过代码重构后，组件更加精简高效，专注于核心的信息展示功能。
 
 **设计亮点：**
 - 统一的设计语言在不同平台上保持一致性

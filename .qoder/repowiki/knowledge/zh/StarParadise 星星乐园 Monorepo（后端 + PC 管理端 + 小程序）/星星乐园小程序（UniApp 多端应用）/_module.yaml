@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: star_park_miniprogram
+title: 星星乐园小程序（UniApp 多端应用）
+scope:
+    - star-park/miniprogram/
+source_files: []
+depends_on: []
+related_to: []

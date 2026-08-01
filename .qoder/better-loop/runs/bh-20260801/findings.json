@@ -1,0 +1,275 @@
+{
+  "summary": {
+    "projectName": "StarParadise",
+    "locale": "zh-CN",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 25,
+    "overview": "项目拥有一套罕见地完整的验证素材——83 个后端 Vitest 用例、三件套执行规格、可运行的环境脚本，但把它们连起来的门禁入口是断的：make test 是一句 echo 且退出 0，make verify 直接报错，make lint-arch 在干净树上就是红的。结果是 agent 能拿到「绿」，却证明不了任何事情。",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Rules",
+        "Skills"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 2,
+          "paths": [
+            ".qoder/rules/1.md",
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Project"
+          ],
+          "count": 7,
+          "paths": [
+            ".qoder/skills/qoder-harness-flow/harness-creator/SKILL.md",
+            ".qoder/skills/qoder-harness-flow/harness-doctor/SKILL.md",
+            ".qoder/skills/qoder-harness-flow/harness-evolver/SKILL.md",
+            ".qoder/skills/qoder-harness-flow/harness-executor/SKILL.md",
+            ".qoder/skills/qoder-harness-flow/harness-recorder/SKILL.md",
+            ".qoder/skills/qoder-harness-flow/harness-spec/SKILL.md",
+            ".qoder/skills/qoder-harness-flow/harness-upgrader/SKILL.md"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": [
+            "Project"
+          ],
+          "count": 30
+        },
+        {
+          "surface": "Hooks",
+          "scopes": [
+            "Global"
+          ],
+          "count": 2
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        }
+      ]
+    },
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "任务理解",
+        "score": 58,
+        "summary": "根 AGENTS.md 密度高且确实被遵循，但其声明的覆盖率阈值、测试目录与验证脚本已与真实配置不一致。",
+        "findingRefs": [
+          "guidance-threshold-drift",
+          "generated-artifacts-tracked",
+          "empty-always-on-rule"
+        ]
+      },
+      {
+        "id": "controlled-execution",
+        "label": "可控执行",
+        "score": 52,
+        "summary": "环境、数据库一致性、接口探测三条路线实测可跑；但文档化的验证与文档生成命令分别硬失败和假成功。",
+        "findingRefs": [
+          "lint-baseline-red",
+          "api-doc-false-success"
+        ]
+      },
+      {
+        "id": "change-validation",
+        "label": "改动验证",
+        "score": 48,
+        "summary": "测试床本身很强且被实际执行过，但唯一被文档指认的入口不执行它，且钱路径的失败分支被主动排除在覆盖率之外。",
+        "findingRefs": [
+          "test-entrypoint-noop",
+          "layer-gate-silent-skip",
+          "error-branch-blind"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "可靠交付",
+        "score": 38,
+        "summary": "仓库确认无 CI 与合并门禁，端到端验收路线报错、场景数为零，已有验收证据仅以叙述性 JSON 存在且不可重放。",
+        "findingRefs": [
+          "e2e-acceptance-route-broken"
+        ]
+      },
+      {
+        "id": "learning-capture",
+        "label": "经验沉淀",
+        "score": 42,
+        "summary": "仓内沉淀了知识与 episode，但重复出现的覆盖率抬升诉求没有可执行归属，唯一的项目专属 playbook 位于加载器扫描不到的目录。",
+        "findingRefs": [
+          "project-playbook-unreachable",
+          "skill-reference-vars-undefined"
+        ]
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "test-entrypoint-noop",
+      "title": "make test 只打印一句「无测试」并成功退出，83 个后端用例从未被门禁跑到",
+      "severity": "High",
+      "reason": "事实：Makefile 的 test 目标是 `@echo \"No tests configured yet\"`，本次实测输出该行并以 exit 0 结束；harness/config/environment.json 的 runtime.test_command 复制了同一句占位符，scripts/validate.py 的 Test 步骤因此恒真。而 AGENTS.md 第 28 行、docs/DEVELOPMENT.md、docs/TESTING.md 都声称该命令运行 Vitest 与覆盖率。推断：兑换、打卡结算、积分这些资金与积分路径的回归可以通过项目宣称的「完整流水线」而不被任何断言拦下。归属：Makefile 的 test 目标（伴生 harness/config/environment.json 的 test_command）。不确定性：Qoder 会话侧本窗口未观测到任何变更事件，因此「已因此漏过某次真实回归」并未被观察；分析器仅记录到 vitest 作为被观测的验证命令类别，即执行者是绕过 make 直接调用的。关于重复出现的覆盖率抬升诉求（窗口内三个不同请求键、跨两个上下文组）为何不另立 Skill 归属：其缺失的归属正是这个可执行入口本身，按 observed→built-in→configured→extend→create 阶梯应先修复既有配置归属，而非新建资产。",
+      "expectedOutput": [
+        "make test 真实执行 Vitest 并在断言失败时非零退出，让「绿」重新成为可信信号。"
+      ],
+      "expectedArtifact": "Build script",
+      "aiFixPrompt": "/better-harness fix this issue\n\n把 Makefile 的 `test` 目标改为真正执行后端 Vitest（在 star-park/server 下运行 vitest 并带覆盖率），使其在用例失败或覆盖率不达阈值时以非零码退出；同步修正 harness/config/environment.json 的 runtime.test_command，使其与 Makefile 一致。保持现有 tests/ 目录结构与 vitest.config.js 的阈值配置不变。\n\n## Validation\n\n- 运行 `make test`，确认输出包含通过的测试文件数与覆盖率表格，且退出码为 0\n- 临时把 star-park/server/tests/rewards.test.js 中「重复兑换应被拒绝」的期望状态码改为 200，确认 `make test` 以非零码退出，随后还原该改动\n- 运行 `python3 scripts/validate.py .`，确认 Test 步骤反映真实测试结果",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "e2e-acceptance-route-broken",
+      "title": "make verify 直接报错且场景数为零，兑换路径的验收证据无法重放",
+      "severity": "High",
+      "reason": "事实：Makefile 的 verify 目标遍历 `scripts/verify/*.sh`，而该目录下只有 README.md，实测输出 `bash: scripts/verify/*.sh: No such file or directory` 并以 `make: *** [verify] Error 1` 终止；AGENTS.md 第 31 行仍把它列为常用命令。同时 harness/verify/README.md 与 scripts/verify/README.md 都自称是场景脚本的存放地，但 make 只展开前者，照后者写脚本的 agent 产物永远不会被执行；harness/trace/verification-report.json 把奖励兑换、重复兑换拦截、未达成拦截共 5 个场景写成带 HTTP 结果的记录，却没有留下任何可重跑的脚本。推断：agent 要证明一次兑换改动仍然正确时，得到的是一个长得像环境故障的硬失败，只能手工重做或整体跳过。归属：scripts/verify/（需要至少一个真实场景脚本）与 Makefile verify 目标的空 glob 保护。不确定性：那 5 个场景今天是否仍然通过未被重放；仓库确认没有 .github/ 或任何工作流文件，因此这里是「验收边界不存在」，而不是「未观察到」。",
+      "expectedOutput": [
+        "给下一个 agent 一条可执行、可失败的端到端验收路线，替代只能读不能跑的叙述性记录。"
+      ],
+      "expectedArtifact": "Runbook",
+      "aiFixPrompt": "/better-harness fix this issue\n\n为 make verify 落地至少一个真实的端到端场景脚本，覆盖 harness/trace/verification-report.json 已记录的奖励兑换与重复兑换拦截行为，放在 Makefile 实际展开的 scripts/verify/ 目录下；同时给 verify 目标加上空 glob 保护，使无场景时能明确说明而不是抛出 bash 错误。统一 scripts/verify/README.md 与 harness/verify/README.md 的说明，只保留一个被 make 真实读取的目录，并把示例端口改为本项目后端实际使用的 3001。\n\n## Validation\n\n- 运行 `make verify`，确认退出码为 0 并打印出至少一个具名场景\n- 临时反转 star-park/server/src/routes/rewards.js 中的重复兑换守卫，确认 `make verify` 以非零码退出，随后还原该改动\n- 确认两个 README 不再指向互相冲突的场景目录",
+      "dimensionRefs": [
+        "reliable-delivery"
+      ]
+    },
+    {
+      "id": "layer-gate-silent-skip",
+      "title": "架构闸门对未登记的模块静默放过，API 组装根从未被层规则约束",
+      "severity": "Medium",
+      "reason": "事实：scripts/lint-deps.py 把 L0–L5 层级写成硬编码模块白名单，find_layer 未命中时返回 -1，第 168–169 行 `if current_layer < 0: return  # 未知模块，跳过`；用该脚本自身的 find_layer 遍历 star-park/ 时，36 个文件被分类、5 个被静默跳过，其中包括挂载全部 /api/* 前缀的 star-park/server/src/app.js 与新增的 routes/goals.js。此时 `make lint-arch` 依然打印 `✓ All package dependencies follow the layer hierarchy`。推断：AGENTS.md 列为头号规则的「路由模块之间不可互引、前端不可导入后端」对任何未手工登记的新文件不成立，而门禁仍报告通过——属于「存在但不生效」。旁证：进行中的执行规格必须专门安排一条「挂载路由并登记架构层级」任务，说明登记是人工负担。归属：scripts/lint-deps.py 的 LAYERS 维护方式与 find_layer 对未知模块的处置。不确定性：未注入违规导入实际触发漏报，该结论来自控制流与白名单缺口，而非一次运行观察。",
+      "expectedOutput": [
+        "让层依赖门禁覆盖每个源文件，新增路由不再天生免检。"
+      ],
+      "expectedArtifact": "Lint rule",
+      "aiFixPrompt": "/better-harness fix this issue\n\n修改 scripts/lint-deps.py，让未出现在层映射中的源文件本身成为一条 violation（而不是静默 return），并把 star-park/server/src/app.js 及现有 routes/ 下的模块补进 LAYERS 的正确层级。保持既有的层比较逻辑与测试文件跳过行为不变。\n\n## Validation\n\n- 运行 `make lint-arch`，确认不再有源文件被静默跳过\n- 在 star-park/server/src/routes/ 下的任一路由中临时加入对同层另一个路由模块的 require，确认 `make lint-arch` 以非零码退出，随后还原该改动\n- 新建一个未登记的临时源文件，确认它本身触发一条明确的未登记 violation",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "lint-baseline-red",
+      "title": "make lint-arch 在干净树上就失败，validate.py 因此永远走不到测试步骤",
+      "severity": "Medium",
+      "reason": "事实：本次在未做源码改动的情况下 `make lint-arch` 以 Error 1 退出，报出 3 条 violation——star-park/pc-admin/src/views/Goals.vue 已 910 行而 scripts/lint-quality.py 的 KNOWN_LARGE_FILES 只豁免到 756；Checkin.vue 505 行刚越过 500 上限；以及 star-park/server/coverage/prettify.js 的 raw-console-log，这是对第三方生成产物的误报，因为 SKIP_DIRS 含 dist 却不含 coverage。scripts/validate.py 的步骤顺序为 Build → Lint Architecture → Test → Verify 且任一步失败即退出。推断：agent 无法把「绿」当作信号，只能整体跳过流水线；副作用是流水线在第 2 步就中止，make test 的空转永远不会在这条路径上暴露。归属：scripts/lint-quality.py 的 SKIP_DIRS 与 KNOWN_LARGE_FILES 棘轮机制。不确定性：未运行 make build，故流水线第 1 步状态未知；Goals.vue 正被另一项进行中的持久化改造重写，其终态未观察。",
+      "expectedOutput": [
+        "恢复一条干净树上为绿、越线即红的 lint 基线，让整条 validate 流水线可以跑完。"
+      ],
+      "expectedArtifact": "Lint rule",
+      "aiFixPrompt": "/better-harness fix this issue\n\n把 coverage 加入 scripts/lint-quality.py 的 SKIP_DIRS，消除对生成产物的误报；然后处理两个真实的行数超限文件——要么拆分，要么在 KNOWN_LARGE_FILES 中给出带到期意图的显式豁免，使干净树上的 lint 基线变绿。不要放宽 MAX_FILE_LINES 本身。\n\n## Validation\n\n- 在未做源码改动的工作树上运行 `make lint-arch`，确认退出码为 0\n- 确认 star-park/server/coverage/ 下的文件不再产生任何 violation\n- 新建一个 501 行的临时 .vue 文件，确认 `make lint-arch` 仍以非零码退出，随后删除该文件\n- 运行 `python3 scripts/validate.py .`，确认流水线能推进到 Test 步骤",
+      "dimensionRefs": [
+        "controlled-execution"
+      ]
+    },
+    {
+      "id": "guidance-threshold-drift",
+      "title": "指令与测试文档给出的覆盖率阈值、测试目录、验证脚本三处与真实配置不符",
+      "severity": "Medium",
+      "reason": "事实：AGENTS.md 第 28 行与第 93 行写行覆盖率阈值 50% 并明确说「配置于 vitest.config.js 的 coverage.thresholds.lines」，docs/TESTING.md 另写 60%/50% 且要求打卡奖励计算与积分余额 100% 覆盖，而 star-park/server/vitest.config.js 实际是 `lines: 80`；docs/TESTING.md 把测试文件位置指定为 star-park/server/src/routes/__tests__/，真实位置是 star-park/server/tests/（且 coverage.include 为 src/**/*.js，写进 src/ 的测试文件会被当作被测源码统计）；docs/TESTING.md 还以表格列出 verify/health-check.sh 与 verify/api-check.sh，两者都不存在。推断：下一个 agent 会按错误坐标干活——把测试写到不存在的目录、按 50% 而非 80% 判断达标、去调用不存在的脚本。归属：docs/TESTING.md 为虚构测试地图与阈值分歧的主发源地，AGENTS.md 第 28/93 行为同因的第二处触点。不确定性：docs/api.md 与路由声明的逐条一致性未核对，仅做了粗口径比较。",
+      "expectedOutput": [
+        "让指令与测试文档中的每个数字和路径都指向真实配置，消除误导下一个 agent 的坐标。"
+      ],
+      "expectedArtifact": "Documentation",
+      "aiFixPrompt": "/better-harness fix this issue\n\n以 star-park/server/vitest.config.js 为唯一事实源，修正 AGENTS.md 第 28、93 行与 docs/TESTING.md 中的覆盖率阈值数字；把 docs/TESTING.md 的测试文件位置改为真实的 star-park/server/tests/；删除或替换 docs/TESTING.md 中指向不存在的 verify/health-check.sh、verify/api-check.sh 的表格行。对文档中声明的「特定模块需 100% 覆盖」要么落成 vitest 配置中的真实阈值，要么改为明确的非强制建议。\n\n## Validation\n\n- 在 AGENTS.md 与 docs/TESTING.md 中检索覆盖率阈值，确认只出现与 vitest.config.js 一致的一个数字\n- 确认文档中提到的每个测试目录与脚本路径在仓库中真实存在\n- 运行 `make check-conventions`，确认无新增规范问题",
+      "dimensionRefs": [
+        "task-understanding"
+      ]
+    },
+    {
+      "id": "error-branch-blind",
+      "title": "钱路径的错误分支既被排除在覆盖率之外，也没有任何可读的运行时诊断",
+      "severity": "Medium",
+      "reason": "事实：star-park/server/src 下有 42 处 `v8 ignore` 标记，而 routes/ 共 28 个 catch 块；server/src 中对 morgan、pino、winston、bunyan 的引用为 0，catch 一律以 `res.status(500).json({ error: err.message })` 收尾；database.js 的 try/catch ALTER TABLE 迁移在失败时仅 console.error 后继续运行。推断：奖励兑换与打卡结算的失败分支同时逃离了项目唯一有牙的门禁（覆盖率）与任何可关联的日志证据，因此当这些路径真的出错时，agent 既拿不到覆盖率信号，也拿不到能把触发、决策边界、失败与结果串起来的诊断输出——按可观测性判定属于 Partial。归属：star-park/server/src/routes/rewards.js（钱路径上忽略标记最密处）的错误处理约定。不确定性：未执行过任何兑换或打卡写操作，未观察到真实失败；本条依据的是静态的忽略标记分布与日志出口缺失，而非一次运行中的诊断失败。",
+      "expectedOutput": [
+        "让资金路径的失败分支同时具备覆盖率约束与可读的诊断证据。"
+      ],
+      "expectedArtifact": "Test",
+      "aiFixPrompt": "/better-harness fix this issue\n\n为后端引入一个最小的结构化日志出口，并在奖励兑换与打卡结算的 catch 分支中记录可关联的失败信息（请求标识、目标资源、失败原因），替代仅返回 500 JSON 的做法；同时移除资金与积分路径上覆盖失败分支的 v8 ignore 标记，改为为这些分支补充断言其错误响应的测试。保持现有对外错误响应结构不变，不要新增任何 console.log 调试语句。\n\n## Validation\n\n- 运行 `make test`，确认新增的错误分支测试通过且覆盖率不低于 vitest.config.js 的阈值\n- 触发一次余额不足的兑换请求，确认日志出口留下可关联的失败记录且响应结构未变\n- 运行 `make lint-arch`，确认未引入 raw-console-log violation",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "api-doc-false-success",
+      "title": "make api-doc 打印「文档已更新」但从不写入文件",
+      "severity": "Low",
+      "reason": "事实：scripts/generate-api-doc.sh 只用 grep 配 sed 把路由声明输出到 stdout，随后无条件打印 `✓ API 文档已更新: docs/api.md`，脚本中不存在任何对 docs/api.md 的写入；实测该命令前后 docs/api.md 的修改时间不变、git diff 为空。推断：agent 在同步文档这一步会收到一个成功信号并据此认为 API 文档已跟上代码，实际上 docs/api.md 会随路由增减持续漂移而无人发现——这正好落在 core-change-watch 建议的 sync-documentation 环节上。归属：scripts/generate-api-doc.sh。不确定性：docs/api.md 当前与 24 个路由声明的逐条差异未逐项核对。",
+      "expectedOutput": [
+        "让文档同步命令的成功信号只在文档真的被更新或校验后出现。"
+      ],
+      "expectedArtifact": "Build script",
+      "aiFixPrompt": "/better-harness fix this issue\n\n让 scripts/generate-api-doc.sh 的行为与它的输出一致：要么真正把扫描结果写入 docs/api.md，要么改成一致性检查——比较路由声明与 docs/api.md 的条目，在漂移时以非零码退出并列出差异。无论选哪种，成功信息只能在操作真的发生后打印。\n\n## Validation\n\n- 在 star-park/server/src/routes/ 中临时新增一个路由声明，运行 `make api-doc`，确认它要么更新了 docs/api.md（git diff 非空），要么以非零码报出该缺失条目，随后还原改动\n- 在无漂移状态下运行 `make api-doc`，确认退出码为 0 且不再打印与实际行为不符的成功信息",
+      "dimensionRefs": [
+        "controlled-execution"
+      ]
+    },
+    {
+      "id": "generated-artifacts-tracked",
+      "title": "仓库跟踪了近四万个依赖与构建产物文件，基于 diff 的变更信号因此不可用",
+      "severity": "Low",
+      "reason": "事实：根 .gitignore 只忽略 .env* 与三条 harness 运行时路径，不含 node_modules/、dist/、coverage/；git ls-files 显示 39965 个 node_modules 文件、3399 个 dist 路径文件、21 个 server/coverage 文件被跟踪，与证据包记录的 40481 个跟踪文件一致。推断：变更影响分析收不到可用信号——证据包统计到的 68 个变更文件、2890 变更行、companionHits=0、diffSeverity=critical 实际几乎全部落在生成的文档与产物上，源码变更为零；同一处也是 lint 对 coverage/prettify.js 误报的上游原因。归属：根 .gitignore。不确定性：清理已跟踪产物属于会改写历史索引的操作，需单独授权；本条只主张现状对信号的影响。",
+      "expectedOutput": [
+        "让 git diff 重新反映真实源码变更，恢复基于变更范围的审查与门禁路由。"
+      ],
+      "expectedArtifact": "Configuration",
+      "aiFixPrompt": "/better-harness fix this issue\n\n在根 .gitignore 中补上 node_modules/、dist/、coverage/ 三类生成产物的忽略规则，保留现有对 harness 运行时路径与 .env* 的处理，并在文件注释中说明 harness/、scripts/、docs/、AGENTS.md、Makefile 仍是应提交的项目资产。把已跟踪产物从索引中移除属于单独操作，需要明确授权后再执行，不要在本次修复中一并进行。\n\n## Validation\n\n- 确认 `git status` 不再把新产生的 node_modules、dist、coverage 文件列为未跟踪变更\n- 确认 AGENTS.md、Makefile、scripts/、docs/、harness/ 下的项目资产仍处于跟踪状态\n- 运行 `git diff --numstat HEAD -- . | wc -l`，确认变更清单不再被生成产物淹没",
+      "dimensionRefs": [
+        "task-understanding"
+      ]
+    },
+    {
+      "id": "empty-always-on-rule",
+      "title": "唯一的常驻规则文件只有 front-matter，正文为空",
+      "severity": "Low",
+      "reason": "事实：.qoder/rules/1.md 共 3 行，内容仅为 `trigger: always_on` 的 front-matter，正文 0 行；它是项目 2 条 Rules 中的一条，另一条是 AGENTS.md。推断：一个每轮都会被加载的常驻上下文槽位占着位置却不下发任何信号，项目真正需要 agent 始终记住的硬约束——层依赖方向、单文件 500 行上限、禁止裸 console.log、数据库文件不可直改——目前全部只存在于 AGENTS.md 的中后部，取决于该文件是否被完整读到。归属：.qoder/rules/1.md。不确定性：agent 是否曾因此违反某条约束未被观察，本次没有会话行为授权；这是一条对当前配置状态的确定性判断，不是对后果的观察。",
+      "expectedOutput": [
+        "让常驻规则槽位真正承载项目的硬约束，而不是占用上下文却零信号。"
+      ],
+      "expectedArtifact": "Configuration",
+      "aiFixPrompt": "/better-harness fix this issue\n\n给 .qoder/rules/1.md 填入正文，只收敛项目最需要常驻的硬约束：L0–L5 层依赖方向、单文件不超过 500 行、仅使用结构化日志、数据库文件不得直接编辑。保持其 always_on 触发方式不变，内容要短到不与 AGENTS.md 重复叙述，只保留判断依据。若认定不需要常驻规则，则删除该文件而不是留下空壳。\n\n## Validation\n\n- 确认 .qoder/rules/1.md 正文非空且只包含常驻硬约束\n- 在不提示 AGENTS.md 的前提下询问「本仓单文件行数上限与层依赖方向」，确认回答正确\n- 确认该文件内容与 AGENTS.md 的规则小节不存在互相矛盾的数字",
+      "dimensionRefs": [
+        "task-understanding"
+      ]
+    },
+    {
+      "id": "project-playbook-unreachable",
+      "title": "唯一的项目专属全栈 playbook 停在 drafts 目录，加载器永远扫描不到",
+      "severity": "Low",
+      "reason": "事实：清单里 7 个项目 Skill 的归属路由全部指向 .qoder/skills/qoder-harness-flow/，描述的都是如何跑 harness 元流程；而唯一描述本项目业务实现路径（数据库迁移 → API → 管理后台 → 小程序，自底向上，含项目特定约定）的 star-park-fullstack-feature 位于 harness/drafts/skills/ 下，不在项目 Skill 目录中，因此不会出现在可选 Skill 中。推断：agent 在真正动手写跨端功能的那一刻拿不到项目自己的做法，只能拿到流程外壳，每次都要重新推导顺序与约定。归属：harness/drafts/skills/star-park-fullstack-feature/SKILL.md。不确定性：仅读取了该文件头部声明，其内容是否与当前仓库现状一致未核实；它是否曾被人工手动引用亦未观察，配置存在从不等于被选用。",
+      "expectedOutput": [
+        "把已经写好的项目专属实现路径放到 agent 真能加载到的位置。"
+      ],
+      "expectedArtifact": "Skill",
+      "aiFixPrompt": "/better-harness fix this issue\n\n先核对 harness/drafts/skills/star-park-fullstack-feature/SKILL.md 的内容是否与当前仓库现状一致（层级顺序、目录结构、验证命令），修正过期之处后把它迁入项目 Skill 目录 .qoder/skills/ 下，使加载器能够发现它。若核对后认为内容已不适用，则明确删除该草稿而不是留在 drafts 中造成「看起来有归属」的错觉。\n\n## Validation\n\n- 确认项目 Skill 数量从 7 变为 8，且新条目的归属路由指向 .qoder/skills/ 下\n- 给出一句典型请求（如同时改后台与小程序的跨端功能），确认该 Skill 会被选中并按其顺序开工\n- 确认该 Skill 中引用的每条命令与目录在仓库中真实存在",
+      "dimensionRefs": [
+        "learning-capture"
+      ]
+    },
+    {
+      "id": "skill-reference-vars-undefined",
+      "title": "两个项目 Skill 在引用跨 Skill 模板时使用了从未定义的路径变量",
+      "severity": "Low",
+      "reason": "事实：harness-evolver/SKILL.md 第 506 行读取 `$CREATOR_SKILL_DIR/references/documentation-templates.md`，harness-recorder/SKILL.md 第 599 行读取 `$EXECUTOR_SKILL_DIR/references/results-template.md`，而这两个文件都只在第 19 行定义了 `SKILL_DIR`，从未定义所使用的那两个变量。推断：执行到这一步的 agent 无法把路径展开成真实文件，只能跳过模板或猜路径；recorder 那处还写了「如果可用」，等于默许静默降级——该分支的模板加载失败不会留下任何痕迹。归属：harness-evolver/SKILL.md 与 harness-recorder/SKILL.md 的变量使用点。不确定性：这些引用在真实执行中被跳过的频率与后果未观察；清单的 missingReferences=0 不能反驳本条，因为它只检查 Markdown 链接，不覆盖裸路径与占位变量。",
+      "expectedOutput": [
+        "让 Skill 中的深层模板引用可以被真实解析，而不是静默跳过。"
+      ],
+      "expectedArtifact": "Skill",
+      "aiFixPrompt": "/better-harness fix this issue\n\n在 harness-evolver/SKILL.md 与 harness-recorder/SKILL.md 中，为使用点所需的跨 Skill 路径变量补上与第 19 行同风格的定义，或改为相对于 Skill 根的显式路径引用，使模板文件能被一次命中。同时移除 recorder 中「如果可用」这类允许静默降级的措辞，改为明确的缺失处理。\n\n## Validation\n\n- 在这两个文件中检索所有 `$` 开头的路径变量，确认每个使用点都有对应定义\n- 让 agent 在不被提示路径的情况下打开 recorder 所要求的结果展示模板，确认一次命中真实文件\n- 确认两个 Skill 中引用的每个 references 文件在磁盘上真实存在",
+      "dimensionRefs": [
+        "learning-capture"
+      ]
+    }
+  ]
+}

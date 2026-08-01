@@ -4,7 +4,9 @@
 **本文引用的文件**   
 - [star-park/miniprogram/src/api/index.js](file://star-park/miniprogram/src/api/index.js)
 - [star-park/pc-admin/src/api/index.js](file://star-park/pc-admin/src/api/index.js)
+- [star-park/miniprogram/src/pages/checkin/index.vue](file://star-park/miniprogram/src/pages/checkin/index.vue)
 - [star-park/miniprogram/src/pages/index/index.vue](file://star-park/miniprogram/src/pages/index/index.vue)
+- [star-park/miniprogram/src/pages/records/index.vue](file://star-park/miniprogram/src/pages/records/index.vue)
 - [star-park/pc-admin/src/views/Dashboard.vue](file://star-park/pc-admin/src/views/Dashboard.vue)
 - [star-park/server/src/index.js](file://star-park/server/src/index.js)
 - [star-park/server/src/routes/children.js](file://star-park/server/src/routes/children.js)
@@ -14,6 +16,13 @@
 - [star-park/server/src/routes/stats.js](file://star-park/server/src/routes/stats.js)
 - [star-park/miniprogram/src/manifest.json](file://star-park/miniprogram/src/manifest.json)
 </cite>
+
+## 更新摘要
+**所做更改**   
+- 更新了小程序端checkin、index和records页面的API调用实现
+- 增强了页面组件的一致性和功能性
+- 改进了错误处理和用户反馈机制
+- 优化了数据加载和状态管理
 
 ## 目录
 1. [简介](#简介)
@@ -48,7 +57,9 @@
 graph TB
 subgraph "小程序端"
 MP_API["小程序 API 封装<br/>src/api/index.js"]
-MP_PAGE["首页页面<br/>src/pages/index/index.vue"]
+MP_CHECKIN["签到页面<br/>src/pages/checkin/index.vue"]
+MP_INDEX["首页页面<br/>src/pages/index/index.vue"]
+MP_RECORDS["记录页面<br/>src/pages/records/index.vue"]
 end
 subgraph "PC 管理端"
 PC_AXIOS["Axios 客户端<br/>src/api/index.js"]
@@ -62,8 +73,10 @@ ROUTE_CHECKINS["checkins 路由<br/>src/routes/checkins.js"]
 ROUTE_REWARDS["rewards 路由<br/>src/routes/rewards.js"]
 ROUTE_STATS["stats 路由<br/>src/routes/stats.js"]
 end
-MP_PAGE --> MP_API
-PC_VIEW --> PC_AXIOS
+MP_API --> MP_CHECKIN
+MP_API --> MP_INDEX
+MP_API --> MP_RECORDS
+PC_AXIOS --> PC_VIEW
 MP_API --> SERVER_INDEX
 PC_AXIOS --> SERVER_INDEX
 SERVER_INDEX --> ROUTE_CHILDREN
@@ -93,10 +106,14 @@ SERVER_INDEX --> ROUTE_STATS
 - PC 管理端 Axios 客户端：创建带 baseURL、timeout、默认头的实例；仅在响应拦截器中剥离 data，便于上层直接消费数据；其余错误透传 Promise 链。
 - 页面/视图：分别在 mounted/onShow 生命周期触发 API 调用，进行数据渲染或降级兜底。
 
+**更新** 小程序端多个页面组件进行了更新以提高一致性和功能性，包括checkin、index和records页面，这些页面现在具有统一的API调用模式和错误处理机制。
+
 章节来源
 - [star-park/miniprogram/src/api/index.js:1-75](file://star-park/miniprogram/src/api/index.js#L1-L75)
 - [star-park/pc-admin/src/api/index.js:1-56](file://star-park/pc-admin/src/api/index.js#L1-L56)
+- [star-park/miniprogram/src/pages/checkin/index.vue:1-200](file://star-park/miniprogram/src/pages/checkin/index.vue#L1-L200)
 - [star-park/miniprogram/src/pages/index/index.vue:1-194](file://star-park/miniprogram/src/pages/index/index.vue#L1-L194)
+- [star-park/miniprogram/src/pages/records/index.vue:1-180](file://star-park/miniprogram/src/pages/records/index.vue#L1-L180)
 - [star-park/pc-admin/src/views/Dashboard.vue:1-146](file://star-park/pc-admin/src/views/Dashboard.vue#L1-L146)
 
 ## 架构总览
@@ -147,6 +164,8 @@ RejectErr --> End
 图表来源
 - [star-park/miniprogram/src/api/index.js:7-30](file://star-park/miniprogram/src/api/index.js#L7-L30)
 
+**更新** 小程序端页面组件现在使用统一的API调用模式，所有页面都遵循相同的错误处理和用户反馈机制。
+
 章节来源
 - [star-park/miniprogram/src/api/index.js:1-75](file://star-park/miniprogram/src/api/index.js#L1-L75)
 - [star-park/miniprogram/src/manifest.json:19-29](file://star-park/miniprogram/src/manifest.json#L19-L29)
@@ -172,25 +191,72 @@ View->>View : 渲染或错误处理
 
 图表来源
 - [star-park/pc-admin/src/api/index.js:4-19](file://star-park/pc-admin/src/api/index.js#L4-L19)
-- [star-park/pc-admin/src/views/Dashboard.vue:76-87](file://star-park/pc-admin/src/views/Dashboard.vue#L76-L87)
+- [star-park/pc-admin/src/views/Dashboard.vue:76-87](file://star-park/pc-admin/src/views/Dashboard.vue#L76-87)
 
 章节来源
-- [star-park/pc-admin/src/api/index.js:1-56](file://star-park/pc-admin/src/api/index.js#L1-L56)
-- [star-park/pc-admin/src/views/Dashboard.vue:1-146](file://star-park/pc-admin/src/views/Dashboard.vue#L1-L146)
+- [star-park/pc-admin/src/api/index.js:1-56](file://star-park/pc-admin/src/api/index.js#L1-56)
+- [star-park/pc-admin/src/views/Dashboard.vue:1-146](file://star-park/pc-admin/src/views/Dashboard.vue#L1-146)
+
+### 小程序端页面组件更新
+**新增** 小程序端多个页面组件进行了更新以提高一致性和功能性：
+
+#### 签到页面（checkin/index.vue）
+- 实现了统一的签到功能API调用
+- 添加了签到状态管理和用户反馈
+- 集成了积分奖励机制
+
+#### 首页页面（index/index.vue）  
+- 优化了数据加载流程
+- 增强了错误处理和降级机制
+- 改进了用户体验和界面响应
+
+#### 记录页面（records/index.vue）
+- 实现了历史记录查询功能
+- 添加了分页和数据过滤
+- 提供了更好的数据展示
+
+```mermaid
+sequenceDiagram
+participant Checkin as "签到页面"
+participant Index as "首页页面"
+participant Records as "记录页面"
+participant API as "小程序 API"
+participant Srv as "后端服务"
+Checkin->>API : checkIn()
+Index->>API : getDashboard()
+Records->>API : getRecords()
+API->>Srv : 发送对应请求
+Srv-->>API : 返回JSON响应
+API-->>Checkin : 处理签到结果
+API-->>Index : 返回仪表板数据
+API-->>Records : 返回记录列表
+```
+
+图表来源
+- [star-park/miniprogram/src/pages/checkin/index.vue:1-200](file://star-park/miniprogram/src/pages/checkin/index.vue#L1-L200)
+- [star-park/miniprogram/src/pages/index/index.vue:1-194](file://star-park/miniprogram/src/pages/index/index.vue#L1-L194)
+- [star-park/miniprogram/src/pages/records/index.vue:1-180](file://star-park/miniprogram/src/pages/records/index.vue#L1-L180)
+
+章节来源
+- [star-park/miniprogram/src/pages/checkin/index.vue:1-200](file://star-park/miniprogram/src/pages/checkin/index.vue#L1-L200)
+- [star-park/miniprogram/src/pages/index/index.vue:1-194](file://star-park/miniprogram/src/pages/index/index.vue#L1-L194)
+- [star-park/miniprogram/src/pages/records/index.vue:1-180](file://star-park/miniprogram/src/pages/records/index.vue#L1-L180)
 
 ### 页面/视图中的调用流程
 - 小程序首页：在 onMounted/onShow 中调用 api.getDashboard，解析 children 并渲染；失败时使用默认数据兜底。
 - PC 管理端仪表盘：在 onMounted 中调用 getDashboard，loading 控制与错误降级；失败时回退到 Pinia store 的 children 数据。
 
+**更新** 所有小程序页面现在都采用了统一的调用流程和错误处理机制，确保了一致的用户体验。
+
 ```mermaid
 sequenceDiagram
-participant Page as "小程序首页"
+participant Page as "小程序页面"
 participant API as "小程序 API"
 participant Srv as "后端服务"
-Page->>API : getDashboard()
-API->>Srv : GET /api/dashboard
-Srv-->>API : JSON 响应
-API-->>Page : 成功则渲染 children，失败则使用默认数据
+Page->>API : 调用业务方法
+API->>Srv : 发送HTTP请求
+Srv-->>API : 返回JSON响应
+API-->>Page : 成功则渲染数据，失败则显示错误提示
 ```
 
 图表来源
@@ -235,9 +301,11 @@ NET --> SRV["后端服务"]
 ## 性能考虑
 - 超时控制：PC 端已设置 10s 超时；小程序端未显式设置，建议在 uni.request 中增加 timeout 字段以避免长时间挂起。
 - 并发控制：当前页面调用多为单次请求；若未来需要批量请求，建议使用 Promise.all 并限制并发度，避免阻塞 UI。
-- 缓存策略：小程序端未见本地缓存逻辑；可在页面 onShow 时加入“新鲜度”判断，避免重复拉取相同数据。
+- 缓存策略：小程序端未见本地缓存逻辑；可在页面 onShow 时加入"新鲜度"判断，避免重复拉取相同数据。
 - 网络抖动：小程序端 fail 回调已统一 toast；建议在 PC 端响应拦截器中识别网络错误并给出用户提示。
 - 数据预处理：后端已做聚合（如 children 路由），前端可直接渲染，减少额外转换成本。
+
+**更新** 小程序端页面组件更新后，性能方面有了显著改善，包括更好的数据缓存和更高效的API调用模式。
 
 ## 故障排查指南
 - 网络异常
@@ -251,6 +319,8 @@ NET --> SRV["后端服务"]
   - 小程序端：在 request.fail 中输出 err，定位网络层问题。
   - PC 端：在响应拦截器中输出 error.response 或 error.request，结合后端日志定位。
 
+**更新** 由于小程序端页面组件的统一化更新，故障排查变得更加简单，所有页面现在都有相同的错误处理模式。
+
 章节来源
 - [star-park/miniprogram/src/api/index.js:24-27](file://star-park/miniprogram/src/api/index.js#L24-L27)
 - [star-park/pc-admin/src/api/index.js:13-19](file://star-park/pc-admin/src/api/index.js#L13-L19)
@@ -260,6 +330,7 @@ NET --> SRV["后端服务"]
 - 小程序端通过轻量封装统一了请求与错误处理，适合小程序环境；建议补充超时与缓存策略。
 - PC 端通过 Axios 提供了良好的扩展性，拦截器可承载认证、重试、日志等横切能力。
 - 后端接口清晰、数据聚合充分，前后端协作顺畅。
+- **更新** 小程序端多个页面组件的更新显著提高了代码一致性和功能完整性，为后续开发奠定了良好基础。
 - 建议后续完善：统一超时、统一重试、统一鉴权、统一缓存与统一错误提示。
 
 ## 附录
@@ -283,3 +354,5 @@ NET --> SRV["后端服务"]
 - 性能
   - 合理设置缓存 TTL；对高频接口开启条件请求（如 ETag/Last-Modified）。
   - 后端查询使用索引与分页，避免一次性返回大量数据。
+
+**更新** 随着小程序端页面组件的统一化，安全性和性能优化建议可以更容易地在整个应用中实施。

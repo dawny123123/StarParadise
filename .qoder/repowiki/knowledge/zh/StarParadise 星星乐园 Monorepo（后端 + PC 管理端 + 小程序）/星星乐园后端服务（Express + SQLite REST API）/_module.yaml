@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: star_park_server
+title: 星星乐园后端服务（Express + SQLite REST API）
+scope:
+    - star-park/server/
+source_files: []
+depends_on: []
+related_to:
+    - path: scripts
+    - path: star_park_miniprogram/shared_infra
+    - path: star_park_pc_admin

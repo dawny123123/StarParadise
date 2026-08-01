@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "summary": {},
+  "dimensions": [
+    {
+      "id": "task-understanding"
+    },
+    {
+      "id": "controlled-execution"
+    },
+    {
+      "id": "change-validation"
+    },
+    {
+      "id": "reliable-delivery"
+    },
+    {
+      "id": "learning-capture"
+    }
+  ],
+  "findings": [
+    {
+      "id": "test-entrypoint-noop"
+    },
+    {
+      "id": "e2e-acceptance-route-broken"
+    },
+    {
+      "id": "layer-gate-silent-skip"
+    },
+    {
+      "id": "lint-baseline-red"
+    },
+    {
+      "id": "guidance-threshold-drift"
+    },
+    {
+      "id": "error-branch-blind"
+    },
+    {
+      "id": "api-doc-false-success"
+    },
+    {
+      "id": "generated-artifacts-tracked"
+    },
+    {
+      "id": "empty-always-on-rule"
+    },
+    {
+      "id": "project-playbook-unreachable"
+    },
+    {
+      "id": "skill-reference-vars-undefined"
+    }
+  ]
+}
