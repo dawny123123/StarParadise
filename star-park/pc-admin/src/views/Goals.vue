@@ -127,11 +127,14 @@
             <span class="date-text">{{ formatDate(row.plannedDate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="110" align="center" fixed="right">
+        <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
             <div class="todo-actions">
               <el-button text size="small" @click="openTodoModal(row)">
                 <el-icon><Edit /></el-icon>
+              </el-button>
+              <el-button text size="small" @click="cloneTodo(row)">
+                <el-icon><DocumentCopy /></el-icon>
               </el-button>
               <el-button text size="small" type="danger" @click="deleteTodo(row.id)">
                 <el-icon><Delete /></el-icon>
@@ -242,6 +245,21 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="120" align="center">
+          <template #default="{ row }">
+            <div class="todo-actions">
+              <el-button text size="small" @click="openTodoModal(row)">
+                <el-icon><Edit /></el-icon>
+              </el-button>
+              <el-button text size="small" @click="cloneTodo(row)">
+                <el-icon><DocumentCopy /></el-icon>
+              </el-button>
+              <el-button text size="small" type="danger" @click="deleteTodo(row.id)">
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
       </el-table>
       <el-empty v-else description="暂无关联任务" :image-size="60" />
     </el-dialog>
@@ -252,7 +270,7 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, DocumentCopy } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { triggerGoalAutoAssociation, addPoints } from '../api'
 import { useAppStore } from '../stores/app'
@@ -505,6 +523,21 @@ const deleteTodo = async (id) => {
     todos.value = todos.value.filter(t => t.id !== id)
     saveTodos()
   } catch {}
+}
+
+const cloneTodo = (todo) => {
+  Object.assign(todoForm, {
+    title: `${todo.title}（复制）`,
+    goalId: todo.goalId,
+    creator: todo.creator,
+    priority: todo.priority,
+    expectedPoints: todo.expectedPoints || 0,
+    plannedDate: todo.plannedDate,
+    description: todo.description || ''
+  })
+  editingTodo.value = null
+  todoDialogVisible.value = true
+  ElMessage.info('已填充待办信息，确认后创建副本')
 }
 
 // ========== 辅助函数 ==========
