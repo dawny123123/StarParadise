@@ -30,7 +30,7 @@
               <div class="goal-progress-bar">
                 <div class="goal-progress-fill" :style="{ width: getProgressPercent(goal) + '%' }"></div>
               </div>
-              <span class="goal-progress-text">{{ goal.progress }}/{{ goal.target }}</span>
+              <span class="goal-progress-text">{{ goalTaskStats(goal.id).completed }}/{{ goalTaskStats(goal.id).total }}</span>
             </div>
           </div>
           <div v-if="hoveredGoal === goal.id" class="goal-actions">
@@ -408,9 +408,17 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
+// 每个目标的实际关系统计（基于 todos 全量数据，不受 childName 筛选影响）
+const goalTaskStats = (goalId) => {
+  const linked = todos.value.filter(t => t.goalId === goalId)
+  const completed = linked.filter(t => t.completed).length
+  return { total: linked.length, completed, inProgress: linked.length - completed }
+}
+
 const getProgressPercent = (goal) => {
-  if (!goal.target || goal.target === 0) return 0
-  return Math.round((goal.progress / goal.target) * 100)
+  const stats = goalTaskStats(goal.id)
+  if (stats.total === 0) return 0
+  return Math.round((stats.completed / stats.total) * 100)
 }
 
 // 点击目标卡片展示关联任务
