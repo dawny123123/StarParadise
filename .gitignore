@@ -10,3 +10,7 @@
 harness/.analysis/
 harness/tasks/current
 harness/trace/skill-backups/
+
+# ─── Python 缓存（lint 脚本运行产物） ───
+__pycache__/
+*.pyc

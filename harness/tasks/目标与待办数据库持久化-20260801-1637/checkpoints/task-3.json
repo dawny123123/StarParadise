@@ -1,0 +1,54 @@
+{
+  "task_num": 3,
+  "summary": "新增 routes/todos.js 待办 CRUD 路由（109 行），支持 goal_id/child_id/planned_date/expected_points/completed 的显式 null 语义",
+  "timestamp": "2026-08-01T16:50:28.680228",
+  "context_snapshot": {
+    "completed": [
+      "Task 1: database.js 新增 goals/todos 表 DDL，resetForTest 表列表按外键倒序追加 todos/goals",
+      "Task 2: 新增 routes/goals.js 目标 CRUD 路由（87 行），DELETE 事务内先置空关联待办 goal_id 再删目标",
+      "Task 3: 新增 routes/todos.js 待办 CRUD 路由（109 行），支持 goal_id/child_id/planned_date/expected_points/completed 的显式 null 语义"
+    ],
+    "current": "Task 4",
+    "remaining": [
+      "Task 2",
+      "Task 3",
+      "Task 4",
+      "Task 5",
+      "Task 6",
+      "Task 7",
+      "Task 8"
+    ],
+    "key_decisions": [
+      "新表使用 CREATE TABLE IF NOT EXISTS 无需 ALTER TABLE 迁移",
+      "resetForTest 中 todos 置首、goals 第二以满足外键倒序删除",
+      "既有 7 个测试文件 83 用例全通过，resetForTest 变更无回归",
+      "DELETE 使用 db.transaction 保证解除关联与删除的原子性",
+      "未 require ./todos，对 todos 表直接用 SQL 操作以遵守同层禁止互引",
+      "PUT 用 child_id in req.body 区分未传与显式 null",
+      "PUT 用硬编码 nullableFields 白名单拼接字段名，避免 Object.keys 注入风险",
+      "GET 支持 child_id 与 goal_id 组合筛选（AND）",
+      "重要发现：foreign_keys=ON 下测试必须先建 children/goals 父行才能插入带外键的 todos，Task 5 单测需遵守"
+    ],
+    "files_modified": [
+      "star-park/server/src/database.js",
+      "star-park/server/src/routes/goals.js",
+      "star-park/server/src/routes/todos.js"
+    ],
+    "files_created": [],
+    "deviations": [],
+    "task_checkpoints": {
+      "1": {
+        "summary": "database.js 新增 goals/todos 表 DDL，resetForTest 表列表按外键倒序追加 todos/goals",
+        "timestamp": "2026-08-01T16:44:10.596632"
+      },
+      "2": {
+        "summary": "新增 routes/goals.js 目标 CRUD 路由（87 行），DELETE 事务内先置空关联待办 goal_id 再删目标",
+        "timestamp": "2026-08-01T16:46:44.932327"
+      },
+      "3": {
+        "summary": "新增 routes/todos.js 待办 CRUD 路由（109 行），支持 goal_id/child_id/planned_date/expected_points/completed 的显式 null 语义",
+        "timestamp": "2026-08-01T16:50:28.680077"
+      }
+    }
+  }
+}

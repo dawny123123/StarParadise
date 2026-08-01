@@ -124,6 +124,111 @@
 - **路径**: `/api/tasks/:id`
 - **方法**: DELETE
 
+### 获取目标列表
+
+- **路径**: `/api/goals`
+- **方法**: GET
+- **说明**: 返回年度目标列表，按 id 升序排列
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| child_id | number | 否 | 按孩子筛选 |
+
+#### 响应字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| child_id | number 或 null | 归属孩子，`null` 表示全局目标 |
+| status | string | 状态：`todo` / `rest` / `health` / `happy` / `study` |
+| progress | number | 当前进度 |
+| target | number | 目标值 |
+
+### 创建目标
+
+- **路径**: `/api/goals`
+- **方法**: POST
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| title | string | 是 | 目标名称 |
+| child_id | number | 否 | 归属孩子 ID，不传为 null（全局目标） |
+| status | string | 否 | 状态（默认 `todo`） |
+| progress | number | 否 | 当前进度（默认 0） |
+| target | number | 否 | 目标值（默认 1） |
+
+### 更新目标
+
+- **路径**: `/api/goals/:id`
+- **方法**: PUT
+- **说明**: 部分更新，未出现在请求体中的字段保持原值；`child_id` 显式传 `null` 表示清空归属。目标不存在返回 404
+
+### 删除目标
+
+- **路径**: `/api/goals/:id`
+- **方法**: DELETE
+- **说明**: 在事务内先将关联待办的 `goal_id` 置为 `NULL`，再删除目标（关联待办不会被删除）。目标不存在返回 404
+
+### 获取待办列表
+
+- **路径**: `/api/todos`
+- **方法**: GET
+- **说明**: 返回待办任务列表，按 id 升序排列
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| child_id | number | 否 | 按孩子筛选 |
+| goal_id | number | 否 | 按关联目标筛选 |
+
+> 两个筛选参数可同时传入，为 AND 关系。
+
+#### 响应字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| goal_id | number 或 null | 关联目标，`null` 表示未关联 |
+| child_id | number 或 null | 归属孩子，`null` 表示全局待办 |
+| priority | string | 优先级：`high` / `medium` / `low` |
+| expected_points | number | 完成时奖励的预期积分 |
+| planned_date | string 或 null | 计划日期，格式 `YYYY-MM-DD` |
+| completed | number | 是否已完成（0 / 1） |
+
+### 创建待办
+
+- **路径**: `/api/todos`
+- **方法**: POST
+
+#### 请求参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| title | string | 是 | 待办名称 |
+| goal_id | number | 否 | 关联目标 ID，不传为 null |
+| child_id | number | 否 | 归属孩子 ID，不传为 null |
+| creator | string | 否 | 创建人 |
+| priority | string | 否 | 优先级（默认 `medium`） |
+| expected_points | number | 否 | 预期积分（默认 0） |
+| planned_date | string | 否 | 计划日期，格式 `YYYY-MM-DD` |
+| description | string | 否 | 待办描述 |
+| completed | number | 否 | 是否已完成（默认 0） |
+
+### 更新待办
+
+- **路径**: `/api/todos/:id`
+- **方法**: PUT
+- **说明**: 部分更新，未出现在请求体中的字段保持原值。`goal_id`、`child_id`、`planned_date`、`description` 显式传 `null` 表示清空；`expected_points` 显式传 `0` 表示置零；`completed` 可切换完成状态。待办不存在返回 404
+
+### 删除待办
+
+- **路径**: `/api/todos/:id`
+- **方法**: DELETE
+- **说明**: 待办不存在返回 404
+
 ### 获取打卡记录
 
 - **路径**: `/api/checkins`

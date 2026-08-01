@@ -1,0 +1,98 @@
+{
+  "task_num": 8,
+  "summary": "docs/api.md 手工补充目标与待办 8 个端点文档（+105 行），10 个既有章节完好",
+  "timestamp": "2026-08-01T17:03:33.102313",
+  "context_snapshot": {
+    "completed": [
+      "Task 1: database.js 新增 goals/todos 表 DDL，resetForTest 表列表按外键倒序追加 todos/goals",
+      "Task 2: 新增 routes/goals.js 目标 CRUD 路由（87 行），DELETE 事务内先置空关联待办 goal_id 再删目标",
+      "Task 3: 新增 routes/todos.js 待办 CRUD 路由（109 行），支持 goal_id/child_id/planned_date/expected_points/completed 的显式 null 语义",
+      "Task 4: app.js 挂载 /api/goals 与 /api/todos，lint-deps.py LAYERS[1] 登记两个新路由模块（纯新增 6 行）",
+      "Task 5: 新增 goals.test.js(13 用例) 与 todos.test.js(15 用例)，两路由行覆盖率 100%，全量 9 文件 111 用例通过",
+      "Task 6: api/index.js 新增 8 个目标/待办 API 方法，复用既有 axios 实例，16 个既有导出完好",
+      "Task 7: Goals.vue script setup 改造为 API 读写（419->450 行），移除 64 行硬编码默认数据与 localStorage 持久化，新增 migrateLegacyData 一次性迁移；template/style 逐字节未变",
+      "Task 8: docs/api.md 手工补充目标与待办 8 个端点文档（+105 行），10 个既有章节完好"
+    ],
+    "current": "Task 9",
+    "remaining": [
+      "Task 2",
+      "Task 3",
+      "Task 4",
+      "Task 5",
+      "Task 6",
+      "Task 7",
+      "Task 8"
+    ],
+    "key_decisions": [
+      "新表使用 CREATE TABLE IF NOT EXISTS 无需 ALTER TABLE 迁移",
+      "resetForTest 中 todos 置首、goals 第二以满足外键倒序删除",
+      "既有 7 个测试文件 83 用例全通过，resetForTest 变更无回归",
+      "DELETE 使用 db.transaction 保证解除关联与删除的原子性",
+      "未 require ./todos，对 todos 表直接用 SQL 操作以遵守同层禁止互引",
+      "PUT 用 child_id in req.body 区分未传与显式 null",
+      "PUT 用硬编码 nullableFields 白名单拼接字段名，避免 Object.keys 注入风险",
+      "GET 支持 child_id 与 goal_id 组合筛选（AND）",
+      "重要发现：foreign_keys=ON 下测试必须先建 children/goals 父行才能插入带外键的 todos，Task 5 单测需遵守",
+      "架构 lint 通过，无层违规",
+      "既有 6 个路由 + health 检查均验证正常无回归",
+      "todos 测试 beforeEach 改为 async 先创建真实 goals 父行以规避外键约束",
+      "整体行覆盖率提升至 96.99%，远超 50% 阈值与 70% 目标",
+      "覆盖了 expected_points 显式置零与 planned_date 未传保留两个 COALESCE 绕过分支",
+      "纯新增 12 行，未改动任何既有导出签名",
+      "用 script setup 边界切片替换确保 template 与 style 零改动，已逐字节比对验证",
+      "修正既有缺陷：deleteGoal/deleteTodo 拆双段 try/catch 避免 API 错误被 confirm 取消吞掉",
+      "修正既有缺陷：toggleTodo 先 await updateTodo 成功再改本地状态",
+      "迁移建立 oldId->newId 映射保证目标关联不丢失，失败时不写标记以便重试",
+      "发现既有 harness 缺陷：scripts/generate-api-doc.sh 是 stub，仅 echo 扫描结果却输出 ✓ API 文档已更新，从不写入 docs/api.md",
+      "按 tasks.md 约定回退到手工补充文档，格式对齐既有任务管理接口章节"
+    ],
+    "files_modified": [
+      "star-park/server/src/app.js",
+      "star-park/server/tests/goals.test.js",
+      "star-park/server/src/routes/todos.js",
+      "star-park/server/tests/todos.test.js",
+      "star-park/pc-admin/src/api/index.js",
+      "scripts/lint-deps.py",
+      "star-park/pc-admin/src/views/Goals.vue",
+      "star-park/server/src/routes/goals.js",
+      "docs/api.md",
+      "star-park/server/src/database.js"
+    ],
+    "files_created": [],
+    "deviations": [],
+    "task_checkpoints": {
+      "1": {
+        "summary": "database.js 新增 goals/todos 表 DDL，resetForTest 表列表按外键倒序追加 todos/goals",
+        "timestamp": "2026-08-01T16:44:10.596632"
+      },
+      "2": {
+        "summary": "新增 routes/goals.js 目标 CRUD 路由（87 行），DELETE 事务内先置空关联待办 goal_id 再删目标",
+        "timestamp": "2026-08-01T16:46:44.932327"
+      },
+      "3": {
+        "summary": "新增 routes/todos.js 待办 CRUD 路由（109 行），支持 goal_id/child_id/planned_date/expected_points/completed 的显式 null 语义",
+        "timestamp": "2026-08-01T16:50:28.680077"
+      },
+      "4": {
+        "summary": "app.js 挂载 /api/goals 与 /api/todos，lint-deps.py LAYERS[1] 登记两个新路由模块（纯新增 6 行）",
+        "timestamp": "2026-08-01T16:52:28.867830"
+      },
+      "5": {
+        "summary": "新增 goals.test.js(13 用例) 与 todos.test.js(15 用例)，两路由行覆盖率 100%，全量 9 文件 111 用例通过",
+        "timestamp": "2026-08-01T16:55:35.836340"
+      },
+      "6": {
+        "summary": "api/index.js 新增 8 个目标/待办 API 方法，复用既有 axios 实例，16 个既有导出完好",
+        "timestamp": "2026-08-01T16:56:14.649880"
+      },
+      "7": {
+        "summary": "Goals.vue script setup 改造为 API 读写（419->450 行），移除 64 行硬编码默认数据与 localStorage 持久化，新增 migrateLegacyData 一次性迁移；template/style 逐字节未变",
+        "timestamp": "2026-08-01T17:01:38.717534"
+      },
+      "8": {
+        "summary": "docs/api.md 手工补充目标与待办 8 个端点文档（+105 行），10 个既有章节完好",
+        "timestamp": "2026-08-01T17:03:33.102138"
+      }
+    }
+  }
+}

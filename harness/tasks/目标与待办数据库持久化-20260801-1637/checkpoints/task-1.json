@@ -1,0 +1,36 @@
+{
+  "task_num": 1,
+  "summary": "database.js 新增 goals/todos 表 DDL，resetForTest 表列表按外键倒序追加 todos/goals",
+  "timestamp": "2026-08-01T16:44:10.596765",
+  "context_snapshot": {
+    "completed": [
+      "Task 1: database.js 新增 goals/todos 表 DDL，resetForTest 表列表按外键倒序追加 todos/goals"
+    ],
+    "current": "Task 2",
+    "remaining": [
+      "Task 2",
+      "Task 3",
+      "Task 4",
+      "Task 5",
+      "Task 6",
+      "Task 7",
+      "Task 8"
+    ],
+    "key_decisions": [
+      "新表使用 CREATE TABLE IF NOT EXISTS 无需 ALTER TABLE 迁移",
+      "resetForTest 中 todos 置首、goals 第二以满足外键倒序删除",
+      "既有 7 个测试文件 83 用例全通过，resetForTest 变更无回归"
+    ],
+    "files_modified": [
+      "star-park/server/src/database.js"
+    ],
+    "files_created": [],
+    "deviations": [],
+    "task_checkpoints": {
+      "1": {
+        "summary": "database.js 新增 goals/todos 表 DDL，resetForTest 表列表按外键倒序追加 todos/goals",
+        "timestamp": "2026-08-01T16:44:10.596632"
+      }
+    }
+  }
+}

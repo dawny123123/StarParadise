@@ -1,0 +1,68 @@
+{
+  "task_id": "目标与待办数据库持久化-20260801-1637",
+  "task": "将 Goals.vue 的年度目标与待办任务从 localStorage 迁移到后端 SQLite：新增 goals/todos 表与 CRUD API，前端改为 API 读写并支持一次性数据迁移",
+  "outcome": "success",
+  "timestamp": "2026-08-01T17:39:14.950537",
+  "files_changed": [
+    "docs/api.md",
+    "scripts/lint-deps.py",
+    "star-park/pc-admin/src/api/index.js",
+    "star-park/pc-admin/src/views/Goals.vue",
+    "star-park/server/src/app.js",
+    "star-park/server/src/database.js"
+  ],
+  "files_created": [
+    "star-park/server/src/routes/goals.js",
+    "star-park/server/src/routes/todos.js",
+    "star-park/server/tests/goals.test.js",
+    "star-park/server/tests/todos.test.js"
+  ],
+  "complexity": "complex",
+  "modules_touched": [
+    "star-park/server",
+    "star-park/pc-admin",
+    "scripts",
+    "docs"
+  ],
+  "layers_touched": [
+    "L0-database",
+    "L1-routes",
+    "L2-app",
+    "L3-api",
+    "L4-views",
+    "test",
+    "docs"
+  ],
+  "friction": {
+    "corrections": 0,
+    "takeovers": 0,
+    "retries": 1
+  },
+  "lessons": {
+    "decisions": [
+      "选择前端一次性自动导入迁移 localStorage 遗留目标/待办，而非 seed 内置默认数据，因需保留用户各浏览器中已有的真实数据而非仅兼容全新环境",
+      "复杂任务跳过 git worktree 隔离：node_modules 不跨 worktree 共享且 better-sqlite3 需原生编译，改以干净 git 源码状态提供等效回滚能力",
+      "Vue SFC 大改造采用 script setup 边界切片替换而非整文件重写，确保 template 与 style 区块逐字节不变，降低回归面"
+    ],
+    "conventions": [
+      "前端 camelCase 与后端 snake_case 通过集中的 mapXxxFromApi 映射函数转换，字段映射不散落在各业务函数中",
+      "新增后端路由文件后必须同步登记到 scripts/lint-deps.py 的 LAYERS 白名单，否则架构 lint 静默不覆盖新文件",
+      "PUT 接口需区分未传字段保持原值与显式传 null/0 清空两种语义，用 field in req.body 判断动态拼接，不能统一用 COALESCE",
+      "动态拼接 SQL 字段名必须取自硬编码白名单数组，禁止使用 Object.keys(req.body) 以防注入"
+    ],
+    "pitfalls": [
+      "PRAGMA foreign_keys=ON 下测试插入带外键的子表记录前必须先创建父行，否则接口返回 500 FOREIGN KEY constraint failed，须在 beforeEach 中先建父记录",
+      "localStorage 迁移仅靠迁移标记不足以幂等：旧代码使各浏览器都存有同一份默认数据，第二个浏览器会重复全量导入致数据翻倍，必须追加服务端已有数据则跳过迁移的守卫",
+      "ElMessageBox.confirm 与业务 API 调用放在同一 try/catch 会静默吞掉 API 错误，必须拆成两段 try/catch 并在 confirm 取消时 return",
+      "校验 Vue SFC 的 template 是否改动不能按固定行号切片比对，嵌套的 template #default 会干扰结束标记匹配，应以 script setup 边界切分整个文件做逐字节比对",
+      "本项目 make test 与 scripts/generate-api-doc.sh 均为 stub（前者只输出 No tests configured yet，后者只扫描不写入文件）却与 AGENTS.md 记载不符，验证时必须改用 npx vitest run --coverage 等真实命令",
+      "E2E 验证前须检查目标端口是否被改动前启动的旧服务占用，否则新路由返回 404 且新实例因 EADDRINUSE 静默退出，误判为代码缺陷"
+    ],
+    "patterns": [
+      "删除主表记录前在同一 db.transaction 内先将子表外键置 NULL，可在 foreign_keys=ON 下安全解除关联而不误删子记录",
+      "数据迁移建立旧 id 到新 id 的 Map，先建父记录再建子记录并用 Map 转换外键引用，映射缺失时置 null 而非抛错，保证关联关系不丢失且容错",
+      "前端写操作统一采用 await API 成功后重新 fetch 列表而非乐观更新，保证前端状态始终以服务端为准",
+      "改动前先跑一次 lint/test 取得基线，才能区分新增违规与历史违规，避免把既有失败误判为本次引入"
+    ]
+  }
+}

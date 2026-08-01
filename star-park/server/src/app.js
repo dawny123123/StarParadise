@@ -7,6 +7,8 @@ const checkinsRouter = require('./routes/checkins');
 const rewardsRouter = require('./routes/rewards');
 const statsRouter = require('./routes/stats');
 const pointsRouter = require('./routes/points');
+const goalsRouter = require('./routes/goals');
+const todosRouter = require('./routes/todos');
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use('/api/rewards', rewardsRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/dashboard', statsRouter);
 app.use('/api/points', pointsRouter);
+app.use('/api/goals', goalsRouter);
+app.use('/api/todos', todosRouter);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

@@ -27,6 +27,18 @@ export const createTask = (data) => api.post('/tasks', data)
 export const updateTask = (id, data) => api.put(`/tasks/${id}`, data)
 export const deleteTask = (id) => api.delete(`/tasks/${id}`)
 
+// ========== 目标相关 ==========
+export const getGoals = (params) => api.get('/goals', { params })
+export const createGoal = (data) => api.post('/goals', data)
+export const updateGoal = (id, data) => api.put(`/goals/${id}`, data)
+export const deleteGoal = (id) => api.delete(`/goals/${id}`)
+
+// ========== 待办相关 ==========
+export const getTodos = (params) => api.get('/todos', { params })
+export const createTodo = (data) => api.post('/todos', data)
+export const updateTodo = (id, data) => api.put(`/todos/${id}`, data)
+export const deleteTodo = (id) => api.delete(`/todos/${id}`)
+
 // ========== 打卡相关 ==========
 export const getCheckins = (params) => api.get('/checkins', { params })
 export const createCheckin = (data) => api.post('/checkins', data)

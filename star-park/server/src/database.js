@@ -86,6 +86,33 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now', 'localtime')),
     FOREIGN KEY (child_id) REFERENCES children(id)
   );
+
+  CREATE TABLE IF NOT EXISTS goals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    child_id INTEGER,
+    title TEXT NOT NULL,
+    status TEXT DEFAULT 'todo',
+    progress INTEGER DEFAULT 0,
+    target INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (child_id) REFERENCES children(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS todos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    goal_id INTEGER,
+    child_id INTEGER,
+    title TEXT NOT NULL,
+    creator TEXT,
+    priority TEXT DEFAULT 'medium',
+    expected_points INTEGER DEFAULT 0,
+    planned_date TEXT,
+    description TEXT,
+    completed INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (goal_id) REFERENCES goals(id),
+    FOREIGN KEY (child_id) REFERENCES children(id)
+  );
 `);
 
 // 迁移：给 children 表添加 points_balance 字段（如果不存在）
@@ -146,7 +173,7 @@ try {
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */
-  const tables = ['points', 'transactions', 'checkins', 'rewards', 'tasks', 'children'];
+  const tables = ['todos', 'goals', 'points', 'transactions', 'checkins', 'rewards', 'tasks', 'children'];
   for (const table of tables) {
     /* v8 ignore next */
     db.exec(`DELETE FROM ${table}`);

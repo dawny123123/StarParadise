@@ -26,6 +26,8 @@ LAYERS = {
         "star-park/server/src/routes/rewards",
         "star-park/server/src/routes/stats",
         "star-park/server/src/routes/points",
+        "star-park/server/src/routes/goals",
+        "star-park/server/src/routes/todos",
     ],
     # Layer 2: 后端入口 —— 依赖 L0-L1
     2: [

@@ -272,7 +272,11 @@ import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import { Plus, Edit, Delete, DocumentCopy } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { triggerGoalAutoAssociation, addPoints } from '../api'
+import {
+  triggerGoalAutoAssociation, addPoints,
+  getGoals, createGoal, updateGoal, deleteGoal as deleteGoalApi,
+  getTodos, createTodo, updateTodo, deleteTodo as deleteTodoApi
+} from '../api'
 import { useAppStore } from '../stores/app'
 
 const route = useRoute()
@@ -322,18 +326,70 @@ const todayStr = computed(() => {
   return dayjs().format('YYYY年MM月DD日 dddd')
 })
 
+// ========== 数据映射与拉取 ==========
+
+// 后端 snake_case ↔ 前端 camelCase 映射
+const mapGoalFromApi = (g) => ({
+  id: g.id,
+  childId: g.child_id,
+  childName: store.children.find(c => c.id === g.child_id)?.name || null,
+  title: g.title,
+  status: g.status,
+  progress: g.progress,
+  target: g.target
+})
+
+const mapTodoFromApi = (t) => ({
+  id: t.id,
+  goalId: t.goal_id,
+  childId: t.child_id,
+  childName: store.children.find(c => c.id === t.child_id)?.name || null,
+  title: t.title,
+  creator: t.creator,
+  priority: t.priority,
+  expectedPoints: t.expected_points,
+  plannedDate: t.planned_date,
+  description: t.description,
+  completed: t.completed === 1
+})
+
+const fetchGoals = async () => {
+  loading.value = true
+  try {
+    const data = await getGoals()
+    goals.value = (Array.isArray(data) ? data : []).map(mapGoalFromApi)
+  } catch (err) {
+    console.error('获取目标失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const fetchTodos = async () => {
+  tableLoading.value = true
+  try {
+    const data = await getTodos()
+    todos.value = (Array.isArray(data) ? data : []).map(mapTodoFromApi)
+  } catch (err) {
+    console.error('获取待办失败:', err)
+  } finally {
+    tableLoading.value = false
+  }
+}
+
 const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
 const completedCount = computed(() => visibleTodos.value.filter(t => t.completed).length)
 
-// 按孩子过滤：子菜单页面仅展示归属该孩子的目标/待办；全部目标页仅展示未归属孩子的目标，孩子的目标只在各自页面展示
+// 全部目标页仅展示未归属孩子的目标；子页面展示该孩子的目标
 const visibleGoals = computed(() => {
-  if (!childName.value) return goals.value.filter(g => !g.childName)
-  return goals.value.filter(g => g.childName === childName.value)
+  if (!childName.value) return goals.value.filter(g => !g.childId)
+  return goals.value.filter(g => g.childId === currentChildId.value)
 })
 
+// 沿用现有行为：全部目标页展示所有待办，子页面仅展示该孩子的待办
 const visibleTodos = computed(() => {
   if (!childName.value) return todos.value
-  return todos.value.filter(t => t.childName === childName.value)
+  return todos.value.filter(t => t.childId === currentChildId.value)
 })
 
 const filteredTodos = computed(() => {
@@ -382,41 +438,48 @@ const openGoalModal = (goal = null) => {
   goalDialogVisible.value = true
 }
 
-const saveGoal = () => {
+const saveGoal = async () => {
   if (!goalForm.title.trim()) {
     ElMessage.warning('请输入目标名称')
     return
   }
-  if (editingGoal.value) {
-    const index = goals.value.findIndex(g => g.id === editingGoal.value.id)
-    if (index !== -1) {
-      goals.value[index] = { ...goals.value[index], ...goalForm }
-    }
-  } else {
-    goals.value.push({
-      id: Date.now(),
-      ...goalForm,
-      // 孩子子页面创建的目标归属该孩子（childId 由 /api/children 按名字匹配）
-      childName: childName.value || null,
-      childId: currentChildId.value
-    })
+  const payload = {
+    title: goalForm.title,
+    status: goalForm.status,
+    progress: goalForm.progress,
+    target: goalForm.target
   }
-  saveGoals()
-  goalDialogVisible.value = false
-  ElMessage.success(editingGoal.value ? '目标已更新' : '目标已添加')
+  try {
+    if (editingGoal.value) {
+      await updateGoal(editingGoal.value.id, payload)
+      ElMessage.success('目标已更新')
+    } else {
+      await createGoal({ ...payload, child_id: currentChildId.value })
+      ElMessage.success('目标已添加')
+    }
+    goalDialogVisible.value = false
+    await fetchGoals()
+  } catch (err) {
+    ElMessage.error('保存失败，请重试')
+    console.error(err)
+  }
 }
 
 const deleteGoal = async (id) => {
   try {
     await ElMessageBox.confirm('确认删除此目标？', '提示', { type: 'warning' })
-    goals.value = goals.value.filter(g => g.id !== id)
-    // 同时清除待办中的关联
-    todos.value.forEach(t => {
-      if (t.goalId === id) t.goalId = null
-    })
-    saveGoals()
-    saveTodos()
-  } catch {}
+  } catch {
+    return
+  }
+  try {
+    await deleteGoalApi(id)
+    ElMessage.success('目标已删除')
+    await fetchGoals()
+    await fetchTodos()
+  } catch (err) {
+    ElMessage.error('删除失败')
+    console.error(err)
+  }
 }
 
 // ========== 待办功能 ==========
@@ -430,36 +493,23 @@ const toggleTodo = async (id) => {
   if (!todo) return
 
   const nextCompleted = !todo.completed
+  try {
+    await updateTodo(id, { completed: nextCompleted ? 1 : 0 })
+  } catch (err) {
+    ElMessage.error('状态更新失败')
+    console.error(err)
+    return
+  }
   todo.completed = nextCompleted
-  saveTodos()
 
   // 根据待办的预期积分值自动汇总到对应孩子的总积分
   const points = parseInt(todo.expectedPoints) || 0
-  if (points === 0) return
-
-  // localStorage 缓存的 childId 可能指向已删除的孩子，须用后端当前孩子列表校验，失效时按名字重新匹配
-  if (store.children.length === 0) {
-    await store.fetchChildren()
-  }
-  let childId = store.children.some(c => c.id === todo.childId) ? todo.childId : null
-  const matchName = todo.childName || childName.value
-  if (!childId && matchName) {
-    const matched = store.children.find(c => c.name === matchName)
-    childId = matched?.id || null
-  }
-  if (!childId) {
-    ElMessage.warning('未找到对应孩子，无法汇总积分')
-    return
-  }
-  // 将校验后的 childId 回写待办，修复旧数据中的失效引用
-  if (todo.childId !== childId) {
-    todo.childId = childId
-    saveTodos()
-  }
+  // 全局待办(childId 为 null)不参与积分汇总
+  if (points === 0 || !todo.childId) return
 
   try {
     await addPoints({
-      child_id: childId,
+      child_id: todo.childId,
       amount: nextCompleted ? points : -points,
       reason: nextCompleted
         ? `完成待办「${todo.title}」获得预期积分`
@@ -483,46 +533,57 @@ const openTodoModal = (todo = null) => {
   todoDialogVisible.value = true
 }
 
-const saveTodo = () => {
+const saveTodo = async () => {
   if (!todoForm.title.trim()) {
     ElMessage.warning('请输入待办名称')
     return
   }
-  let savedTodo = null
-  if (editingTodo.value) {
-    const index = todos.value.findIndex(t => t.id === editingTodo.value.id)
-    if (index !== -1) {
-      todos.value[index] = { ...todos.value[index], ...todoForm }
-      savedTodo = todos.value[index]
-    }
-  } else {
-    savedTodo = {
-      id: Date.now(),
-      ...todoForm,
-      // 孩子子页面创建的待办归属该孩子
-      childName: childName.value || null,
-      childId: currentChildId.value,
-      completed: false
-    }
-    todos.value.push(savedTodo)
+  const payload = {
+    title: todoForm.title,
+    goal_id: todoForm.goalId ?? null,
+    creator: todoForm.creator,
+    priority: todoForm.priority,
+    expected_points: todoForm.expectedPoints || 0,
+    planned_date: todoForm.plannedDate || null,
+    description: todoForm.description || null
   }
-  saveTodos()
-  todoDialogVisible.value = false
-  ElMessage.success(editingTodo.value ? '待办已更新' : '待办已添加')
-  // 未关联目标时，异步触发 QoderWake 自动关联（不阻断保存主流程）
-  if (savedTodo && !savedTodo.goalId) {
-    triggerGoalAutoAssociation(savedTodo, goals.value)
-      .then(() => ElMessage.success('已触发目标自动关联'))
-      .catch(() => ElMessage.warning('目标自动关联触发失败，不影响待办保存'))
+  try {
+    let savedTodo
+    if (editingTodo.value) {
+      savedTodo = await updateTodo(editingTodo.value.id, payload)
+      ElMessage.success('待办已更新')
+    } else {
+      savedTodo = await createTodo({ ...payload, child_id: currentChildId.value, completed: 0 })
+      ElMessage.success('待办已添加')
+    }
+    todoDialogVisible.value = false
+    await fetchTodos()
+    // 未关联目标时，异步触发 QoderWake 自动关联（不阻断保存主流程）
+    if (savedTodo && !savedTodo.goal_id) {
+      triggerGoalAutoAssociation(mapTodoFromApi(savedTodo), goals.value)
+        .then(() => ElMessage.success('已触发目标自动关联'))
+        .catch(() => ElMessage.warning('目标自动关联触发失败，不影响待办保存'))
+    }
+  } catch (err) {
+    ElMessage.error('保存失败，请重试')
+    console.error(err)
   }
 }
 
 const deleteTodo = async (id) => {
   try {
     await ElMessageBox.confirm('确认删除此待办？', '提示', { type: 'warning' })
-    todos.value = todos.value.filter(t => t.id !== id)
-    saveTodos()
-  } catch {}
+  } catch {
+    return
+  }
+  try {
+    await deleteTodoApi(id)
+    ElMessage.success('待办已删除')
+    await fetchTodos()
+  } catch (err) {
+    ElMessage.error('删除失败')
+    console.error(err)
+  }
 }
 
 const cloneTodo = (todo) => {
@@ -571,117 +632,96 @@ const formatDate = (dateStr) => {
   return dateStr.substring(5)
 }
 
-// ========== 数据持久化 ==========
+// ========== localStorage 一次性迁移 ==========
 
-const DATA_KEY_GOALS = 'star-park-pcadmin-goals'
-const DATA_KEY_TODOS = 'star-park-pcadmin-todos'
+const LEGACY_KEY_GOALS = 'star-park-pcadmin-goals'
+const LEGACY_KEY_TODOS = 'star-park-pcadmin-todos'
+const MIGRATED_FLAG = 'star-park-pcadmin-migrated-v1'
 
-// 从ChildInspire项目导入的完整数据：6个目标 + 56条待办（41已完成+15待完成）
-const defaultGoals = [
-  { id: 1, title: '北京深度游或探索新地方', status: 'todo', progress: 6, target: 12 },
-  { id: 2, title: '解锁一项新技能（不设限）', status: 'rest', progress: 1, target: 5 },
-  { id: 3, title: '陪父母', status: 'todo', progress: 1, target: 4 },
-  { id: 4, title: '健康饮食运动', status: 'health', progress: 9, target: 15 },
-  { id: 5, title: '购物玩乐', status: 'happy', progress: 8, target: 10 },
-  { id: 6, title: '学习及思考', status: 'study', progress: 12, target: 20 },
-  { id: 7, title: '学习初三的', status: 'study', progress: 0, target: 1, childName: '甜甜' }
-]
+// 将浏览器本地遗留数据一次性导入服务端；原数据保留作备份，仅用标记避免重复导入
+// 调用前需先完成 fetchGoals/fetchTodos，以便据服务端现有数据做幂等判断
+const migrateLegacyData = async () => {
+  if (localStorage.getItem(MIGRATED_FLAG)) return false
 
-const defaultTodos = [
-  { id: 1, title: '体能结束开放日提前15分钟', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 2, title: '大月上品购物', goalId: 5, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 3, title: '确认驾照有效期', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 4, title: '25年度报销', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 5, title: '解决暖气不热', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 6, title: '洋未来规划', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 7, title: '26元旦party', goalId: 5, creator: '甄甜', priority: 'high', plannedDate: '', completed: true },
-  { id: 8, title: '26元旦计划', goalId: 5, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 9, title: '每两周给孩子们上个课', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 10, title: '身份证重新办理', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 11, title: '2025年体检', goalId: 4, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 12, title: '1月底甲状腺复查', goalId: 4, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 13, title: '国图看书', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 14, title: '甄甄生日', goalId: 5, creator: '甄甜', priority: 'high', plannedDate: '', completed: true },
-  { id: 15, title: '安排济南差旅', goalId: 1, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 16, title: '八大处', goalId: 1, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 17, title: '看洋洋、姨', goalId: 1, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 18, title: '大兴购物', goalId: 5, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 19, title: '奥森观鸟', goalId: 1, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 20, title: '开劳关3季度发票', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 21, title: '地铁高峰期思考', goalId: 6, creator: '甄甜', priority: 'medium', plannedDate: '', completed: true },
-  { id: 22, title: '杭州出差安排', goalId: 1, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 23, title: '过年买衣服', goalId: 5, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 24, title: '过年安排', goalId: 5, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 25, title: 'stock收尾', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 26, title: '2025年总结', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 27, title: '2026规划', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 28, title: '退税传孩子出生证明', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 29, title: '灵峰的社保', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 30, title: '驾照有效性', goalId: 2, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 31, title: '补牙', goalId: 4, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 32, title: '劳关Q3房租', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 33, title: 'AI技能学习-海报', goalId: 6, creator: '嘉甜', priority: 'medium', plannedDate: '', completed: true },
-  { id: 34, title: '每周去一次国图', goalId: 6, creator: '甄甜', priority: 'medium', plannedDate: '', completed: true },
-  { id: 35, title: '坚持多走路', goalId: 4, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 36, title: '4月25上午实践', goalId: 1, creator: '甄甜', priority: 'medium', plannedDate: '', completed: true },
-  { id: 37, title: '甲状腺+膝盖疼', goalId: 4, creator: '嘉甜', priority: 'medium', plannedDate: '', completed: true },
-  { id: 38, title: '3月31日济南交流', goalId: 6, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 39, title: '328国图学习', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 40, title: '学一样技能乒乓球', goalId: 2, creator: '嘉甜', priority: 'medium', plannedDate: '', completed: false },
-  { id: 41, title: '全秒近视', goalId: 4, creator: '洋', priority: 'medium', plannedDate: '', completed: false },
-  { id: 42, title: '4月份安排', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 43, title: '陪爸妈回浙江', goalId: 3, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 44, title: '4.6～4.10出差安排', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 45, title: '51安排', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 46, title: '0425周末安排', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 47, title: '5月研学安排', goalId: 6, creator: '嘉甜', priority: 'medium', plannedDate: '', completed: true },
-  { id: 48, title: '0509阿里日', goalId: 1, creator: '晓', priority: 'medium', plannedDate: '', completed: true },
-  { id: 49, title: '530汉', goalId: null, creator: '顶', priority: 'medium', plannedDate: '', completed: false },
-  { id: 50, title: '做一套harness工程的激励系统', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 51, title: '大阿姨安排', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 52, title: '协和精神内科', goalId: 4, creator: '甄甜', priority: 'medium', plannedDate: '', completed: false },
-  { id: 53, title: '膝盖再看', goalId: 4, creator: '嘉甜', priority: 'medium', plannedDate: '', completed: true },
-  { id: 54, title: '嘉甜AI学习任务', goalId: null, creator: '甄甜', priority: 'medium', plannedDate: '', completed: false },
-  { id: 55, title: 'AI-沉淀最佳实践', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 56, title: 'ali福利', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 57, title: '学习四讲', goalId: 7, creator: '晓', priority: 'medium', expectedPoints: 5, plannedDate: '2026-07-26', completed: false, childName: '甜甜' }
-]
-
-const saveGoals = () => {
-  localStorage.setItem(DATA_KEY_GOALS, JSON.stringify(goals.value))
-}
-
-const saveTodos = () => {
-  localStorage.setItem(DATA_KEY_TODOS, JSON.stringify(todos.value))
-}
-
-const loadData = () => {
-  const savedGoals = localStorage.getItem(DATA_KEY_GOALS)
-  const savedTodos = localStorage.getItem(DATA_KEY_TODOS)
-
-  // 合并策略：以本地数据为准，但自动补充默认数据中缺失的条目
-  // 防止默认目标/待办因 localStorage 被部分覆盖而"丢失"
-  const mergeWithDefault = (saved, defaults) => {
-    if (!saved) return [...defaults]
-    const parsed = JSON.parse(saved)
-    const defaultMap = new Map(defaults.map(item => [item.id, item]))
-    const localMap = new Map(parsed.map(item => [item.id, item]))
-    return Array.from(defaultMap.values()).map(item => localMap.get(item.id) || item)
+  // 服务端已有数据说明其他浏览器或上一次已完成导入；
+  // 旧版各浏览器的 localStorage 都存有同一份默认数据，不拦住会导致全量重复导入
+  if (goals.value.length > 0 || todos.value.length > 0) {
+    localStorage.setItem(MIGRATED_FLAG, '1')
+    return false
   }
 
-  goals.value = mergeWithDefault(savedGoals, defaultGoals)
-  todos.value = mergeWithDefault(savedTodos, defaultTodos)
+  let legacyGoals = []
+  let legacyTodos = []
+  try {
+    legacyGoals = JSON.parse(localStorage.getItem(LEGACY_KEY_GOALS) || '[]')
+    legacyTodos = JSON.parse(localStorage.getItem(LEGACY_KEY_TODOS) || '[]')
+  } catch {
+    // 本地数据已损坏，无可迁移内容，直接打标记跳过
+    localStorage.setItem(MIGRATED_FLAG, '1')
+    return false
+  }
 
-  // 同步回 localStorage，确保缺失的默认数据被补齐
-  saveGoals()
-  saveTodos()
+  if (legacyGoals.length === 0 && legacyTodos.length === 0) {
+    localStorage.setItem(MIGRATED_FLAG, '1')
+    return false
+  }
+
+  const resolveChildId = (item) => {
+    if (item.childName) {
+      return store.children.find(c => c.name === item.childName)?.id ?? null
+    }
+    return null
+  }
+
+  try {
+    // 先建目标并记录 旧id → 新id 映射，供待办关联转换使用
+    const idMap = new Map()
+    for (const g of legacyGoals) {
+      const created = await createGoal({
+        child_id: resolveChildId(g),
+        title: g.title,
+        status: g.status || 'todo',
+        progress: g.progress ?? 0,
+        target: g.target ?? 1
+      })
+      idMap.set(g.id, created.id)
+    }
+    for (const t of legacyTodos) {
+      await createTodo({
+        goal_id: t.goalId ? (idMap.get(t.goalId) ?? null) : null,
+        child_id: resolveChildId(t),
+        title: t.title,
+        creator: t.creator || null,
+        priority: t.priority || 'medium',
+        expected_points: t.expectedPoints ?? 0,
+        planned_date: t.plannedDate || null,
+        description: t.description || null,
+        completed: t.completed ? 1 : 0
+      })
+    }
+    localStorage.setItem(MIGRATED_FLAG, '1')
+    ElMessage.success(`本地数据已迁移到服务器（${legacyGoals.length} 个目标，${legacyTodos.length} 条待办）`)
+    return true
+  } catch (err) {
+    // 不写标记，下次进入页面自动重试；原数据保留
+    // 若已部分导入，下次会因服务端已有数据而跳过迁移，避免重复；未导入部分仍在 localStorage 备份中
+    ElMessage.error('本地数据迁移失败，原数据已保留，请稍后重试')
+    console.error('迁移失败:', err)
+    return false
+  }
 }
 
-onMounted(() => {
-  loadData()
-  // 加载孩子列表，完成待办时按名字匹配 child_id 汇总积分
+onMounted(async () => {
+  // 先加载孩子列表：迁移时需按名字匹配 child_id，映射时需按 id 反查名字
   if (store.children.length === 0) {
-    store.fetchChildren()
+    await store.fetchChildren()
+  }
+  await fetchGoals()
+  await fetchTodos()
+  const migrated = await migrateLegacyData()
+  if (migrated) {
+    await fetchGoals()
+    await fetchTodos()
   }
 })
 </script>

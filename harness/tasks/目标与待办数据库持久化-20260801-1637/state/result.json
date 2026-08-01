@@ -1,0 +1,25 @@
+{
+  "status": "success",
+  "files_changed": [
+    "docs/api.md",
+    "scripts/lint-deps.py",
+    "star-park/pc-admin/src/api/index.js",
+    "star-park/pc-admin/src/views/Goals.vue",
+    "star-park/server/src/app.js",
+    "star-park/server/src/database.js"
+  ],
+  "files_created": [
+    "star-park/server/src/routes/goals.js",
+    "star-park/server/src/routes/todos.js",
+    "star-park/server/tests/goals.test.js",
+    "star-park/server/tests/todos.test.js"
+  ],
+  "summary": "Completed: 目标与待办从 localStorage 迁移到后端 SQLite 持久化。新增 goals/todos 表与 8 个 CRUD 端点，Goals.vue 改为 API 读写并支持 localStorage 一次性迁移（含 oldId→newId 映射与幂等守卫）。8/8 任务通过四层验证，111 单测全通过，新路由行覆盖率 100%",
+  "completed_at": "2026-08-01T17:39:14.950537",
+  "validation": {
+    "build": "pass",
+    "lint": "pass-with-preexisting-warnings",
+    "test": "pass",
+    "verify": "pass"
+  }
+}
