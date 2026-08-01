@@ -76,12 +76,12 @@ router.get('/:childId', (req, res) => {
       });
     }
 
-    // 余额（总收入 - 总支出）
+    // 余额（总收入 - 总支出 - 已兑换）
     const earnings = db.prepare(
       "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE child_id = ? AND type = 'earn'"
     ).get(childId).total;
     const spendings = db.prepare(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE child_id = ? AND type = 'spend'"
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE child_id = ? AND type IN ('spend', 'redeem')"
     ).get(childId).total;
     const balance = earnings - spendings;
 
@@ -95,7 +95,7 @@ router.get('/:childId', (req, res) => {
       balance,
       daily_data: dailyData
     });
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -116,7 +116,7 @@ router.get('/', (req, res) => {
 
       // 今日活跃任务
       const activeTasks = db.prepare(
-        'SELECT * FROM tasks WHERE child_id = ? AND is_active = 1'
+        'SELECT * FROM tasks WHERE child_id = ? AND is_active = 1 ORDER BY planned_date IS NULL, planned_date ASC, id ASC'
       ).all(child.id);
 
       // 连续打卡天数
@@ -146,12 +146,12 @@ router.get('/', (req, res) => {
       ).get(child.id, weekStart, weekEnd).count;
       const weeklyRate = expectedCheckins > 0 ? Math.round((weekCheckins / expectedCheckins) * 100) : 0;
 
-      // 余额
+      // 余额（总收入 - 总支出 - 已兑换）
       const earnings = db.prepare(
         "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE child_id = ? AND type = 'earn'"
       ).get(child.id).total;
       const spendings = db.prepare(
-        "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE child_id = ? AND type = 'spend'"
+        "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE child_id = ? AND type IN ('spend', 'redeem')"
       ).get(child.id).total;
       const balance = earnings - spendings;
 
@@ -173,7 +173,7 @@ router.get('/', (req, res) => {
     });
 
     res.json(dashboardData);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });

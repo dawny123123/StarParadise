@@ -2,34 +2,26 @@
 schema_version: 1
 locale: zh-CN
 branch: main
-exported_at: "2026-05-26T03:07:48Z"
+nodes_managed: true
+exported_at: "2026-07-03T10:27:30Z"
 modules:
     "":
-        dir_name: 星星乐园全栈协同与质量保障中枢
-        title: 星星乐园全栈协同与质量保障中枢
-        scope:
-            - .canvas-meta.json
-            - .design-state.json
-            - .design.json
-            - .gitignore
-            - AGENTS.md
-            - Makefile
-            - miniprogram-screens.html
-            - pc-dashboard.html
-            - outputs/
+        dir_name: StarParadise 星星乐园全栈 Monorepo
+        title: StarParadise 星星乐园全栈 Monorepo
+        scope: []
         source_files: []
         children:
-            - star_park_server
+            - docs
+            - harness
             - scripts
             - star_park_miniprogram
-            - harness
-            - docs
             - star_park_pc_admin
+            - star_park_server
         depends_on: []
         related_to: []
     docs:
-        dir_name: 项目文档与规范中心
-        title: 项目文档与规范中心
+        dir_name: 项目文档与执行规范
+        title: 项目文档与执行规范
         scope:
             - docs/
         source_files: []
@@ -37,28 +29,27 @@ modules:
         depends_on: []
         related_to: []
     harness:
-        dir_name: 自动化开发与验证基础设施
-        title: 自动化开发与验证基础设施
+        dir_name: StarParadise 项目运行与任务编排 Harness
+        title: StarParadise 项目运行与任务编排 Harness
         scope:
             - harness/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: scripts
+        related_to: []
     scripts:
-        dir_name: 自动化验证与质量保障脚本
-        title: 自动化验证与质量保障脚本
+        dir_name: CI_CD 与代码质量验证脚本集
+        title: CI/CD 与代码质量验证脚本集
         scope:
             - scripts/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: harness
+            - path: star_park_server
     star_park_miniprogram:
-        dir_name: 星星乐园小程序前端应用
-        title: 星星乐园小程序前端应用
+        dir_name: 星星乐园微信小程序（UniApp 多端应用）
+        title: 星星乐园微信小程序（UniApp 多端应用）
         scope:
             - star-park/miniprogram/
         source_files: []
@@ -78,8 +69,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: star_park_miniprogram/user_assets
+        related_to: []
     star_park_miniprogram/shared_infra:
         dir_name: 小程序共享基础设施与通用组件
         title: 小程序共享基础设施与通用组件
@@ -102,11 +92,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: star_park_miniprogram/core_features
+        related_to: []
     star_park_pc_admin:
-        dir_name: 星星乐园 PC 管理后台
-        title: 星星乐园 PC 管理后台
+        dir_name: 星星乐园 PC 管理后台前端
+        title: 星星乐园 PC 管理后台前端
         scope:
             - star-park/pc-admin/
         source_files: []
@@ -115,13 +104,14 @@ modules:
         related_to:
             - path: star_park_server
     star_park_server:
-        dir_name: 星星乐园后端服务
-        title: 星星乐园后端服务
+        dir_name: 星星乐园后端服务（Express + SQLite）
+        title: 星星乐园后端服务（Express + SQLite）
         scope:
             - star-park/server/
         source_files: []
         children: []
         depends_on: []
         related_to:
-            - path: star_park_pc_admin
+            - path: scripts
             - path: star_park_miniprogram/shared_infra
+            - path: star_park_pc_admin

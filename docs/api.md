@@ -85,12 +85,17 @@
 
 - **路径**: `/api/tasks`
 - **方法**: GET
+- **说明**: 返回按计划日期排序的任务列表（有 `planned_date` 的按日期升序在前，无日期的按 id 升序在后）
 
 #### 请求参数
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | child_id | number | 否 | 按孩子筛选 |
+
+#### 响应字段说明
+
+任务对象包含 `planned_date` 字段（string 或 null，格式 `YYYY-MM-DD`），表示任务计划日期，未设置时为 `null`。
 
 ### 创建任务
 
@@ -106,11 +111,13 @@
 | description | string | 否 | 任务描述 |
 | reward_amount | number | 否 | 奖励金额（默认 1.0） |
 | reward_unit | string | 否 | 奖励单位（默认 "元"） |
+| planned_date | string | 否 | 计划日期，格式 `YYYY-MM-DD`，不传为 null |
 
 ### 更新任务
 
 - **路径**: `/api/tasks/:id`
 - **方法**: PUT
+- **说明**: 部分更新，未出现在请求体中的字段保持原值；`planned_date` 可更新，显式传 `null` 表示清空计划日期
 
 ### 删除任务
 

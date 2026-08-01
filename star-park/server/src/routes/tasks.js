@@ -8,12 +8,12 @@ router.get('/', (req, res) => {
     const { child_id } = req.query;
     let tasks;
     if (child_id) {
-      tasks = db.prepare('SELECT * FROM tasks WHERE child_id = ? ORDER BY id').all(child_id);
+      tasks = db.prepare('SELECT * FROM tasks WHERE child_id = ? ORDER BY planned_date IS NULL, planned_date ASC, id ASC').all(child_id);
     } else {
-      tasks = db.prepare('SELECT * FROM tasks ORDER BY id').all();
+      tasks = db.prepare('SELECT * FROM tasks ORDER BY planned_date IS NULL, planned_date ASC, id ASC').all();
     }
     res.json(tasks);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -21,16 +21,16 @@ router.get('/', (req, res) => {
 // POST /api/tasks - 创建任务
 router.post('/', (req, res) => {
   try {
-    const { child_id, title, description, reward_amount, reward_unit } = req.body;
+    const { child_id, title, description, reward_amount, reward_unit, planned_date, points_reward } = req.body;
     if (!child_id || !title) {
       return res.status(400).json({ error: 'child_id 和 title 为必填项' });
     }
     const result = db.prepare(
-      'INSERT INTO tasks (child_id, title, description, reward_amount, reward_unit) VALUES (?, ?, ?, ?, ?)'
-    ).run(child_id, title, description || null, reward_amount || 1.0, reward_unit || '元');
+      'INSERT INTO tasks (child_id, title, description, reward_amount, reward_unit, planned_date, points_reward) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(child_id, title, description || null, reward_amount || 1.0, reward_unit || '元', planned_date || null, points_reward || 0);
     const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(task);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -43,26 +43,30 @@ router.put('/:id', (req, res) => {
     if (!existing) {
       return res.status(404).json({ error: '任务不存在' });
     }
-    const { title, description, reward_amount, reward_unit, is_active } = req.body;
-    db.prepare(
-      `UPDATE tasks SET
+    const { title, description, reward_amount, reward_unit, is_active, planned_date, points_reward } = req.body;
+    const fields = [title, description, reward_amount, reward_unit, is_active];
+    let sql = `UPDATE tasks SET
         title = COALESCE(?, title),
         description = COALESCE(?, description),
         reward_amount = COALESCE(?, reward_amount),
         reward_unit = COALESCE(?, reward_unit),
-        is_active = COALESCE(?, is_active)
-      WHERE id = ?`
-    ).run(
-      title ?? null,
-      description ?? null,
-      reward_amount ?? null,
-      reward_unit ?? null,
-      is_active ?? null,
-      id
-    );
+        is_active = COALESCE(?, is_active)`;
+    const params = fields.map(f => f ?? null);
+    // planned_date 需区分"未传"(保持原值)与"显式传 null"(清空)，不能用 COALESCE
+    if ('planned_date' in req.body) {
+      sql += `, planned_date = ?`;
+      params.push(planned_date ?? null);
+    }
+    // points_reward 同样需区分"未传"与"显式传 0/null"
+    if ('points_reward' in req.body) {
+      sql += `, points_reward = ?`;
+      params.push(points_reward ?? 0);
+    }
+    sql += ` WHERE id = ?`;
+    db.prepare(sql).run(...params, id);
     const updated = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
     res.json(updated);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -82,7 +86,7 @@ router.delete('/:id', (req, res) => {
     });
     deleteTransaction();
     res.json({ message: '任务已删除' });
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });

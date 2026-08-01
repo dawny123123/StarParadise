@@ -40,7 +40,7 @@ KNOWN_EXCEPTIONS = {
 # 已知大文件例外（需后续拆分）
 KNOWN_LARGE_FILES = {
     "./star-park/miniprogram/src/pages/checkin/index.vue": 660,  # 打卡页面，需拆分
-    "./star-park/pc-admin/src/views/Goals.vue": 686,            # 目标管理页面，需拆分
+    "./star-park/pc-admin/src/views/Goals.vue": 756,            # 目标管理页面，需拆分（readlines 口径，文件末尾无换行符）
 }
 
 

@@ -251,18 +251,18 @@ const loadData = async () => {
   } catch (err) {
     console.error('加载孩子数据失败', err)
     children.value = [
-      { id: 1, name: '老二', color: '#FF6B6B', streak: 15, monthlyEarnings: '¥34', balance: '¥34', pointsBalance: 0,
+      { id: 1, name: '甜甜', color: '#FF6B6B', streak: 15, monthlyEarnings: '¥34', balance: '¥34', pointsBalance: 0,
         tasks: [
           { id: 1, name: '英语背单词10个', desc: '每天10个新词', reward: '+1元', done: false, checkedToday: false },
           { id: 2, name: '数学练习1套', desc: '完成1套练习题', reward: '+2元', done: false, checkedToday: false },
           { id: 3, name: '语文阅读30分钟', desc: '课外阅读', reward: '+1元', done: false, checkedToday: false }
         ] },
-      { id: 2, name: '老三', color: '#4ECDC4', streak: 8, monthlyEarnings: '¥18', balance: '¥18', pointsBalance: 0,
+      { id: 2, name: '甄甄', color: '#4ECDC4', streak: 8, monthlyEarnings: '¥18', balance: '¥18', pointsBalance: 0,
         tasks: [
           { id: 4, name: '每日练字', desc: '写50个字以上', reward: '+1元', done: false, checkedToday: false },
           { id: 5, name: '朗读课文', desc: '大声朗读1篇课文', reward: '+0.5元', done: false, checkedToday: false }
         ] },
-      { id: 3, name: '老四', color: '#FFD93D', streak: 22, monthlyEarnings: '¥12', balance: '¥12', pointsBalance: 0,
+      { id: 3, name: '欣甜', color: '#FFD93D', streak: 22, monthlyEarnings: '¥12', balance: '¥12', pointsBalance: 0,
         tasks: [
           { id: 6, name: '背诵古诗1首', desc: '背诵一首完整古诗', reward: '+1元', done: false, checkedToday: false }
         ] }

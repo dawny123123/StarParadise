@@ -46,10 +46,10 @@
         <div v-if="reward.isAchieved && !reward.redeemedAt" class="achieved-badge">
           <el-tag type="success" size="small">🎉 已达成</el-tag>
         </div>
-        <div class="reward-header">
+        <div class="reward-header" :class="{ 'reward-header--with-badge': reward.redeemedAt }">
           <span class="reward-name">{{ reward.name }}</span>
           <div class="header-actions">
-            <el-tag size="small" :type="reward.childName === '老四' ? 'warning' : 'primary'">
+            <el-tag size="small" :type="reward.childName === '欣甜' ? 'warning' : 'primary'">
               {{ reward.childName }}
             </el-tag>
             <el-button type="primary" size="small" text @click="openDialog(reward)">
@@ -177,9 +177,9 @@ const form = ref({
 
 const getChildColor = (name) => {
   const colorMap = {
-    '老二': '#FF6B6B',
-    '老三': '#4ECDC4',
-    '老四': '#FFD93D'
+    '甜甜': '#FF6B6B',
+    '甄甄': '#4ECDC4',
+    '欣甜': '#FFD93D'
   }
   return colorMap[name] || '#19C8B9'
 }
@@ -392,6 +392,7 @@ watch(() => store.children, (newChildren) => {
   position: absolute;
   top: 12px;
   right: 12px;
+  z-index: 1;
 }
 
 .achieved-badge {
@@ -402,6 +403,10 @@ watch(() => store.children, (newChildren) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.reward-header--with-badge {
+  margin-top: 36px;
 }
 
 .header-actions {

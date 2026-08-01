@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: scripts
+title: CI/CD 与代码质量验证脚本集
+scope:
+    - scripts/
+source_files: []
+depends_on: []
+related_to:
+    - path: star_park_server

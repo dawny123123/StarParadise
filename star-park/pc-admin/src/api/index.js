@@ -75,4 +75,38 @@ export const triggerQoderWake = async (prompt = '') => {
   return res.json()
 }
 
+// ========== QoderWake 目标自动关联触发 ==========
+// 任务（待办）未关联目标时触发自动化任务，为其匹配最合适的目标
+export const triggerGoalAutoAssociation = async (todo, goals = []) => {
+  const url = import.meta.env.VITE_QODERWAKE_GOAL_ASSOC_URL
+  const pat = import.meta.env.VITE_QODERWAKE_PAT
+  if (!url || !pat) {
+    throw new Error('QoderWake 目标关联配置缺失，请检查 .env 文件')
+  }
+  const goalList = goals.map(g => `- id: ${g.id}, 名称: ${g.title}`).join('\n')
+  const prompt = [
+    '目标管理：以下任务录入时未关联任何目标，请为该任务自动匹配并关联最合适的目标。',
+    `任务标题: ${todo.title}`,
+    `任务 id: ${todo.id}`,
+    '当前已存在的目标列表:',
+    goalList || '（暂无目标）'
+  ].join('\n')
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${pat}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      prompt,
+      wakeSessionUniqueId: `star-park-goal-assoc-${todo.id}`
+    })
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`QoderWake 目标关联触发失败 (${res.status}): ${text}`)
+  }
+  return res.json()
+}
+
 export default api

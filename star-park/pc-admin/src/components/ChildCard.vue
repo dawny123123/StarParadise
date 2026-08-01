@@ -6,30 +6,9 @@
       </div>
       <div class="child-info">
         <h3 class="child-name">{{ child.name }}</h3>
-        <p class="child-grade">{{ child.grade || '' }}</p>
       </div>
     </div>
     <div class="card-body">
-      <div class="stat-row">
-        <span class="stat-label">今日打卡</span>
-        <span class="stat-value" :class="{ done: checkedIn }">
-          {{ checkedIn ? '✓ 已完成' : '○ 未完成' }}
-        </span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">连续打卡</span>
-        <span class="stat-value">{{ child.streak || 0 }} 天</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">本周完成率</span>
-        <el-progress
-          :percentage="weekRate"
-          :stroke-width="8"
-          :color="color"
-          :show-text="true"
-          style="flex: 1; margin-left: 8px;"
-        />
-      </div>
       <div class="stat-row">
         <span class="stat-label">累计余额</span>
         <span class="stat-value balance" :style="{ color: color }">
@@ -62,9 +41,6 @@ const props = defineProps({
 })
 
 const router = useRouter()
-
-const checkedIn = computed(() => props.child.todayCheckedIn || false)
-const weekRate = computed(() => props.child.weekRate || 0)
 
 const cardStyle = computed(() => ({
   borderTop: `3px solid ${props.color}`
@@ -112,12 +88,6 @@ const goToBalance = () => {
   color: var(--text);
 }
 
-.child-grade {
-  font-size: 13px;
-  color: var(--text-light);
-  margin-top: 2px;
-}
-
 .card-body {
   display: flex;
   flex-direction: column;
@@ -140,11 +110,6 @@ const goToBalance = () => {
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
-}
-
-.stat-value.done {
-  color: var(--primary);
-  font-weight: 600;
 }
 
 .stat-value.balance {

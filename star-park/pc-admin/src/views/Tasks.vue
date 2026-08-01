@@ -31,6 +31,16 @@
           <span class="reward-tag">{{ row.rewardAmount }} {{ row.rewardUnit || '元' }}</span>
         </template>
       </el-table-column>
+      <el-table-column prop="pointsReward" label="积分奖励" width="100" align="center">
+        <template #default="{ row }">
+          <span class="points-tag">{{ row.pointsReward || 0 }} 分</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="计划日期" width="120" align="center">
+        <template #default="{ row }">
+          {{ row.plannedDate || '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="row.enabled !== false ? 'success' : 'info'" size="small">
@@ -83,6 +93,18 @@
             <el-option label="星星" value="星星" />
           </el-select>
         </el-form-item>
+        <el-form-item label="积分奖励">
+          <el-input-number v-model="form.pointsReward" :min="0" :max="9999" :precision="0" placeholder="完成任务奖励积分" style="width: 160px" />
+        </el-form-item>
+        <el-form-item label="计划日期">
+          <el-date-picker
+            v-model="form.plannedDate"
+            type="date"
+            value-format="YYYY-MM-DD"
+            placeholder="选择计划日期（可选）"
+            style="width: 100%;"
+          />
+        </el-form-item>
         <el-form-item label="是否启用">
           <el-switch v-model="form.enabled" />
         </el-form-item>
@@ -118,6 +140,8 @@ const form = ref({
   description: '',
   rewardAmount: 1,
   rewardUnit: '元',
+  pointsReward: 0,
+  plannedDate: null,
   enabled: true
 })
 
@@ -140,6 +164,8 @@ const openDialog = (task = null) => {
       description: task.description || '',
       rewardAmount: task.rewardAmount,
       rewardUnit: task.rewardUnit || '元',
+      pointsReward: task.pointsReward || 0,
+      plannedDate: task.plannedDate || null,
       enabled: task.enabled !== false
     }
   } else {
@@ -151,6 +177,8 @@ const openDialog = (task = null) => {
       description: '',
       rewardAmount: 1,
       rewardUnit: '元',
+      pointsReward: 0,
+      plannedDate: null,
       enabled: true
     }
   }
@@ -170,6 +198,8 @@ const handleSubmit = async () => {
       description: form.value.description,
       reward_amount: form.value.rewardAmount,
       reward_unit: form.value.rewardUnit,
+      points_reward: form.value.pointsReward || 0,
+      planned_date: form.value.plannedDate || null,
       is_active: form.value.enabled ? 1 : 0
     }
     if (isEdit.value) {
@@ -212,6 +242,8 @@ const fetchTasks = async () => {
       description: t.description,
       rewardAmount: t.reward_amount,
       rewardUnit: t.reward_unit,
+      pointsReward: t.points_reward,
+      plannedDate: t.planned_date,
       enabled: t.is_active === 1
     }))
   } catch (err) {
@@ -244,6 +276,11 @@ onMounted(async () => {
 
 .reward-tag {
   color: var(--primary);
+  font-weight: 600;
+}
+
+.points-tag {
+  color: #FF6B00;
   font-weight: 600;
 }
 

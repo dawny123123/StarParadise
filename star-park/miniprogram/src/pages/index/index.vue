@@ -116,9 +116,9 @@ const loadDashboard = async () => {
     console.error('加载仪表盘失败', err)
     // 使用默认数据
     children.value = [
-      { id: 1, name: '老二', avatarText: '二', color: '#FF6B6B', taskDesc: '英语10词 · 数学1套 · 语文阅读', checkedIn: true, streak: 15, balance: '¥127' },
-      { id: 2, name: '老三', avatarText: '三', color: '#4ECDC4', taskDesc: '练字50字', checkedIn: false, streak: 8, balance: '¥58' },
-      { id: 3, name: '老四', avatarText: '四', color: '#FFD93D', taskDesc: '背诗1首', checkedIn: true, streak: 22, balance: '¥45' }
+      { id: 1, name: '甜甜', avatarText: '甜', color: '#FF6B6B', taskDesc: '英语10词 · 数学1套 · 语文阅读', checkedIn: true, streak: 15, balance: '¥127' },
+      { id: 2, name: '甄甄', avatarText: '甄', color: '#4ECDC4', taskDesc: '练字50字', checkedIn: false, streak: 8, balance: '¥58' },
+      { id: 3, name: '欣甜', avatarText: '欣', color: '#FFD93D', taskDesc: '背诗1首', checkedIn: true, streak: 22, balance: '¥45' }
     ]
   }
 }

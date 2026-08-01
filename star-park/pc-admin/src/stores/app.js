@@ -17,9 +17,9 @@ export const useAppStore = defineStore('app', () => {
 
   // 孩子颜色映射
   const childColors = {
-    '老二': '#FF6B6B',
-    '老三': '#4ECDC4',
-    '老四': '#FFD93D'
+    '甜甜': '#FF6B6B',
+    '甄甄': '#4ECDC4',
+    '欣甜': '#FFD93D'
   }
 
   // 获取孩子颜色

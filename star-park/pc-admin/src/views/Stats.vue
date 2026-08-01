@@ -58,9 +58,9 @@ const children = computed(() => store.children)
 
 const getChildColor = (name) => {
   const colorMap = {
-    '老二': '#FF6B6B',
-    '老三': '#4ECDC4',
-    '老四': '#FFD93D'
+    '甜甜': '#FF6B6B',
+    '甄甄': '#4ECDC4',
+    '欣甜': '#FFD93D'
   }
   return colorMap[name] || '#19C8B9'
 }

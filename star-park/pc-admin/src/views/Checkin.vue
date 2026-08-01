@@ -53,6 +53,7 @@
               <div class="task-reward">
                 奖励: <span class="reward-amount">{{ task.rewardAmount }}</span>
                 {{ task.rewardUnit || '元' }}
+                <span v-if="task.pointsReward > 0" class="task-points">+{{ task.pointsReward }} 积分</span>
               </div>
             </div>
             <div class="task-action">
@@ -115,6 +116,26 @@
       <el-button type="primary" @click="submitPoints">确认发放</el-button>
     </template>
   </el-dialog>
+
+  <!-- 打卡积分确认弹窗 -->
+  <el-dialog v-model="showCheckinPointsModal" title="完成任务并奖励积分" width="420px" center>
+    <div class="points-modal">
+      <div class="points-form">
+        <div class="form-item">
+          <label>任务</label>
+          <span class="checkin-task-name">{{ checkinTask?.name }}</span>
+        </div>
+        <div class="form-item">
+          <label>积分奖励</label>
+          <el-input-number v-model="checkinPointsReward" :min="0" :max="9999" :precision="0" style="width: 100%" placeholder="输入本次奖励积分数值" />
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="showCheckinPointsModal = false">取消</el-button>
+      <el-button type="primary" @click="submitCheckinWithPoints">确认打卡</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -136,6 +157,12 @@ const pointsChildId = ref(null)
 const pointsAmount = ref(1)
 const pointsReason = ref('')
 
+// 打卡积分确认
+const showCheckinPointsModal = ref(false)
+const checkinTask = ref(null)
+const checkinChildId = ref(null)
+const checkinPointsReward = ref(0)
+
 const children = computed(() => store.children)
 
 const isPastDate = computed(() => {
@@ -144,9 +171,9 @@ const isPastDate = computed(() => {
 
 const getChildColor = (name) => {
   const colorMap = {
-    '老二': '#FF6B6B',
-    '老三': '#4ECDC4',
-    '老四': '#FFD93D'
+    '甜甜': '#FF6B6B',
+    '甄甄': '#4ECDC4',
+    '欣甜': '#FFD93D'
   }
   return colorMap[name] || '#19C8B9'
 }
@@ -181,6 +208,7 @@ const fetchCheckinData = async () => {
       description: t.description,
       rewardAmount: t.reward_amount,
       rewardUnit: t.reward_unit,
+      pointsReward: t.points_reward,
       enabled: t.is_active === 1
     }))
 
@@ -201,16 +229,30 @@ const fetchCheckinData = async () => {
   }
 }
 
-const handleCheckin = async (childId, task) => {
+const handleCheckin = (childId, task) => {
+  // 打开积分确认弹窗，允许人工输入本次打卡积分
+  checkinChildId.value = childId
+  checkinTask.value = task
+  checkinPointsReward.value = task.pointsReward || 0
+  showCheckinPointsModal.value = true
+}
+
+const submitCheckinWithPoints = async () => {
+  const task = checkinTask.value
+  const childId = checkinChildId.value
+  if (!task || !childId) return
+
   try {
     await createCheckin({
       child_id: childId,
       task_id: task.id,
       checkin_date: selectedDate.value,
-      completed: 1
+      completed: 1,
+      points_reward: checkinPointsReward.value || 0
     })
+    showCheckinPointsModal.value = false
     ElMessage.success({
-      message: `打卡成功！获得 ${task.rewardAmount}${task.rewardUnit || '元'}`,
+      message: `打卡成功！获得 ${task.rewardAmount}${task.rewardUnit || '元'}${checkinPointsReward.value > 0 ? '，积分 +' + checkinPointsReward.value : ''}`,
       duration: 2000,
       showClose: true
     })
@@ -362,6 +404,13 @@ const submitPoints = async () => {
   font-weight: 600;
 }
 
+.task-points {
+  margin-left: 8px;
+  color: #FF6B00;
+  font-weight: 600;
+  font-size: 13px;
+}
+
 .task-action {
   display: flex;
   align-items: center;
@@ -445,6 +494,12 @@ const submitPoints = async () => {
 .form-item label {
   font-size: 14px;
   font-weight: 500;
+  color: var(--text);
+}
+
+.checkin-task-name {
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text);
 }
 </style>

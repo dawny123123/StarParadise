@@ -1,7 +1,7 @@
 <template>
   <div class="page-container fade-in-up">
     <div class="welcome-section">
-      <h1 class="welcome-title">🎯 目标管理</h1>
+      <h1 class="welcome-title">🎯 {{ pageTitle }}</h1>
       <p class="welcome-date">{{ todayStr }}</p>
     </div>
 
@@ -16,9 +16,10 @@
       </div>
       <div class="goals-grid">
         <div
-          v-for="goal in goals"
+          v-for="goal in visibleGoals"
           :key="goal.id"
           :class="['goal-card', `status-${goal.status}`]"
+          @click="openGoalTasks(goal)"
           @mouseenter="hoveredGoal = goal.id"
           @mouseleave="hoveredGoal = null"
         >
@@ -33,22 +34,22 @@
             </div>
           </div>
           <div v-if="hoveredGoal === goal.id" class="goal-actions">
-            <el-button text size="small" @click="openGoalModal(goal)">
+            <el-button text size="small" @click.stop="openGoalModal(goal)">
               <el-icon><Edit /></el-icon>
             </el-button>
-            <el-button text size="small" type="danger" @click="deleteGoal(goal.id)">
+            <el-button text size="small" type="danger" @click.stop="deleteGoal(goal.id)">
               <el-icon><Delete /></el-icon>
             </el-button>
           </div>
         </div>
-        <div v-if="goals.length === 0" class="empty-text">暂无目标，点击上方按钮添加</div>
+        <div v-if="visibleGoals.length === 0" class="empty-text">暂无目标，点击上方按钮添加</div>
       </div>
     </div>
 
     <!-- 待办任务区域 -->
     <div class="todo-section card">
       <div class="section-header">
-        <h3 class="section-title">📝 待办任务 ({{ todos.length }})</h3>
+        <h3 class="section-title">📝 待办任务 ({{ visibleTodos.length }})</h3>
         <el-button type="primary" size="small" @click="openTodoModal()">
           <el-icon><Plus /></el-icon>
           添加待办
@@ -61,7 +62,7 @@
           class="filter-tab"
           @click="setTodoFilter('all')"
         >
-          全部 <span class="tab-count">{{ todos.length }}</span>
+          全部 <span class="tab-count">{{ visibleTodos.length }}</span>
         </el-tag>
         <el-tag
           :type="todoFilter === 'pending' ? 'primary' : ''"
@@ -110,19 +111,32 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="预期积分" width="90" align="center">
+          <template #default="{ row }">
+            <span class="points-tag">{{ row.expectedPoints || 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.description">{{ row.description }}</span>
+            <span v-else class="text-muted">-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="计划日期" width="100">
           <template #default="{ row }">
             <span class="date-text">{{ formatDate(row.plannedDate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column width="80" fixed="right">
+        <el-table-column label="操作" width="110" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button text size="small" @click="openTodoModal(row)">
-              <el-icon><Edit /></el-icon>
-            </el-button>
-            <el-button text size="small" type="danger" @click="deleteTodo(row.id)">
-              <el-icon><Delete /></el-icon>
-            </el-button>
+            <div class="todo-actions">
+              <el-button text size="small" @click="openTodoModal(row)">
+                <el-icon><Edit /></el-icon>
+              </el-button>
+              <el-button text size="small" type="danger" @click="deleteTodo(row.id)">
+                <el-icon><Delete /></el-icon>
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -166,7 +180,7 @@
         </el-form-item>
         <el-form-item label="关联目标">
           <el-select v-model="todoForm.goalId" placeholder="选择目标（可选）" clearable style="width: 100%">
-            <el-option v-for="goal in goals" :key="goal.id" :label="goal.title" :value="goal.id" />
+            <el-option v-for="goal in visibleGoals" :key="goal.id" :label="goal.title" :value="goal.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="创建人">
@@ -179,8 +193,14 @@
             <el-option value="low" label="低" />
           </el-select>
         </el-form-item>
+        <el-form-item label="预期积分值">
+          <el-input-number v-model="todoForm.expectedPoints" :min="0" :max="9999" :precision="0" placeholder="完成时奖励的积分" style="width: 100%" />
+        </el-form-item>
         <el-form-item label="计划日期">
           <el-date-picker v-model="todoForm.plannedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="todoForm.description" type="textarea" :rows="3" placeholder="请输入任务描述（可选）" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -188,14 +208,67 @@
         <el-button type="primary" @click="saveTodo">确认</el-button>
       </template>
     </el-dialog>
+
+    <!-- 目标关联任务弹窗 -->
+    <el-dialog v-model="goalTasksDialogVisible" :title="`「${viewingGoal?.title || ''}」关联任务`" width="640px">
+      <el-table v-if="goalTasks.length > 0" :data="goalTasks" stripe style="width: 100%">
+        <el-table-column width="50">
+          <template #default="{ row }">
+            <el-checkbox
+              :model-value="row.completed"
+              @change="toggleTodo(row.id)"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="title" label="标题" min-width="160">
+          <template #default="{ row }">
+            <span :class="['todo-title-text', { completed: row.completed }]">{{ row.title }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="预期积分" width="90" align="center">
+          <template #default="{ row }">
+            <span class="points-tag">{{ row.expectedPoints || 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="计划日期" width="100">
+          <template #default="{ row }">
+            <span class="date-text">{{ formatDate(row.plannedDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.completed ? 'success' : 'info'" size="small">
+              {{ row.completed ? '已完成' : '进行中' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-empty v-else description="暂无关联任务" :image-size="60" />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { triggerGoalAutoAssociation, addPoints } from '../api'
+import { useAppStore } from '../stores/app'
+
+const route = useRoute()
+const store = useAppStore()
+
+// 路由参数中的孩子名（如 洋洋/甜甜/甄甄/欣甜），为空表示"全部目标"
+const childName = computed(() => route.params.childName || '')
+// 通过 /api/children 按名字匹配 child_id（服务不可用时为 null，不影响本地过滤）
+const currentChildId = computed(() => {
+  const child = store.children.find(c => c.name === childName.value)
+  return child ? child.id : null
+})
+
+const pageTitle = computed(() => (childName.value ? `${childName.value}目标管理` : '目标管理'))
 
 const loading = ref(false)
 const tableLoading = ref(false)
@@ -216,29 +289,42 @@ const goalForm = reactive({
 const todos = ref([])
 const todoDialogVisible = ref(false)
 const editingTodo = ref(null)
-const todoFilter = ref('all')
+const todoFilter = ref('pending')
 const todoForm = reactive({
   title: '',
   goalId: null,
   creator: '晓',
   priority: 'medium',
-  plannedDate: ''
+  expectedPoints: 0,
+  plannedDate: '',
+  description: ''
 })
 
 const todayStr = computed(() => {
   return dayjs().format('YYYY年MM月DD日 dddd')
 })
 
-const pendingCount = computed(() => todos.value.filter(t => !t.completed).length)
-const completedCount = computed(() => todos.value.filter(t => t.completed).length)
+const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
+const completedCount = computed(() => visibleTodos.value.filter(t => t.completed).length)
+
+// 按孩子过滤：子菜单页面仅展示归属该孩子的目标/待办；全部目标页仅展示未归属孩子的目标，孩子的目标只在各自页面展示
+const visibleGoals = computed(() => {
+  if (!childName.value) return goals.value.filter(g => !g.childName)
+  return goals.value.filter(g => g.childName === childName.value)
+})
+
+const visibleTodos = computed(() => {
+  if (!childName.value) return todos.value
+  return todos.value.filter(t => t.childName === childName.value)
+})
 
 const filteredTodos = computed(() => {
   if (todoFilter.value === 'pending') {
-    return todos.value.filter(t => !t.completed)
+    return visibleTodos.value.filter(t => !t.completed)
   } else if (todoFilter.value === 'completed') {
-    return todos.value.filter(t => t.completed)
+    return visibleTodos.value.filter(t => t.completed)
   }
-  return todos.value
+  return visibleTodos.value
 })
 
 // ========== 目标功能 ==========
@@ -251,6 +337,20 @@ const getStatusLabel = (status) => {
 const getProgressPercent = (goal) => {
   if (!goal.target || goal.target === 0) return 0
   return Math.round((goal.progress / goal.target) * 100)
+}
+
+// 点击目标卡片展示关联任务
+const goalTasksDialogVisible = ref(false)
+const viewingGoal = ref(null)
+
+const goalTasks = computed(() => {
+  if (!viewingGoal.value) return []
+  return todos.value.filter(t => t.goalId === viewingGoal.value.id)
+})
+
+const openGoalTasks = (goal) => {
+  viewingGoal.value = goal
+  goalTasksDialogVisible.value = true
 }
 
 const openGoalModal = (goal = null) => {
@@ -277,7 +377,10 @@ const saveGoal = () => {
   } else {
     goals.value.push({
       id: Date.now(),
-      ...goalForm
+      ...goalForm,
+      // 孩子子页面创建的目标归属该孩子（childId 由 /api/children 按名字匹配）
+      childName: childName.value || null,
+      childId: currentChildId.value
     })
   }
   saveGoals()
@@ -304,21 +407,60 @@ const setTodoFilter = (filter) => {
   todoFilter.value = filter
 }
 
-const toggleTodo = (id) => {
+const toggleTodo = async (id) => {
   const todo = todos.value.find(t => t.id === id)
-  if (todo) {
-    todo.completed = !todo.completed
+  if (!todo) return
+
+  const nextCompleted = !todo.completed
+  todo.completed = nextCompleted
+  saveTodos()
+
+  // 根据待办的预期积分值自动汇总到对应孩子的总积分
+  const points = parseInt(todo.expectedPoints) || 0
+  if (points === 0) return
+
+  // localStorage 缓存的 childId 可能指向已删除的孩子，须用后端当前孩子列表校验，失效时按名字重新匹配
+  if (store.children.length === 0) {
+    await store.fetchChildren()
+  }
+  let childId = store.children.some(c => c.id === todo.childId) ? todo.childId : null
+  const matchName = todo.childName || childName.value
+  if (!childId && matchName) {
+    const matched = store.children.find(c => c.name === matchName)
+    childId = matched?.id || null
+  }
+  if (!childId) {
+    ElMessage.warning('未找到对应孩子，无法汇总积分')
+    return
+  }
+  // 将校验后的 childId 回写待办，修复旧数据中的失效引用
+  if (todo.childId !== childId) {
+    todo.childId = childId
     saveTodos()
+  }
+
+  try {
+    await addPoints({
+      child_id: childId,
+      amount: nextCompleted ? points : -points,
+      reason: nextCompleted
+        ? `完成待办「${todo.title}」获得预期积分`
+        : `取消完成待办「${todo.title}」扣减预期积分`
+    })
+    ElMessage.success(nextCompleted ? `已奖励 ${points} 积分` : `已扣减 ${points} 积分`)
+  } catch (err) {
+    ElMessage.error('积分汇总失败')
+    console.error('积分汇总失败:', err)
   }
 }
 
 const openTodoModal = (todo = null) => {
   if (todo) {
     editingTodo.value = todo
-    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, plannedDate: todo.plannedDate })
+    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '' })
   } else {
     editingTodo.value = null
-    Object.assign(todoForm, { title: '', goalId: null, creator: '晓', priority: 'medium', plannedDate: '' })
+    Object.assign(todoForm, { title: '', goalId: null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '' })
   }
   todoDialogVisible.value = true
 }
@@ -328,21 +470,33 @@ const saveTodo = () => {
     ElMessage.warning('请输入待办名称')
     return
   }
+  let savedTodo = null
   if (editingTodo.value) {
     const index = todos.value.findIndex(t => t.id === editingTodo.value.id)
     if (index !== -1) {
       todos.value[index] = { ...todos.value[index], ...todoForm }
+      savedTodo = todos.value[index]
     }
   } else {
-    todos.value.push({
+    savedTodo = {
       id: Date.now(),
       ...todoForm,
+      // 孩子子页面创建的待办归属该孩子
+      childName: childName.value || null,
+      childId: currentChildId.value,
       completed: false
-    })
+    }
+    todos.value.push(savedTodo)
   }
   saveTodos()
   todoDialogVisible.value = false
   ElMessage.success(editingTodo.value ? '待办已更新' : '待办已添加')
+  // 未关联目标时，异步触发 QoderWake 自动关联（不阻断保存主流程）
+  if (savedTodo && !savedTodo.goalId) {
+    triggerGoalAutoAssociation(savedTodo, goals.value)
+      .then(() => ElMessage.success('已触发目标自动关联'))
+      .catch(() => ElMessage.warning('目标自动关联触发失败，不影响待办保存'))
+  }
 }
 
 const deleteTodo = async (id) => {
@@ -396,7 +550,8 @@ const defaultGoals = [
   { id: 3, title: '陪父母', status: 'todo', progress: 1, target: 4 },
   { id: 4, title: '健康饮食运动', status: 'health', progress: 9, target: 15 },
   { id: 5, title: '购物玩乐', status: 'happy', progress: 8, target: 10 },
-  { id: 6, title: '学习及思考', status: 'study', progress: 12, target: 20 }
+  { id: 6, title: '学习及思考', status: 'study', progress: 12, target: 20 },
+  { id: 7, title: '学习初三的', status: 'study', progress: 0, target: 1, childName: '甜甜' }
 ]
 
 const defaultTodos = [
@@ -455,7 +610,8 @@ const defaultTodos = [
   { id: 53, title: '膝盖再看', goalId: 4, creator: '嘉甜', priority: 'medium', plannedDate: '', completed: true },
   { id: 54, title: '嘉甜AI学习任务', goalId: null, creator: '甄甜', priority: 'medium', plannedDate: '', completed: false },
   { id: 55, title: 'AI-沉淀最佳实践', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
-  { id: 56, title: 'ali福利', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false }
+  { id: 56, title: 'ali福利', goalId: null, creator: '晓', priority: 'medium', plannedDate: '', completed: false },
+  { id: 57, title: '学习四讲', goalId: 7, creator: '晓', priority: 'medium', expectedPoints: 5, plannedDate: '2026-07-26', completed: false, childName: '甜甜' }
 ]
 
 const saveGoals = () => {
@@ -468,14 +624,32 @@ const saveTodos = () => {
 
 const loadData = () => {
   const savedGoals = localStorage.getItem(DATA_KEY_GOALS)
-  goals.value = savedGoals ? JSON.parse(savedGoals) : [...defaultGoals]
-
   const savedTodos = localStorage.getItem(DATA_KEY_TODOS)
-  todos.value = savedTodos ? JSON.parse(savedTodos) : [...defaultTodos]
+
+  // 合并策略：以本地数据为准，但自动补充默认数据中缺失的条目
+  // 防止默认目标/待办因 localStorage 被部分覆盖而"丢失"
+  const mergeWithDefault = (saved, defaults) => {
+    if (!saved) return [...defaults]
+    const parsed = JSON.parse(saved)
+    const defaultMap = new Map(defaults.map(item => [item.id, item]))
+    const localMap = new Map(parsed.map(item => [item.id, item]))
+    return Array.from(defaultMap.values()).map(item => localMap.get(item.id) || item)
+  }
+
+  goals.value = mergeWithDefault(savedGoals, defaultGoals)
+  todos.value = mergeWithDefault(savedTodos, defaultTodos)
+
+  // 同步回 localStorage，确保缺失的默认数据被补齐
+  saveGoals()
+  saveTodos()
 }
 
 onMounted(() => {
   loadData()
+  // 加载孩子列表，完成待办时按名字匹配 child_id 汇总积分
+  if (store.children.length === 0) {
+    store.fetchChildren()
+  }
 })
 </script>
 
@@ -646,9 +820,26 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.todo-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.todo-actions .el-button + .el-button {
+  margin-left: 0;
+}
+
 .todo-title-text.completed {
   text-decoration: line-through;
   color: var(--text-light);
+}
+
+.points-tag {
+  color: #FF6B00;
+  font-weight: 600;
 }
 
 .text-muted {

@@ -22,7 +22,7 @@
         <text class="balance-card__sub">本月 {{ activeChild.monthlyEarnings }} · 已用 {{ activeChild.spent }}</text>
       </view>
 
-      <!-- 礼物进度（仅老四显示） -->
+      <!-- 礼物进度（仅欣甜显示） -->
       <view v-if="activeChild.giftGoal" class="gift-card">
         <view class="gift-card__icon">
           <text class="gift-card__icon-text">🎁</text>
@@ -183,9 +183,9 @@ const loadChildren = async () => {
   } catch (err) {
     console.error('加载孩子数据失败', err)
     children.value = [
-      { id: 1, name: '老二', color: '#FF6B6B', balance: '¥127', monthlyEarnings: '+¥34', spent: '¥0', giftGoal: null },
-      { id: 2, name: '老三', color: '#4ECDC4', balance: '¥58', monthlyEarnings: '+¥18', spent: '¥0', giftGoal: null },
-      { id: 3, name: '老四', color: '#FFD93D', balance: '¥45', monthlyEarnings: '+¥12', spent: '¥30', giftGoal: { name: '粉色小书包', price: '¥100', percent: 45, saved: '¥45', remaining: '¥55' } }
+      { id: 1, name: '甜甜', color: '#FF6B6B', balance: '¥127', monthlyEarnings: '+¥34', spent: '¥0', giftGoal: null },
+      { id: 2, name: '甄甄', color: '#4ECDC4', balance: '¥58', monthlyEarnings: '+¥18', spent: '¥0', giftGoal: null },
+      { id: 3, name: '欣甜', color: '#FFD93D', balance: '¥45', monthlyEarnings: '+¥12', spent: '¥30', giftGoal: { name: '粉色小书包', price: '¥100', percent: 45, saved: '¥45', remaining: '¥55' } }
     ]
     if (!activeChildId.value) {
       activeChildId.value = 3

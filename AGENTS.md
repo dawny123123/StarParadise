@@ -25,7 +25,7 @@ cd star-park && npm run start:mini
 
 # 构建、测试、lint
 make build          # 构建管理后台生产版本
-make test           # 运行测试（当前未配置）
+make test           # 运行后端单测（Vitest + 覆盖率，含 50% 行覆盖率阈值）
 make lint-arch      # 架构 lint（层边界 + 代码质量，由 scripts/lint-deps.py + lint-quality.py 执行）
 make lint           # 所有 lint
 make verify         # 端到端验证（scripts/verify/*.sh）
@@ -82,6 +82,15 @@ Schema 迁移采用 try/catch ALTER TABLE 模式（见 `database.js`），新增
 所有 API 以 `/api/` 为前缀：children, tasks, checkins, rewards, stats, dashboard, points。完整接口见 [docs/api.md](docs/api.md)。
 
 pc-admin 开发环境通过 Vite proxy 将 `/api` 请求转发到后端。
+
+### 测试
+
+后端测试框架：**Vitest**，配置文件 `star-park/server/vitest.config.js`。
+
+- **测试目录**：`star-park/server/tests/`，包含各 API 模块的单测文件（children、tasks、checkins、rewards、points、stats、seed 等）
+- **测试环境设置**：`tests/setup.js`（beforeEach 重置数据库）和 `tests/helpers.js`（创建测试代理、注入种子数据）
+- **运行命令**：`cd star-park/server && npx vitest run --coverage`
+- **覆盖率阈值**：行覆盖率 50%（配置于 `vitest.config.js` 的 `coverage.thresholds.lines`）
 
 ## 规则
 

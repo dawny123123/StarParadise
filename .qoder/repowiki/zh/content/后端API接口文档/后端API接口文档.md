@@ -16,6 +16,14 @@
 - [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
 </cite>
 
+## 更新摘要
+**变更内容**
+- 新增奖励兑换功能端点 POST /api/rewards/:id/redeem
+- 完善奖励管理的CRUD操作，支持description、reward_unit字段
+- 添加完整的错误处理机制，包括余额不足、重复兑换等场景
+- 增强数据库迁移逻辑，支持rewards表结构演进
+- 完善前后端API客户端集成
+
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
@@ -266,7 +274,7 @@ Note over Client,DB : 前端应用通过HTTP API与后端通信
 - 财务对账
 
 **章节来源**
-- [children.js:70-85](file://star-park/server/src/routes/children.js#L70-L85)
+- [children.js:70-85](file://star-park/server/src/routes/children.js#L70-85)
 
 ### 任务管理接口
 
@@ -517,6 +525,9 @@ Checkin-->>Client : 返回打卡结果
     "target_amount": 50,
     "current_amount": 0,
     "is_achieved": 0,
+    "description": "乐高积木套装",
+    "reward_unit": "元",
+    "redeemed_at": null,
     "created_at": "2026-05-25T10:30:00.000Z"
   }
 ]
@@ -538,11 +549,13 @@ Checkin-->>Client : 返回打卡结果
 - **用途**：创建新的奖励目标
 
 **请求参数**
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| child_id | number | 是 | 关联孩子ID |
-| title | string | 是 | 奖励名称 |
-| target_amount | number | 是 | 目标金额 |
+| 参数名 | 类型 | 必填 | 说明 | 默认值 |
+|--------|------|------|------|--------|
+| child_id | number | 是 | 关联孩子ID | - |
+| title | string | 是 | 奖励名称 | - |
+| target_amount | number | 是 | 目标金额 | - |
+| description | string | 否 | 奖励描述 | "" |
+| reward_unit | string | 否 | 奖励单位 | "元" |
 
 **响应格式**
 ```json
@@ -552,7 +565,10 @@ Checkin-->>Client : 返回打卡结果
   "title": "变形金刚玩具",
   "target_amount": 50,
   "current_amount": 0,
-  "is_achieved": 0
+  "is_achieved": 0,
+  "description": "乐高积木套装",
+  "reward_unit": "元",
+  "redeemed_at": null
 }
 ```
 
@@ -578,6 +594,8 @@ Checkin-->>Client : 返回打卡结果
 | target_amount | number | 否 | 目标金额 |
 | current_amount | number | 否 | 当前进度 |
 | is_achieved | number | 否 | 是否达成 |
+| description | string | 否 | 奖励描述 |
+| reward_unit | string | 否 | 奖励单位 |
 
 **响应格式**
 ```json
@@ -587,7 +605,10 @@ Checkin-->>Client : 返回打卡结果
   "title": "变形金刚玩具",
   "target_amount": 50,
   "current_amount": 0,
-  "is_achieved": 0
+  "is_achieved": 0,
+  "description": "乐高积木套装",
+  "reward_unit": "元",
+  "redeemed_at": null
 }
 ```
 
@@ -618,6 +639,73 @@ Checkin-->>Client : 返回打卡结果
 
 **章节来源**
 - [rewards.js:68-81](file://star-park/server/src/routes/rewards.js#L68-L81)
+
+#### 兑换奖励目标
+
+**基础信息**
+- **路径**：`/api/rewards/:id/redeem`
+- **方法**：POST
+- **用途**：兑换已达成的奖励目标（家长操作）
+
+**路径参数**
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| id | number | 是 | 奖励目标ID |
+
+**响应格式**
+```json
+{
+  "id": 1,
+  "child_id": 1,
+  "title": "变形金刚玩具",
+  "target_amount": 50,
+  "current_amount": 50,
+  "is_achieved": 1,
+  "description": "乐高积木套装",
+  "reward_unit": "元",
+  "redeemed_at": "2026-05-25T15:30:00.000Z"
+}
+```
+
+**兑换流程**
+
+```mermaid
+sequenceDiagram
+participant Client as 客户端
+participant Redeem as 兑换路由
+participant DB as SQLite数据库
+Client->>Redeem : POST /api/rewards/ : id/redeem
+Redeem->>DB : 验证奖励存在且已达成
+Redeem->>DB : 检查是否已兑换
+Redeem->>DB : 计算余额/积分
+Redeem->>DB : 检查余额充足性
+alt 余额充足
+Redeem->>DB : 标记兑换时间
+Redeem->>DB : 扣减余额/积分
+Redeem->>DB : 创建交易记录
+Redeem-->>Client : 返回兑换成功
+else 余额不足
+Redeem-->>Client : 返回余额不足错误
+end
+```
+
+**图表来源**
+- [rewards.js:89-164](file://star-park/server/src/routes/rewards.js#L89-L164)
+
+**错误处理**
+- **404**: 奖励目标不存在
+- **400**: 奖励目标尚未达成，无法兑换
+- **400**: 奖励已兑换，不能重复兑换  
+- **400**: 余额不足，无法兑换
+- **400**: 积分余额不足，无法兑换
+- **400**: 不支持的奖励单位
+
+**使用场景**
+- 家长确认孩子达成奖励目标后执行兑换
+- 扣减相应余额并记录兑换时间
+
+**章节来源**
+- [rewards.js:89-164](file://star-park/server/src/routes/rewards.js#L89-L164)
 
 ### 统计分析接口
 
@@ -810,6 +898,9 @@ text title
 real target_amount
 real current_amount
 integer is_achieved
+text description
+text reward_unit
+text redeemed_at
 text created_at
 }
 TRANSACTIONS {
@@ -880,6 +971,15 @@ TASKS ||--o{ CHECKINS : "generates"
   "error": "错误描述信息"
 }
 ```
+
+### 奖励兑换错误处理
+
+奖励兑换功能包含完善的错误处理机制：
+
+- **余额不足错误**：当金钱余额或积分余额不足时返回400状态码
+- **重复兑换保护**：防止同一奖励被多次兑换
+- **状态验证**：仅允许兑换已达成且未兑换的奖励
+- **事务一致性**：所有操作在数据库事务中执行，确保数据一致性
 
 **章节来源**
 - [api.md:215-222](file://docs/api.md#L215-L222)

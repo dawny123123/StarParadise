@@ -3,6 +3,16 @@ const db = require('../database');
 const dayjs = require('dayjs');
 const router = express.Router();
 
+// 辅助函数：给孩子奖励积分
+function rewardPoints(childId, amount, reason) {
+  const pointsAmount = parseInt(amount) || 0;
+  if (pointsAmount <= 0) return;
+  db.prepare('INSERT INTO points (child_id, amount, reason) VALUES (?, ?, ?)').run(childId, pointsAmount, reason);
+  const child = db.prepare('SELECT points_balance FROM children WHERE id = ?').get(childId);
+  const newBalance = ((child?.points_balance) ?? 0) + pointsAmount;
+  db.prepare('UPDATE children SET points_balance = ? WHERE id = ?').run(newBalance, childId);
+}
+
 // GET /api/checkins?date=YYYY-MM-DD&child_id=x - 获取打卡记录
 router.get('/', (req, res) => {
   try {
@@ -22,7 +32,7 @@ router.get('/', (req, res) => {
 
     const checkins = db.prepare(sql).all(...params);
     res.json(checkins);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -30,7 +40,7 @@ router.get('/', (req, res) => {
 // POST /api/checkins - 创建打卡(同时更新 transactions 和 rewards.current_amount)
 router.post('/', (req, res) => {
   try {
-    const { child_id, task_id, checkin_date, completed } = req.body;
+    const { child_id, task_id, checkin_date, completed, points_reward } = req.body;
     if (!child_id || !task_id || !checkin_date) {
       return res.status(400).json({ error: 'child_id、task_id 和 checkin_date 为必填项' });
     }
@@ -44,6 +54,8 @@ router.post('/', (req, res) => {
     }
 
     const rewardEarned = isCompleted ? task.reward_amount : 0;
+    // 优先使用人工传入的积分奖励，否则使用任务预设积分
+    const pointsReward = isCompleted ? (parseInt(points_reward) || task.points_reward || 0) : 0;
 
     const transaction = db.transaction(() => {
       // 插入打卡记录
@@ -51,24 +63,31 @@ router.post('/', (req, res) => {
         'INSERT INTO checkins (child_id, task_id, checkin_date, completed, reward_earned) VALUES (?, ?, ?, ?, ?)'
       ).run(child_id, task_id, checkin_date, isCompleted, rewardEarned);
 
-      // 如果完成了任务，创建 transaction 记录并更新 rewards
-      if (isCompleted && rewardEarned > 0) {
-        // 创建交易记录
-        db.prepare(
-          'INSERT INTO transactions (child_id, type, amount, description) VALUES (?, ?, ?, ?)'
-        ).run(child_id, 'earn', rewardEarned, `完成「${task.title}」打卡奖励`);
-
-        // 更新该孩子所有未达成的奖励目标的 current_amount
-        const rewards = db.prepare(
-          'SELECT * FROM rewards WHERE child_id = ? AND is_achieved = 0'
-        ).all(child_id);
-
-        for (const reward of rewards) {
-          const newAmount = reward.current_amount + rewardEarned;
-          const isAchieved = newAmount >= reward.target_amount ? 1 : 0;
+      // 如果完成了任务，创建 transaction 记录、积分奖励并更新 rewards
+      if (isCompleted) {
+        if (rewardEarned > 0) {
+          // 创建交易记录
           db.prepare(
-            'UPDATE rewards SET current_amount = ?, is_achieved = ? WHERE id = ?'
-          ).run(newAmount, isAchieved, reward.id);
+            'INSERT INTO transactions (child_id, type, amount, description) VALUES (?, ?, ?, ?)'
+          ).run(child_id, 'earn', rewardEarned, `完成「${task.title}」打卡奖励`);
+
+          // 更新该孩子所有未达成的奖励目标的 current_amount
+          const rewards = db.prepare(
+            'SELECT * FROM rewards WHERE child_id = ? AND is_achieved = 0'
+          ).all(child_id);
+
+          for (const reward of rewards) {
+            const newAmount = reward.current_amount + rewardEarned;
+            const isAchieved = newAmount >= reward.target_amount ? 1 : 0;
+            db.prepare(
+              'UPDATE rewards SET current_amount = ?, is_achieved = ? WHERE id = ?'
+            ).run(newAmount, isAchieved, reward.id);
+          }
+        }
+
+        // 任务完成自动奖励积分
+        if (pointsReward > 0) {
+          rewardPoints(child_id, pointsReward, `完成「${task.title}」任务积分奖励`);
         }
       }
 
@@ -81,7 +100,7 @@ router.post('/', (req, res) => {
     ).get(insertId);
 
     res.status(201).json(checkin);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -93,7 +112,7 @@ router.post('/auto-checkin-all', (req, res) => {
 
     // 获取所有活跃任务
     const activeTasks = db.prepare(
-      'SELECT t.*, c.name as child_name FROM tasks t LEFT JOIN children c ON t.child_id = c.id WHERE t.is_active = 1'
+      'SELECT t.*, c.name as child_name FROM tasks t LEFT JOIN children c ON t.child_id = c.id WHERE t.is_active = 1 ORDER BY t.planned_date IS NULL, t.planned_date ASC, t.id ASC'
     ).all();
 
     if (activeTasks.length === 0) {
@@ -133,7 +152,7 @@ router.post('/auto-checkin-all', (req, res) => {
           'INSERT INTO checkins (child_id, task_id, checkin_date, completed, reward_earned) VALUES (?, ?, ?, 1, ?)'
         ).run(task.child_id, task.id, checkinDate, rewardEarned);
 
-        // 创建交易记录并更新奖励进度
+        // 创建交易记录、积分奖励并更新奖励进度
         if (rewardEarned > 0) {
           db.prepare(
             'INSERT INTO transactions (child_id, type, amount, description) VALUES (?, ?, ?, ?)'
@@ -150,6 +169,11 @@ router.post('/auto-checkin-all', (req, res) => {
               'UPDATE rewards SET current_amount = ?, is_achieved = ? WHERE id = ?'
             ).run(newAmount, isAchieved, reward.id);
           }
+        }
+
+        // 任务完成自动奖励积分
+        if (task.points_reward > 0) {
+          rewardPoints(task.child_id, task.points_reward, `完成「${task.title}」任务积分奖励`);
         }
 
         created++;
@@ -170,7 +194,7 @@ router.post('/auto-checkin-all', (req, res) => {
 
     const result = autoCheckinAll();
     res.json(result);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });

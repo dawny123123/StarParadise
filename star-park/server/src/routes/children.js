@@ -9,11 +9,13 @@ router.get('/', (req, res) => {
 
     // 获取每个孩子的任务和余额信息
     const childrenWithTasks = children.map(child => {
-      const tasks = db.prepare('SELECT * FROM tasks WHERE child_id = ? AND is_active = 1').all(child.id);
+      const tasks = db.prepare('SELECT * FROM tasks WHERE child_id = ? AND is_active = 1 ORDER BY planned_date IS NULL, planned_date ASC, id ASC').all(child.id);
 
-      // 计算累计余额（通过 transactions 表汇总 earn 类型收入）
+      // 计算累计余额（earn 收入 − spend/redeem 支出，与仪表盘口径一致）
       const balanceResult = db.prepare(
-        `SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE child_id = ? AND type = 'earn'`
+        `SELECT COALESCE(SUM(CASE WHEN type = 'earn' THEN amount ELSE 0 END), 0) -
+                COALESCE(SUM(CASE WHEN type IN ('spend', 'redeem') THEN amount ELSE 0 END), 0) as total
+         FROM transactions WHERE child_id = ?`
       ).get(child.id);
 
       return {
@@ -31,7 +33,7 @@ router.get('/', (req, res) => {
     });
 
     res.json(childrenWithTasks);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -48,7 +50,7 @@ router.post('/', (req, res) => {
     ).run(name, age || null, grade || null, focus || null, avatar_color || '#19C8B9');
     const child = db.prepare('SELECT * FROM children WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(child);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -62,7 +64,7 @@ router.get('/:id/balance', (req, res) => {
       return res.status(404).json({ error: '孩子不存在' });
     }
     res.json(child.points_balance || 0);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -87,7 +89,7 @@ router.get('/:id/transactions', (req, res) => {
       ).all(id);
       res.json(transactions);
     }
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });

@@ -20,16 +20,10 @@ const routes = [
         meta: { title: '目标管理', icon: 'Target' }
       },
       {
-        path: 'checkin',
-        name: 'Checkin',
-        component: () => import('../views/Checkin.vue'),
-        meta: { title: '每日打卡', icon: 'Calendar' }
-      },
-      {
-        path: 'tasks',
-        name: 'Tasks',
-        component: () => import('../views/Tasks.vue'),
-        meta: { title: '任务管理', icon: 'List' }
+        path: 'goals/:childName',
+        name: 'ChildGoals',
+        component: () => import('../views/Goals.vue'),
+        meta: { title: '目标管理', icon: 'Target' }
       },
       {
         path: 'balance',
@@ -59,7 +53,8 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  document.title = `${to.meta.title || '星星乐园'} - 星星乐园管理后台`
+  const title = to.params.childName ? `${to.params.childName}目标管理` : (to.meta.title || '目标')
+  document.title = `${title} - 目标管理后台`
   next()
 })
 

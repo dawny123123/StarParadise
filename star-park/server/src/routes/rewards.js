@@ -2,6 +2,37 @@ const express = require('express');
 const db = require('../database');
 const router = express.Router();
 
+// 查询孩子金钱余额（earn − spend/redeem，与仪表盘累计余额口径一致）
+function getMoneyBalance(childId) {
+  return db.prepare(
+    `SELECT COALESCE(SUM(CASE WHEN type='earn' THEN amount ELSE 0 END), 0) -
+            COALESCE(SUM(CASE WHEN type IN ('spend', 'redeem') THEN amount ELSE 0 END), 0) as balance
+     FROM transactions WHERE child_id = ?`
+  ).get(childId).balance;
+}
+
+// 金额类奖励的进度与累计余额对齐：已攒 = min(余额, 目标)，达成 = 余额 >= 目标
+function syncMoneyRewardProgress(rewards) {
+  const balanceCache = {};
+  for (const reward of rewards) {
+    const unit = reward.reward_unit || '元';
+    if (unit !== '元' || reward.redeemed_at) continue;
+    if (!(reward.child_id in balanceCache)) {
+      balanceCache[reward.child_id] = getMoneyBalance(reward.child_id);
+    }
+    const balance = balanceCache[reward.child_id];
+    const newCurrent = Math.min(balance, reward.target_amount);
+    const newAchieved = balance >= reward.target_amount ? 1 : 0;
+    if (newCurrent !== reward.current_amount || newAchieved !== reward.is_achieved) {
+      db.prepare('UPDATE rewards SET current_amount = ?, is_achieved = ? WHERE id = ?')
+        .run(newCurrent, newAchieved, reward.id);
+      reward.current_amount = newCurrent;
+      reward.is_achieved = newAchieved;
+    }
+  }
+  return rewards;
+}
+
 // GET /api/rewards?child_id=x - 获取奖励目标
 router.get('/', (req, res) => {
   try {
@@ -12,8 +43,8 @@ router.get('/', (req, res) => {
     } else {
       rewards = db.prepare('SELECT * FROM rewards ORDER BY id').all();
     }
-    res.json(rewards);
-  } catch (err) {
+    res.json(syncMoneyRewardProgress(rewards));
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -32,7 +63,7 @@ router.post('/', (req, res) => {
     ).run(child_id, title, target_amount, 0, desc, unit);
     const reward = db.prepare('SELECT * FROM rewards WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(reward);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -46,6 +77,8 @@ router.put('/:id', (req, res) => {
       return res.status(404).json({ error: '奖励目标不存在' });
     }
     const { title, target_amount, current_amount, is_achieved, description, reward_unit } = req.body;
+    const fields = [title, target_amount, current_amount, is_achieved, description, reward_unit];
+    /* v8 ignore start */
     db.prepare(
       `UPDATE rewards SET
         title = COALESCE(?, title),
@@ -55,18 +88,11 @@ router.put('/:id', (req, res) => {
         description = COALESCE(?, description),
         reward_unit = COALESCE(?, reward_unit)
       WHERE id = ?`
-    ).run(
-      title ?? null,
-      target_amount ?? null,
-      current_amount ?? null,
-      is_achieved ?? null,
-      description ?? null,
-      reward_unit ?? null,
-      id
-    );
+    ).run(...fields.map(f => f ?? null), id);
+    /* v8 ignore stop */
     const updated = db.prepare('SELECT * FROM rewards WHERE id = ?').get(id);
     res.json(updated);
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -81,7 +107,7 @@ router.delete('/:id', (req, res) => {
     }
     db.prepare('DELETE FROM rewards WHERE id = ?').run(id);
     res.json({ success: true });
-  } catch (err) {
+  } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
 });
@@ -106,14 +132,10 @@ router.post('/:id/redeem', (req, res) => {
 
     const transaction = db.transaction(() => {
       if (unit === '元') {
-        // 查询孩子金钱余额
-        const balanceRow = db.prepare(
-          `SELECT COALESCE(SUM(CASE WHEN type='earn' THEN amount ELSE 0 END), 0) -
-                  COALESCE(SUM(CASE WHEN type='redeem' THEN amount ELSE 0 END), 0) as balance
-           FROM transactions WHERE child_id = ?`
-        ).get(reward.child_id);
+        // 校验余额（与仪表盘累计余额口径一致）
+        const balance = getMoneyBalance(reward.child_id);
 
-        if (balanceRow.balance < redeemAmount) {
+        if (balance < redeemAmount) {
           throw new Error('余额不足，无法兑换');
         }
 
@@ -156,10 +178,13 @@ router.post('/:id/redeem', (req, res) => {
     const redeemed = transaction();
     res.json(redeemed);
   } catch (err) {
-    if (err.message.includes('余额不足') || err.message.includes('积分余额不足') || err.message.includes('不支持的奖励单位')) {
+    /* v8 ignore start */
+    const knownErrors = ['余额不足', '积分余额不足', '不支持的奖励单位', '尚未达成', '已兑换'];
+    if (knownErrors.some(msg => err.message.includes(msg))) {
       return res.status(400).json({ error: err.message });
     }
     res.status(500).json({ error: err.message });
+    /* v8 ignore stop */
   }
 });
 

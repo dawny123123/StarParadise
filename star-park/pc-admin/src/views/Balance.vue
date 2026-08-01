@@ -70,9 +70,9 @@ const children = computed(() => store.children)
 const balanceStyle = computed(() => {
   const child = children.value.find(c => c.id === selectedChildId.value)
   const colorMap = {
-    '老二': '#FF6B6B',
-    '老三': '#4ECDC4',
-    '老四': '#FFD93D'
+    '甜甜': '#FF6B6B',
+    '甄甄': '#4ECDC4',
+    '欣甜': '#FFD93D'
   }
   const color = child ? (colorMap[child.name] || '#19C8B9') : '#19C8B9'
   return {
