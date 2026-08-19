@@ -67,8 +67,25 @@ npm run start:mini      # 小程序 H5
 > **触发分支**：当前临时指向 `feat/nodejs-cicd-pipeline` 用于验证，
 > 合并后需改回 `main` 并开启推送触发。
 >
-> ⚠️ **端口 3002 尚未在安全组放通**，服务目前仅本机可访问，
-> `http://8.147.58.185:3002` 外部不可达；需单独申请安全组变更。
+> **端口 3002 访问控制**：安全组 `sg-0jlcfjm7lp3p2dmwag8d` 中已按**来源白名单**放通，
+> 未在白名单内的公网地址无法访问，属预期行为。当前白名单见下表。
+
+| 端口 | 来源 CIDR | 规则 ID | 说明 |
+|------|-----------|---------|------|
+| 3002 | `140.205.11.234/32` | `sgr-0jlinf1pmsafsh8fuhpu` | star-park pc-admin 3002 |
+
+```bash
+# 新增白名单（每个来源一条规则，便于单独回收）
+aliyun ecs AuthorizeSecurityGroup --RegionId cn-wulanchabu \
+  --SecurityGroupId sg-0jlcfjm7lp3p2dmwag8d \
+  --IpProtocol tcp --PortRange 3002/3002 \
+  --SourceCidrIp <CIDR> --Priority 100 --Description 'star-park pc-admin 3002'
+
+# 回收白名单
+aliyun ecs RevokeSecurityGroup --RegionId cn-wulanchabu \
+  --SecurityGroupId sg-0jlcfjm7lp3p2dmwag8d \
+  --IpProtocol tcp --PortRange 3002/3002 --SourceCidrIp <CIDR>
+```
 
 本地等价校验命令：
 
