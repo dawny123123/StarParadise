@@ -48,13 +48,40 @@ stages:
             name: vitest 单测与覆盖率
             with:
               # node_modules 不入库，且历史提交含 macOS arm64 原生二进制，
-              # 必须 npm ci 干净安装，禁止复用仓库内依赖
-              # 字段名必须是 version 且为完整版本号（nodeVersion / '20' 均被校验拒绝）
+              # 必须 npm ci 干净安装，禁止复用仓库内依赖。
+              # NodeBuild 的 version 字段实测不生效（镜像默认 Node 14.8.0，
+              # npm 6 无法解析 lockfileVersion 3），因此用镜像自带 nvm 显式切换。
               version: '20.9.0'
               run: |
                 set -e
+                export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" || true
+                echo "-- 镜像已装 node --"; ls "$NVM_DIR/versions/node" 2>/dev/null || true
+                nvm install 20 >/dev/null 2>&1 || nvm use 20 >/dev/null 2>&1 || true
+                node -v; npm -v
+                MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
+                [ "$MAJOR" -ge 18 ] || { echo "需要 Node >= 18，当前 $(node -v)" >&2; exit 1; }
                 cd star-park/server
-                npm ci --no-audit --no-fund
+
+                # better-sqlite3 是原生模块：prebuild-install 直连 GitHub Releases 会超时，
+                # 回退源码编译又因镜像 g++ 5.4 不支持 -std=c++20 必然失败。
+                # 因此跳过安装脚本，改为从 npmmirror 取对应 ABI 的预编译产物。
+                BS3_MIRROR="https://registry.npmmirror.com/-/binary/better-sqlite3"
+                npm ci --no-audit --no-fund --ignore-scripts
+
+                ABI="$(node -p 'process.versions.modules')"
+                BSV="$(node -p "require('./node_modules/better-sqlite3/package.json').version")"
+                URL="${BS3_MIRROR}/v${BSV}/better-sqlite3-v${BSV}-node-v${ABI}-linux-x64.tar.gz"
+                echo "获取 better-sqlite3 预编译产物: $URL"
+                curl -fsSL --retry 3 --retry-delay 2 -o /tmp/bs3.tar.gz "$URL"
+                tar -xzf /tmp/bs3.tar.gz -C node_modules/better-sqlite3
+
+                # --ignore-scripts 会跳过安装脚本；esbuild 若存在需确认可用
+                node -e "require('better-sqlite3'); console.log('better-sqlite3 可加载')"
+                if [ -f node_modules/esbuild/install.js ] && ! node -e "require('esbuild')" >/dev/null 2>&1; then
+                  echo "esbuild 未就绪，执行其安装脚本"
+                  node node_modules/esbuild/install.js
+                fi
                 npm run test:coverage
   build_stage:
     name: 构建
@@ -70,6 +97,12 @@ stages:
               version: '20.9.0'
               run: |
                 set -e
+                export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+                [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" || true
+                nvm install 20 >/dev/null 2>&1 || nvm use 20 >/dev/null 2>&1 || true
+                node -v; npm -v
+                MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
+                [ "$MAJOR" -ge 18 ] || { echo "需要 Node >= 18，当前 $(node -v)" >&2; exit 1; }
                 cd star-park/pc-admin
                 npm ci --no-audit --no-fund
                 npm run build
