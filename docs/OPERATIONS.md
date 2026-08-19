@@ -239,6 +239,59 @@ rm -f /opt/star-park/shared/data/star-park.db-wal /opt/star-park/shared/data/sta
 systemctl start star-park-server
 ```
 
+### 4.2.1 本地数据同步到生产
+
+已在 2026-08-19 执行过一次全量同步（6 成员 / 14 目标 / 85 待办 / 25 打卡 / 40 流水 / 30 积分 / 2 奖励）。
+
+**两个坑，务必注意**：
+
+1. **WAL 未落盘**：本地 `star-park.db` 仅 32KB，而 `star-park.db-wal` 有 1.7MB —— 绝大部分数据在 WAL 里。
+   直接 `cp` 单个 `.db` 文件会丢数据。必须先做一致性快照。
+2. **目标机 sqlite3 为 3.26**，**不支持 `VACUUM INTO`**（3.27 起才有），
+   在目标机上做快照只能用 `.backup`。本地 macOS 的 sqlite3 较新，可用 `VACUUM INTO`。
+
+此外本地库 schema 比线上旧（`checkins` 外键缺 `ON DELETE CASCADE`），
+因此**只导数据、不导 schema**，保留线上 schema。
+
+```bash
+# ---- 本地：生成一致性快照 + 仅数据 SQL ----
+D=star-park/server/data
+sqlite3 "$D/star-park.db" "VACUUM INTO '/tmp/snap.db';"       # 含 WAL 内容，不改动源库
+{
+  echo "PRAGMA foreign_keys=OFF;"; echo "BEGIN;"
+  for t in children tasks goals todos checkins rewards transactions points; do echo "DELETE FROM $t;"; done
+  echo "DELETE FROM sqlite_sequence;"
+  for t in children tasks goals todos checkins rewards transactions points sqlite_sequence; do
+    sqlite3 /tmp/snap.db ".mode insert $t" "SELECT * FROM $t;"
+  done
+  echo "COMMIT;"
+} > /tmp/data-only.sql
+gzip -9 -c /tmp/data-only.sql > /tmp/data-only.sql.gz   # ~6KB，可走云助手 SendFile
+
+# ---- 传输（无需 SSH）----
+aliyun ecs SendFile --RegionId cn-wulanchabu --InstanceId.1 i-0jlhpo15qqlwky4ldk5x \
+  --TargetDir /tmp --Name data-only.sql.gz --FileMode 0600 --Overwrite true \
+  --ContentType Base64 --Content "$(base64 < /tmp/data-only.sql.gz | tr -d '\n')"
+
+# ---- 目标机：停服 -> 备份 -> 导入 -> 校验 -> 起服 ----
+DB=/opt/star-park/shared/data/star-park.db
+BK=/opt/star-park/backups; STAMP=$(date +%Y%m%d%H%M%S)
+systemctl stop star-park-server
+sqlite3 "$DB" ".backup ${BK}/pre-datasync-${STAMP}.db"   # 注意：不能用 VACUUM INTO
+tar -czf "${BK}/pre-datasync-${STAMP}-raw.tgz" -C /opt/star-park/shared/data .
+gunzip -c /tmp/data-only.sql.gz | sqlite3 "$DB"
+sqlite3 "$DB" "PRAGMA integrity_check;"                  # 期望 ok
+sqlite3 "$DB" "PRAGMA foreign_key_check;"                # 无输出即通过
+systemctl start star-park-server
+curl -s 127.0.0.1:3002/api/health
+
+# ---- 回滚 ----
+systemctl stop star-park-server
+cp -f "${BK}/pre-datasync-<STAMP>.db" "$DB"
+rm -f "${DB}-wal" "${DB}-shm"
+systemctl start star-park-server
+```
+
 ### 4.3 性能调优
 
 - SQLite 已启用 WAL 模式提升并发性能
