@@ -13,27 +13,78 @@ npm run start:pc        # 管理后台 :5173
 npm run start:mini      # 小程序 H5
 ```
 
-### 1.2 生产部署
+### 1.2 生产部署（云效 Flow 自动部署）
 
-```bash
-# 构建管理后台
-cd star-park/pc-admin && npm run build
-# 产出 dist/ 目录，部署到静态文件服务器
+生产部署由云效流水线 **star-park-nodejs-cicd** 全自动完成，不要手工登录目标机部署。
 
-# 构建小程序
-cd star-park/miniprogram && npm run build:mp-weixin
-# 产出 dist/build/mp-weixin/，上传到微信开发者工具
+| 项 | 值 |
+|----|-----|
+| 代码仓库 | Codeup `625d2340cfea268afc2158c5/StartParadise`，分支 `main` |
+| 目标主机 | ECS `i-0jlhpo15qqlwky4ldk5x` / `8.147.58.185`（华北6 乌兰察布 B） |
+| 云效机器组 | `star-park-prod`（id 359190） |
+| 后端端口 | **3002** |
+| 服务名 | `star-park-server.service`（systemd） |
 
-# 后端服务
-cd star-park/server && NODE_ENV=production node src/index.js
+> ⚠️ **端口 3001 禁止使用**：该端口被目标机上另一个无关线上应用
+> `game-guess`（PM2 托管的 Next.js 应用）占用。`deploy/deploy.sh`
+> 内置端口占用守卫，检测到被无关进程占用时会主动中止部署。
+
+目标机目录布局：
+
 ```
+/opt/star-park/
+├── releases/<BUILD_NUMBER>/   # 历史版本（保留最近 5 个）
+├── current -> releases/<N>    # 原子软链，切换即上线/回滚
+├── shared/
+│   ├── data/                  # SQLite 持久化，跨版本保留
+│   └── star-park.env          # 生产环境变量（600 权限，不入库）
+└── backups/                   # 每次部署前的数据库备份（保留 10 份）
+```
+
+小程序需人工发布：`cd star-park/miniprogram && npm run build:mp-weixin`
+产出 `dist/build/mp-weixin/`，再用微信开发者工具上传。
 
 ### 1.3 CI/CD 流水线
 
+流水线名称 **star-park-nodejs-cicd**，触发方式：`main` 分支推送自动触发。
+
+| 阶段 | 内容 | 卡点 |
+|------|------|------|
+| 代码检查 | 架构分层 lint + 代码质量 lint（`scripts/lint-*.py`） | 失败即中断 |
+| 单元测试 | `vitest run --coverage`（行覆盖率阈值 80%） | 失败即中断 |
+| 构建 | `npm ci` 干净安装 + pc-admin `vite build` + 打包制品 | 失败即中断 |
+| 部署 | 主机部署 → `deploy/deploy.sh` → 健康检查 | 健康检查失败自动回滚 |
+
+本地等价校验命令：
+
 ```bash
-make build       # 构建项目
-make lint-arch   # 架构检查
-make test        # 测试
+make lint-arch                                           # 架构与质量检查
+cd star-park/server && npm ci && npm run test:coverage    # 单测 + 覆盖率
+cd star-park/pc-admin && npm ci && npm run build          # 前端构建
+```
+
+> 依赖目录 `node_modules/` 不入库。CI 必须执行 `npm ci` 干净安装，
+> 因为提交历史中曾包含 macOS arm64 原生二进制，复用会导致 Linux 构建失败。
+
+### 1.4 服务管理与回滚
+
+```bash
+# 服务状态与日志
+systemctl status star-park-server
+journalctl -u star-park-server -n 100 --no-pager
+tail -f /var/log/star-park/server.log
+
+# 健康检查
+bash /opt/star-park/current/deploy/health-check.sh 3002
+
+# 回滚到上一个版本
+bash /opt/star-park/current/deploy/rollback.sh
+# 回滚到指定版本
+bash /opt/star-park/current/deploy/rollback.sh <BUILD_NUMBER>
+
+# 查看可回滚版本与数据库备份
+ls -1t /opt/star-park/releases/
+ls -1t /opt/star-park/backups/
 ```
 
 ## 2 环境配置
@@ -65,15 +116,23 @@ const DB_PATH = path.join(DATA_DIR, 'star-park.db');
 ### 3.2 健康检查
 
 ```bash
+# 本地
 curl http://localhost:3001/api/health
+# 生产（目标机上，端口 3002）
+curl http://127.0.0.1:3002/api/health
 # 期望返回: {"status":"ok","timestamp":"..."}
 ```
 
 ### 3.3 查看日志
 
 ```bash
-# 直接运行查看控制台输出
+# 本地：直接运行查看控制台输出
 cd star-park/server && npm run dev
+
+# 生产
+journalctl -u star-park-server -f
+tail -f /var/log/star-park/server.log
+tail -f /var/log/star-park/server.err.log
 ```
 
 ## 4 运维手册
@@ -81,24 +140,34 @@ cd star-park/server && npm run dev
 ### 4.1 服务管理
 
 ```bash
-# 启动后端
+# 本地
 cd star-park/server && npm start
-
-# 停止服务
 pkill -f "node src/index.js" || true
+
+# 生产（systemd 托管，勿用 pkill：会绕过 systemd 的自动重启语义）
+systemctl status  star-park-server
+systemctl restart star-park-server
+systemctl stop    star-park-server
 ```
 
 ### 4.2 数据库维护
 
 ```bash
-# 备份 SQLite 数据库
+# 本地备份 / 恢复
 cp star-park/server/data/star-park.db star-park/server/data/star-park.db.bak
-
-# 恢复
 cp star-park/server/data/star-park.db.bak star-park/server/data/star-park.db
 
 # 重新初始化种子数据
 rm star-park/server/data/star-park.db && npm start  # 自动重建
+
+# 生产：数据库位于 /opt/star-park/shared/data/star-park.db
+# 每次部署前由 deploy.sh 自动备份到 /opt/star-park/backups/（保留 10 份）
+ls -1t /opt/star-park/backups/
+# 手工恢复（需先停服，避免 WAL 状态不一致）
+systemctl stop star-park-server
+cp /opt/star-park/backups/star-park.db.<BUILD_NUMBER> /opt/star-park/shared/data/star-park.db
+rm -f /opt/star-park/shared/data/star-park.db-wal /opt/star-park/shared/data/star-park.db-shm
+systemctl start star-park-server
 ```
 
 ### 4.3 性能调优
@@ -109,9 +178,23 @@ rm star-park/server/data/star-park.db && npm start  # 自动重建
 
 ## 5 安全与权限
 
-- 当前无认证中间件，适合家庭内网使用
-- 生产部署时应添加：
-  - API 认证（JWT 或 Session）
-  - CORS 白名单限制
-  - HTTPS 反向代理
-- 数据库文件仅本地访问，无远程连接风险
+### 5.1 当前状态
+
+- **后端无认证中间件**：所有 `/api/*` 接口无鉴权，任何人可读写全部数据
+- **CORS 全开**：`app.use(cors())` 未做来源白名单
+- **无 HTTPS**：仅 HTTP 明文
+- **安全组过宽**：目标机安全组 `sg-0jlcfjm7lp3p2dmwag8d` 对 `0.0.0.0/0`
+  放通 22、3389、80、3001、8080
+
+### 5.2 待办（按优先级）
+
+| 优先级 | 项 | 说明 |
+|--------|-----|------|
+| P0 | 收紧安全组 | 22/3389 限制为办公出口 IP，移除未使用的 3389 |
+| P0 | 3002 不对公网开放 | 生产端口默认不放通；对外访问统一走反向代理 |
+| P1 | 增加 API 认证 | JWT 或 Session，覆盖全部 `/api/*` 写接口 |
+| P1 | CORS 白名单 | 限定为实际前端域名 |
+| P2 | HTTPS 反向代理 | 目标机未装 nginx，需先安装并申请证书 |
+| P2 | 数据库异地备份 | 当前备份与数据同盘，磁盘故障会一并丢失 |
+
+> ⚠️ 在完成 P0/P1 之前，不应把该服务端口暴露到公网。
