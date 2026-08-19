@@ -134,7 +134,9 @@ stages:
         component: VMDeploy
         with:
           artifact: $[stages.build_stage.build_job.upload_step.artifacts.star-park-package]
-          machineGroup: '359190'
+          # VMDeploy 只接受机器组 uuid（OpenAPI 不返回该字段，取自 Flow 控制台）
+          # 对应机器组 star-park-prod (id 359190) -> ECS i-0jlhpo15qqlwky4ldk5x / 8.147.58.185
+          machineGroup: tnohf384amokxmtw
           artifactDownloadPath: /opt/star-park/package.tgz
           executeUser: root
           pauseStrategy: noPause

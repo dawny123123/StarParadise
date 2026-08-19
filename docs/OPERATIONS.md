@@ -21,7 +21,7 @@ npm run start:mini      # 小程序 H5
 |----|-----|
 | 代码仓库 | Codeup `625d2340cfea268afc2158c5/StartParadise`，分支 `main` |
 | 目标主机 | ECS `i-0jlhpo15qqlwky4ldk5x` / `8.147.58.185`（华北6 乌兰察布 B） |
-| 云效机器组 | `star-park-prod`（id 359190） |
+| 云效机器组 | `star-park-prod`（id 359190，uuid `tnohf384amokxmtw`） |
 | 后端端口 | **3002** |
 | 服务名 | `star-park-server.service`（systemd） |
 
@@ -54,14 +54,21 @@ npm run start:mini      # 小程序 H5
 | 代码检查 | 架构分层 lint + 代码质量 lint（`scripts/lint-*.py`） | 失败即中断 | 已验证通过 |
 | 单元测试 | `vitest run --coverage`（行覆盖率阈值 80%） | 失败即中断 | 已验证通过 |
 | 构建 | `npm ci` 干净安装 + pc-admin `vite build` + 打包制品 | 失败即中断 | 已验证通过 |
-| 部署 | 主机部署 → `deploy/deploy.sh` → 健康检查 | 健康检查失败自动回滚 | **未接入** |
+| 部署 | 主机部署 → `deploy/deploy.sh` → 健康检查 | 健康检查失败自动回滚 | 已验证通过 |
 
-> **部署阶段未接入的原因**：VMDeploy 组件的 `machineGroup` 只接受机器组 **uuid**，
-> 而 OpenAPI（`GetHostGroup`）只返回数字 id `359190`，不返回 uuid。
-> 需从 Flow 控制台主机组页面 URL 取 uuid 后补入 `deploy_stage`。
+> **机器组标识**：VMDeploy 组件的 `machineGroup` 只接受机器组 **uuid**
+> `tnohf384amokxmtw`，OpenAPI（`GetHostGroup`）只返回数字 id `359190`，不返回 uuid，
+> 该 uuid 只能从 Flow 控制台主机组页面获取。填数字 id 会报「该机器组uuid不存在」。
+>
+> **首次生产部署**：流水线运行 #10（2026-08-19）四阶段全部 SUCCESS，
+> 目标机 `star-park-server.service` 已 enabled + active，`/api/health` 返回 `status: ok`，
+> `current -> releases/10`，同机 `game-guess`(3001) 未受影响。
 >
 > **触发分支**：当前临时指向 `feat/nodejs-cicd-pipeline` 用于验证，
 > 合并后需改回 `main` 并开启推送触发。
+>
+> ⚠️ **端口 3002 尚未在安全组放通**，服务目前仅本机可访问，
+> `http://8.147.58.185:3002` 外部不可达；需单独申请安全组变更。
 
 本地等价校验命令：
 
