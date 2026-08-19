@@ -1,0 +1,129 @@
+# 云效 Flow 流水线定义 — star-park Node.js CI/CD
+#
+# 该文件是流水线的版本化副本，便于 review 与追溯。
+# 云效侧的实际流水线通过 API/控制台维护，修改后请同步更新本文件。
+#
+# 组织: 625d2340cfea268afc2158c5   仓库: StartParadise
+# 目标机器组: star-park-prod (359190) -> ECS 8.147.58.185 (cn-wulanchabu)
+# 生产端口: 3002（3001 已被无关线上应用 game-guess 占用，禁止复用）
+name: star-park-nodejs-cicd
+sources:
+  star_park_repo:
+    type: codeup
+    name: StartParadise
+    endpoint: https://codeup.aliyun.com/625d2340cfea268afc2158c5/StartParadise.git
+    branch: main
+    certificate:
+      type: serviceConnection
+      # 必须是服务连接 uuid（数字 id 935415 会被校验拒绝）
+      serviceConnection: dppdxrk3h4a4d88w
+stages:
+  check_stage:
+    name: 代码检查
+    jobs:
+      lint_job:
+        name: 架构与质量 lint
+        runsOn: public/cn-beijing
+        steps:
+          lint_step:
+            step: Command
+            name: 分层依赖与代码质量检查
+            with:
+              # 构建机默认 python3 早于 3.6，无法解析 lint 脚本里的 f-string，
+              # 因此显式挑选可用的 Python 3.6+ 解释器
+              run: |
+                set -e
+                PY=""
+                for c in python3.12 python3.11 python3.10 python3.9 python3.8 python3; do
+                  command -v "$c" >/dev/null 2>&1 || continue
+                  v=$("$c" -c 'import sys;print(sys.version_info[0]*100+sys.version_info[1])' 2>/dev/null || echo 0)
+                  if [ "$v" -ge 306 ]; then PY="$c"; break; fi
+                done
+                if [ -z "$PY" ]; then
+                  echo "未找到 Python 3.6+，尝试安装 python3.11"
+                  yum install -y python3.11 >/dev/null 2>&1 || true
+                  command -v python3.11 >/dev/null 2>&1 && PY=python3.11
+                fi
+                [ -n "$PY" ] || { echo "无可用 Python 3.6+ 解释器" >&2; exit 1; }
+                echo "使用解释器: $PY ($("$PY" -V 2>&1))"
+                "$PY" scripts/lint-deps.py
+                "$PY" scripts/lint-quality.py
+  test_stage:
+    name: 单元测试
+    jobs:
+      test_job:
+        name: 后端单元测试
+        runsOn: public/cn-beijing
+        steps:
+          test_step:
+            step: NodeBuild
+            name: vitest 单测与覆盖率
+            with:
+              # node_modules 不入库，且历史提交含 macOS arm64 原生二进制，
+              # 必须 npm ci 干净安装，禁止复用仓库内依赖
+              # 字段名必须是 version 且为完整版本号（nodeVersion / '20' 均被校验拒绝）
+              version: '20.9.0'
+              run: |
+                set -e
+                cd star-park/server
+                npm ci --no-audit --no-fund
+                npm run test:coverage
+  build_stage:
+    name: 构建
+    jobs:
+      build_job:
+        name: 构建与制品打包
+        runsOn: public/cn-beijing
+        steps:
+          build_step:
+            step: NodeBuild
+            name: 前端构建与制品组装
+            with:
+              version: '20.9.0'
+              run: |
+                set -e
+                cd star-park/pc-admin
+                npm ci --no-audit --no-fund
+                npm run build
+                cd ../..
+                rm -rf dist-package
+                mkdir -p dist-package/server dist-package/pc-admin dist-package/deploy
+                cp -r star-park/server/src dist-package/server/
+                cp star-park/server/package.json dist-package/server/
+                cp star-park/server/package-lock.json dist-package/server/
+                cp -r star-park/pc-admin/dist/. dist-package/pc-admin/
+                cp deploy/deploy.sh deploy/rollback.sh deploy/health-check.sh dist-package/deploy/
+                cp deploy/star-park-server.service dist-package/deploy/
+                chmod +x dist-package/deploy/*.sh
+                echo "--- 制品内容 ---"
+                find dist-package -maxdepth 2
+          upload_step:
+            step: ArtifactUpload
+            name: 制品上传
+            with:
+              uploadType: flowPublic
+              artifact: star-park-package
+              filePath:
+                - dist-package/
+  deploy_stage:
+    name: 部署
+    jobs:
+      deploy_job:
+        name: 主机部署到生产 ECS
+        component: VMDeploy
+        with:
+          artifact: $[stages.build_stage.build_job.upload_step.artifacts.star-park-package]
+          machineGroup: '359190'
+          artifactDownloadPath: /opt/star-park/package.tgz
+          executeUser: root
+          pauseStrategy: noPause
+          run: |
+            set -e
+            mkdir -p /opt/star-park
+            UNPACK=$(mktemp -d)
+            tar -xzf /opt/star-park/package.tgz -C "$UNPACK"
+            DEPLOY_SH=$(find "$UNPACK" -maxdepth 3 -type f -name deploy.sh -print -quit)
+            [ -n "$DEPLOY_SH" ] || { echo "制品包内未找到 deploy/deploy.sh" >&2; exit 1; }
+            # deploy.sh 自身负责：备份数据库、原子切版本、健康检查、失败自动回滚
+            APP_PORT=3002 bash "$DEPLOY_SH"
+            rm -rf "$UNPACK"

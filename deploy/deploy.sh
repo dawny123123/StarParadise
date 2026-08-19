@@ -85,13 +85,23 @@ else
   log "首次部署，无既有数据库"
 fi
 
-# ---------- 3. 解包 ----------
+# ---------- 3. 解包（自适应归档布局：server/ 可能在根，也可能嵌套一层） ----------
 [ -f "$PACKAGE_PATH" ] || fail "制品包不存在: ${PACKAGE_PATH}"
+UNPACK_DIR="$(mktemp -d "${APP_ROOT}/.unpack.XXXXXX")"
+trap 'rm -rf "$UNPACK_DIR"' EXIT
+tar -xzf "$PACKAGE_PATH" -C "$UNPACK_DIR"
+
+PKG_MANIFEST="$(find "$UNPACK_DIR" -maxdepth 3 -type f -path '*/server/package.json' -print -quit)"
+[ -n "$PKG_MANIFEST" ] || fail "制品包结构异常：未找到 server/package.json"
+PKG_ROOT="$(cd "$(dirname "$PKG_MANIFEST")/.." && pwd)"
+[ -d "${PKG_ROOT}/server" ] || fail "制品包结构异常：${PKG_ROOT} 下缺少 server/"
+[ -f "${PKG_ROOT}/deploy/${APP_NAME}.service" ] \
+  || fail "制品包结构异常：缺少 deploy/${APP_NAME}.service"
+
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR"
-tar -xzf "$PACKAGE_PATH" -C "$RELEASE_DIR"
-[ -f "${RELEASE_DIR}/server/package.json" ] || fail "制品包结构异常：缺少 server/package.json"
-log "解包完成 -> ${RELEASE_DIR}"
+cp -a "${PKG_ROOT}/." "$RELEASE_DIR/"
+log "解包完成（制品根 ${PKG_ROOT#$UNPACK_DIR/}） -> ${RELEASE_DIR}"
 
 trap rollback ERR
 
