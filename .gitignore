@@ -14,3 +14,20 @@ harness/trace/skill-backups/
 # ─── Python 缓存（lint 脚本运行产物） ───
 __pycache__/
 *.pyc
+
+# ─── 依赖目录（禁止提交：含平台相关原生二进制，会导致跨平台构建失败） ───
+node_modules/
+
+# ─── 构建产物 ───
+dist/
+star-park/miniprogram/unpackage/
+
+# ─── 测试覆盖率报告 ───
+coverage/
+
+# ─── 运行时数据与日志（SQLite 数据库属于运行时状态，不入库） ───
+star-park/server/data/
+*.log
+
+# ─── OS 噪声文件 ───
+.DS_Store
