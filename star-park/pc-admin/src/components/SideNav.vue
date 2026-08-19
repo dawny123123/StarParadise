@@ -48,33 +48,47 @@
 </template>
 
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowDown } from '@element-plus/icons-vue'
+import { useAppStore } from '../stores/app'
 
 const route = useRoute()
+const store = useAppStore()
 
-const menuItems = [
+const staticMenuItems = [
   { path: '/dashboard', title: '仪表盘', icon: 'DataBoard' },
-  {
-    path: '/goals',
-    title: '目标管理',
-    icon: 'Aim',
-    children: [
-      { path: '/goals', title: '全部目标' },
-      { path: '/goals/洋洋', title: '洋洋目标管理' },
-      { path: '/goals/甜甜', title: '甜甜目标管理' },
-      { path: '/goals/甄甄', title: '甄甄目标管理' },
-      { path: '/goals/欣甜', title: '欣甜目标管理' }
-    ]
-  },
   { path: '/balance', title: '积分记录', icon: 'Wallet', hidden: true },
   { path: '/rewards', title: '奖励管理', icon: 'Present' },
   { path: '/stats', title: '数据统计', icon: 'TrendCharts' }
 ]
 
+// 动态生成目标管理子菜单
+const goalsMenuItem = computed(() => {
+  const childrenMenu = store.children.map(child => ({
+    path: `/goals/${child.name}`,
+    title: `${child.name}目标管理`
+  }))
+  return {
+    path: '/goals',
+    title: '目标管理',
+    icon: 'Aim',
+    children: [
+      { path: '/goals', title: '全部目标' },
+      ...childrenMenu
+    ]
+  }
+})
+
+// 合并完整菜单
+const menuItems = computed(() => [
+  staticMenuItems[0],
+  goalsMenuItem.value,
+  ...staticMenuItems.slice(1)
+])
+
 const visibleMenuItems = computed(() => {
-  return menuItems.filter(item => !item.hidden)
+  return menuItems.value.filter(item => !item.hidden)
 })
 
 // route.path 中文段会被编码，统一解码后比较
@@ -98,12 +112,19 @@ const toggleGroup = (path) => {
 
 // 当前路由命中子菜单时自动展开对应分组
 watch(currentPath, (path) => {
-  menuItems.forEach(item => {
+  menuItems.value.forEach(item => {
     if (item.children && item.children.some(sub => sub.path === path)) {
       expandedGroups[item.path] = true
     }
   })
 }, { immediate: true })
+
+// 确保 store 加载孩子列表
+onMounted(() => {
+  if (store.children.length === 0) {
+    store.fetchChildren()
+  }
+})
 </script>
 
 <style scoped>

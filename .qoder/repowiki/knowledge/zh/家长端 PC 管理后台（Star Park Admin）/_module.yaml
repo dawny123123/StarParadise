@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: pc_admin
+title: 家长端 PC 管理后台（Star Park Admin）
+scope:
+    - star-park/pc-admin/
+source_files: []
+depends_on: []
+related_to: []

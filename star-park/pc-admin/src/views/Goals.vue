@@ -55,95 +55,17 @@
           添加待办
         </el-button>
       </div>
-      <div class="filter-tabs">
-        <el-tag
-          :type="todoFilter === 'all' ? 'primary' : ''"
-          :effect="todoFilter === 'all' ? 'dark' : 'plain'"
-          class="filter-tab"
-          @click="setTodoFilter('all')"
-        >
-          全部 <span class="tab-count">{{ visibleTodos.length }}</span>
-        </el-tag>
-        <el-tag
-          :type="todoFilter === 'pending' ? 'primary' : ''"
-          :effect="todoFilter === 'pending' ? 'dark' : 'plain'"
-          class="filter-tab"
-          @click="setTodoFilter('pending')"
-        >
-          进行中 <span class="tab-count">{{ pendingCount }}</span>
-        </el-tag>
-        <el-tag
-          :type="todoFilter === 'completed' ? 'primary' : ''"
-          :effect="todoFilter === 'completed' ? 'dark' : 'plain'"
-          class="filter-tab"
-          @click="setTodoFilter('completed')"
-        >
-          已完成 <span class="tab-count">{{ completedCount }}</span>
-        </el-tag>
-      </div>
-      <el-table :data="filteredTodos" stripe style="width: 100%" v-loading="tableLoading">
-        <el-table-column width="50">
-          <template #default="{ row }">
-            <el-checkbox
-              :model-value="row.completed"
-              @change="toggleTodo(row.id)"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column prop="title" label="标题" min-width="150">
-          <template #default="{ row }">
-            <span :class="['todo-title-text', { completed: row.completed }]">{{ row.title }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="关联目标" width="120">
-          <template #default="{ row }">
-            <el-tag v-if="getGoalTitle(row.goalId)" :type="getGoalTagType(row.goalId)" size="small">
-              {{ getGoalTitle(row.goalId) }}
-            </el-tag>
-            <span v-else class="text-muted">选择目标</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="creator" label="创建人" width="80" />
-        <el-table-column label="优先级" width="80">
-          <template #default="{ row }">
-            <el-tag :type="getPriorityType(row.priority)" size="small">
-              {{ getPriorityLabel(row.priority) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="预期积分" width="90" align="center">
-          <template #default="{ row }">
-            <span class="points-tag">{{ row.expectedPoints || 0 }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip>
-          <template #default="{ row }">
-            <span v-if="row.description">{{ row.description }}</span>
-            <span v-else class="text-muted">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="计划日期" width="100">
-          <template #default="{ row }">
-            <span class="date-text">{{ formatDate(row.plannedDate) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="150" align="center" fixed="right">
-          <template #default="{ row }">
-            <div class="todo-actions">
-              <el-button text size="small" @click="openTodoModal(row)">
-                <el-icon><Edit /></el-icon>
-              </el-button>
-              <el-button text size="small" @click="cloneTodo(row)">
-                <el-icon><DocumentCopy /></el-icon>
-              </el-button>
-              <el-button text size="small" type="danger" @click="deleteTodo(row.id)">
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      <el-empty v-if="filteredTodos.length === 0" description="暂无待办事项" />
+      <TodoTree
+        :todos="visibleTodos"
+        :goals="visibleGoals"
+        :loading="tableLoading"
+        @refresh="fetchTodos"
+        @edit="openTodoModal"
+        @add-child="openTodoModal(null, $event)"
+        @delete="deleteTodo"
+        @clone="cloneTodo"
+        @toggle="toggleTodo"
+      />
     </div>
 
     <!-- 目标弹窗 -->
@@ -178,6 +100,22 @@
     <!-- 待办弹窗 -->
     <el-dialog v-model="todoDialogVisible" :title="editingTodo ? '编辑待办' : '添加待办'" width="480px">
       <el-form :model="todoForm" label-width="90px">
+        <el-form-item label="父任务">
+          <el-select
+            v-model="todoForm.parentId"
+            placeholder="选择父任务（可选）"
+            clearable
+            :disabled="editingTodo && todos.some(t => t.parentId === editingTodo.id)"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="t in candidateParents"
+              :key="t.id"
+              :label="t.title"
+              :value="t.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="待办名称" required>
           <el-input v-model="todoForm.title" placeholder="请输入待办名称" />
         </el-form-item>
@@ -197,7 +135,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="预期积分值">
-          <el-input-number v-model="todoForm.expectedPoints" :min="0" :max="9999" :precision="0" placeholder="完成时奖励的积分" style="width: 100%" />
+          <el-input-number v-model="todoForm.expectedPoints" :min="-9999" :max="9999" :precision="0" placeholder="完成时奖励的积分（负数为扣减）" style="width: 100%" />
         </el-form-item>
         <el-form-item label="计划日期">
           <el-date-picker v-model="todoForm.plannedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" />
@@ -267,7 +205,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
 import { Plus, Edit, Delete, DocumentCopy } from '@element-plus/icons-vue'
@@ -278,6 +216,7 @@ import {
   getTodos, createTodo, updateTodo, deleteTodo as deleteTodoApi
 } from '../api'
 import { useAppStore } from '../stores/app'
+import TodoTree from '../components/TodoTree.vue'
 
 const route = useRoute()
 const store = useAppStore()
@@ -311,7 +250,6 @@ const goalForm = reactive({
 const todos = ref([])
 const todoDialogVisible = ref(false)
 const editingTodo = ref(null)
-const todoFilter = ref('pending')
 const todoForm = reactive({
   title: '',
   goalId: null,
@@ -319,7 +257,8 @@ const todoForm = reactive({
   priority: 'medium',
   expectedPoints: 0,
   plannedDate: '',
-  description: ''
+  description: '',
+  parentId: null
 })
 
 const todayStr = computed(() => {
@@ -350,7 +289,8 @@ const mapTodoFromApi = (t) => ({
   expectedPoints: t.expected_points,
   plannedDate: t.planned_date,
   description: t.description,
-  completed: t.completed === 1
+  completed: t.completed === 1,
+  parentId: t.parent_id ?? null
 })
 
 const fetchGoals = async () => {
@@ -377,28 +317,45 @@ const fetchTodos = async () => {
   }
 }
 
-const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
-const completedCount = computed(() => visibleTodos.value.filter(t => t.completed).length)
-
 // 全部目标页仅展示未归属孩子的目标；子页面展示该孩子的目标
 const visibleGoals = computed(() => {
   if (!childName.value) return goals.value.filter(g => !g.childId)
   return goals.value.filter(g => g.childId === currentChildId.value)
 })
 
-// 沿用现有行为：全部目标页展示所有待办，子页面仅展示该孩子的待办
+// 全部目标页仅展示未归属孩子的待办；子页面仅展示该孩子的待办
 const visibleTodos = computed(() => {
-  if (!childName.value) return todos.value
+  if (!childName.value) return todos.value.filter(t => !t.childId)
   return todos.value.filter(t => t.childId === currentChildId.value)
 })
 
-const filteredTodos = computed(() => {
-  if (todoFilter.value === 'pending') {
-    return visibleTodos.value.filter(t => !t.completed)
-  } else if (todoFilter.value === 'completed') {
-    return visibleTodos.value.filter(t => t.completed)
+// 可作为父任务的候选：根任务，且排除当前编辑任务自身及其子孙任务
+const candidateParents = computed(() => {
+  const editingId = editingTodo.value?.id
+  const descendants = new Set()
+  const walk = (id) => {
+    todos.value.filter(t => t.parentId === id).forEach(child => {
+      descendants.add(child.id)
+      walk(child.id)
+    })
   }
-  return visibleTodos.value
+  if (editingId) walk(editingId)
+  return todos.value.filter(t => {
+    if (t.parentId) return false
+    if (t.id === editingId) return false
+    if (descendants.has(t.id)) return false
+    // 只显示当前上下文下的任务：同孩子，且与所选目标分类一致
+    if (t.childId !== currentChildId.value) return false
+    if (todoForm.goalId && t.goalId !== todoForm.goalId) return false
+    return true
+  })
+})
+
+// 切换目标分类后，若已选父任务不在新的候选列表中，则自动清空
+watch(() => todoForm.goalId, () => {
+  if (todoForm.parentId && !candidateParents.value.some(t => t.id === todoForm.parentId)) {
+    todoForm.parentId = null
+  }
 })
 
 // ========== 目标功能 ==========
@@ -492,10 +449,6 @@ const deleteGoal = async (id) => {
 
 // ========== 待办功能 ==========
 
-const setTodoFilter = (filter) => {
-  todoFilter.value = filter
-}
-
 const toggleTodo = async (id) => {
   const todo = todos.value.find(t => t.id === id)
   if (!todo) return
@@ -530,13 +483,13 @@ const toggleTodo = async (id) => {
   }
 }
 
-const openTodoModal = (todo = null) => {
+const openTodoModal = (todo = null, parentTodo = null) => {
   if (todo) {
     editingTodo.value = todo
-    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '' })
+    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '', parentId: todo.parentId || null })
   } else {
     editingTodo.value = null
-    Object.assign(todoForm, { title: '', goalId: null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '' })
+    Object.assign(todoForm, { title: '', goalId: parentTodo?.goalId || null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '', parentId: parentTodo?.id || null })
   }
   todoDialogVisible.value = true
 }
@@ -553,7 +506,8 @@ const saveTodo = async () => {
     priority: todoForm.priority,
     expected_points: todoForm.expectedPoints || 0,
     planned_date: todoForm.plannedDate || null,
-    description: todoForm.description || null
+    description: todoForm.description || null,
+    parent_id: todoForm.parentId ?? null
   }
   try {
     let savedTodo
@@ -579,8 +533,12 @@ const saveTodo = async () => {
 }
 
 const deleteTodo = async (id) => {
+  const childCount = todos.value.filter(t => t.parentId === id).length
+  const confirmMsg = childCount > 0
+    ? `此待办包含 ${childCount} 个子任务，删除后将同时删除所有子任务。确认删除？`
+    : '确认删除此待办？'
   try {
-    await ElMessageBox.confirm('确认删除此待办？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm(confirmMsg, '提示', { type: 'warning' })
   } catch {
     return
   }
@@ -610,30 +568,6 @@ const cloneTodo = (todo) => {
 }
 
 // ========== 辅助函数 ==========
-
-const getGoalTitle = (goalId) => {
-  if (!goalId) return ''
-  const goal = goals.value.find(g => g.id === goalId)
-  return goal ? goal.title.substring(0, 8) + (goal.title.length > 8 ? '...' : '') : ''
-}
-
-const getGoalTagType = (goalId) => {
-  if (!goalId) return 'info'
-  const goal = goals.value.find(g => g.id === goalId)
-  if (!goal) return 'info'
-  const typeMap = { 'todo': 'success', 'rest': 'info', 'health': '', 'happy': 'warning', 'study': 'purple' }
-  return typeMap[goal.status] || 'info'
-}
-
-const getPriorityType = (priority) => {
-  const typeMap = { 'high': 'danger', 'medium': 'warning', 'low': 'success' }
-  return typeMap[priority] || 'info'
-}
-
-const getPriorityLabel = (priority) => {
-  const labelMap = { 'high': '高', 'medium': '中', 'low': '低' }
-  return labelMap[priority] || priority
-}
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
@@ -874,43 +808,8 @@ onMounted(async () => {
 }
 
 /* 待办区域 */
-.filter-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.filter-tab {
-  cursor: pointer;
-}
-
-.tab-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: var(--border);
-  border-radius: 9px;
-  font-size: 11px;
-  margin-left: 4px;
-}
-
 .todo-title-text {
   font-weight: 500;
-}
-
-.todo-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-}
-
-.todo-actions .el-button + .el-button {
-  margin-left: 0;
 }
 
 .todo-title-text.completed {

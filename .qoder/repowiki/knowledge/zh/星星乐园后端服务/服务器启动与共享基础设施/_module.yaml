@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: server/shared_infrastructure
+title: 服务器启动与共享基础设施
+scope:
+    - star-park/server/src/app.js
+    - star-park/server/src/database.js
+    - star-park/server/src/index.js
+    - star-park/server/src/seed.js
+source_files: []
+depends_on: []
+related_to: []

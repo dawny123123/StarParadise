@@ -170,6 +170,20 @@ try {
   }
 }
 
+// 迁移：给 todos 表添加 parent_id 字段（父子任务支持）
+try {
+  db.exec(`ALTER TABLE todos ADD COLUMN parent_id INTEGER REFERENCES todos(id)`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('parent_id 迁移失败:', err.message);
+    throw err;
+  }
+}
+// 索引：加速子任务查询
+try {
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_todos_parent_id ON todos(parent_id)`);
+} catch (err) { /* 忽略已存在 */ }
+
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */

@@ -20,6 +20,7 @@ api.interceptors.response.use(
 
 // ========== 孩子相关 ==========
 export const getChildren = () => api.get('/children')
+export const createChild = (data) => api.post('/children', data)
 
 // ========== 任务相关 ==========
 export const getTasks = (params) => api.get('/tasks', { params })

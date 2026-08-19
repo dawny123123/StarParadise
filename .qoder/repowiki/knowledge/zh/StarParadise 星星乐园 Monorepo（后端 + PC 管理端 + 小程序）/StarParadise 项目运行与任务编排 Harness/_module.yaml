@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: harness
-title: StarParadise 项目运行与任务编排 Harness
-scope:
-    - harness/
-source_files: []
-depends_on: []
-related_to: []

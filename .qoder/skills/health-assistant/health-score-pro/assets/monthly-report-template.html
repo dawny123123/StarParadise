@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif; background: #fff; color: #1a1a2e; padding: 36px 32px; width: 560px; line-height: 1.6; }
+.hero { text-align: center; padding: 24px 0 20px; }
+.hero h1 { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero .sub { font-size: 13px; color: #aaa; margin-top: 4px; }
+.hero-stats { display: flex; justify-content: space-around; margin-top: 24px; padding: 0 10px; }
+.hero-stat { text-align: center; }
+.hero-stat .num { font-size: 40px; font-weight: 900; line-height: 1; }
+.hero-stat .unit { font-size: 14px; font-weight: 600; margin-left: 2px; }
+.hero-stat .lbl { font-size: 11px; color: #999; margin-top: 6px; }
+.g1 { background: linear-gradient(135deg, #11998e, #38ef7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.g2 { background: linear-gradient(135deg, #f2994a, #f2c94c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.g3 { background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.sep { height: 1px; background: linear-gradient(90deg, transparent, #e8e8e8, transparent); margin: 20px 0; }
+.sec { margin-bottom: 20px; }
+.sec-h { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.sec-h .dot { width: 6px; height: 6px; border-radius: 50%; }
+.d1 { background: linear-gradient(135deg, #2193b0, #6dd5ed); }
+.d2 { background: linear-gradient(135deg, #11998e, #38ef7d); }
+.d3 { background: linear-gradient(135deg, #667eea, #764ba2); }
+.d5 { background: linear-gradient(135deg, #eb3349, #f45c43); }
+.sec-h h2 { font-size: 13px; font-weight: 700; color: #888; letter-spacing: 2px; }
+.mc { background: linear-gradient(135deg, #f7f8fa 0%, #eef1f5 100%); border-radius: 14px; padding: 4px 16px; margin-bottom: 10px; }
+.mr { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.mr:last-child { border-bottom: none; }
+.ml { font-size: 12px; color: #888; }
+.mv { font-size: 15px; font-weight: 700; }
+.ms { font-size: 10px; color: #aaa; margin-left: 4px; }
+.cb { background: #f7f8fa; border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+.ct { font-size: 11px; color: #aaa; margin-bottom: 8px; }
+.hm { display: flex; gap: 2px; flex-wrap: wrap; }
+.hc { width: 15px; height: 15px; border-radius: 3px; }
+.h0 { background: #f0f0f0; } .h1 { background: #c8e6c9; } .h2 { background: #66bb6a; } .h3 { background: #ffa726; } .h4 { background: #ef5350; }
+.nr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.nn { font-size: 12px; color: #888; width: 42px; }
+.nb { flex: 1; height: 20px; background: #e8e8e8; border-radius: 10px; overflow: hidden; }
+.nf { height: 100%; border-radius: 10px; display: flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 700; color: #fff; }
+.nt { font-size: 11px; color: #bbb; width: 50px; text-align: right; }
+.ng { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 3px; width: 36px; text-align: center; }
+.tg-h { background: rgba(239,83,80,0.1); color: #ef5350; }
+.tg-l { background: rgba(33,147,176,0.1); color: #2193b0; }
+.fg { background: linear-gradient(90deg, #11998e, #38ef7d); }
+.fb { background: linear-gradient(90deg, #2193b0, #6dd5ed); }
+.fo { background: linear-gradient(90deg, #f2994a, #f2c94c); }
+.fr { background: linear-gradient(90deg, #eb3349, #f45c43); }
+.fp { background: linear-gradient(90deg, #667eea, #764ba2); }
+.fc { background: linear-gradient(90deg, #00838f, #26c6da); }
+.er { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+.el { font-size: 11px; min-width: 62px; padding: 2px 6px; border-radius: 5px; color: #fff; font-weight: 600; text-align: center; }
+.eb { flex: 1; height: 16px; background: #e8e8e8; border-radius: 8px; overflow: hidden; }
+.ef { height: 100%; border-radius: 8px; }
+.ed { font-size: 11px; color: #888; min-width: 90px; text-align: right; }
+.tg { color: #11998e; } .tr { color: #ef5350; } .to { color: #f2994a; } .tb { color: #2193b0; } .tp { color: #667eea; }
+
+/* 总结+亮点 横排 */
+.summary-card { background: linear-gradient(135deg, #f7f8fa 0%, #eef1f5 100%); border-radius: 14px; padding: 14px; }
+.sum-row { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 10px; }
+.sum-item { flex: 1; text-align: center; padding: 8px 2px; background: #fff; border-radius: 10px; }
+.sum-item .ic { font-size: 16px; }
+.sum-item .sv { font-size: 16px; font-weight: 800; margin-top: 2px; }
+.sum-item .sl { font-size: 9px; color: #aaa; margin-top: 2px; }
+.hl-row { display: flex; gap: 6px; }
+.hl { flex: 1; background: #fff; border-radius: 10px; padding: 10px 8px; text-align: center; }
+.hl .t { font-size: 9px; color: #aaa; }
+.hl .d { font-size: 10px; color: #667eea; }
+.hl .v { font-size: 15px; font-weight: 800; margin-top: 1px; }
+.hl .ds { font-size: 9px; color: #aaa; margin-top: 1px; }
+
+.adv { background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%); border-radius: 14px; padding: 18px; margin-top: 16px; }
+.adv-t { font-size: 13px; font-weight: 700; margin-bottom: 12px; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.adv-block { margin-bottom: 14px; }
+.adv-block:last-child { margin-bottom: 0; }
+.adv-head { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.adv-head .badge { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; color: #fff; }
+.badge-red { background: #ef5350; } .badge-orange { background: #f2994a; } .badge-green { background: #11998e; }
+.adv-body { font-size: 11px; color: #555; line-height: 1.6; padding-left: 2px; }
+.adv-body b { color: #333; }
+.adv-metric { display: inline-block; background: rgba(102,126,234,0.08); padding: 1px 6px; border-radius: 3px; font-weight: 600; color: #667eea; font-size: 10px; margin: 0 2px; }
+.ft { margin-top: 16px; text-align: center; font-size: 9px; color: #ccc; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>健康月报</h1>
+  <div class="sub">2026年6月 · 30天</div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num g1">-1.1<span class="unit">kg</span></div><div class="lbl">体重变化</div></div>
+    <div class="hero-stat"><div class="num g2">2,406</div><div class="lbl">日均热量 kcal</div></div>
+    <div class="hero-stat"><div class="num g3">19.5<span class="unit">h</span></div><div class="lbl">运动时长</div></div>
+  </div>
+</div>
+<div class="sep"></div>
+
+<!-- 体重 -->
+<div class="sec">
+  <div class="sec-h"><div class="dot d1"></div><h2>体重</h2></div>
+  <div class="mc">
+    <div class="mr"><span class="ml">月初 → 月末</span><span><span class="mv">86.6</span><span class="ms">→</span><span class="mv tg">85.5</span><span class="ms">kg</span></span></div>
+    <div class="mr"><span class="ml">变化</span><span class="mv tg">-1.1 kg</span></div>
+    <div class="mr"><span class="ml">最低 / 最高</span><span><span class="mv tb">84.75</span><span class="ms">/</span><span class="mv to">86.8</span><span class="ms">kg</span></span></div>
+    <div class="mr"><span class="ml">记录天数</span><span class="mv">28<span class="ms">/ 30天 (93%)</span></span></div>
+  </div>
+  <div class="cb">
+    <div class="ct">近7天趋势</div>
+    <svg viewBox="0 0 480 50" style="width:100%;height:50px">
+      <line x1="0" y1="10" x2="480" y2="10" stroke="#e8e8e8" stroke-width="0.5"/>
+      <line x1="0" y1="25" x2="480" y2="25" stroke="#e8e8e8" stroke-width="0.5"/>
+      <line x1="0" y1="40" x2="480" y2="40" stroke="#e8e8e8" stroke-width="0.5"/>
+      <text x="0" y="49" fill="#ccc" font-size="8">24</text><text x="80" y="49" fill="#ccc" font-size="8">25</text><text x="160" y="49" fill="#ccc" font-size="8">26</text><text x="240" y="49" fill="#ccc" font-size="8">27</text><text x="320" y="49" fill="#ccc" font-size="8">28</text><text x="400" y="49" fill="#ccc" font-size="8">29</text><text x="460" y="49" fill="#ccc" font-size="8">30</text>
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2193b0"/><stop offset="100%" stop-color="#6dd5ed"/></linearGradient><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2193b0" stop-opacity="0.2"/><stop offset="100%" stop-color="#6dd5ed" stop-opacity="0"/></linearGradient></defs>
+      <polygon fill="url(#ag)" points="30,8 95,26 160,44 225,35 290,35 355,17 420,20 420,44 30,44"/>
+      <polyline fill="none" stroke="url(#lg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="30,8 95,26 160,44 225,35 290,35 355,17 420,20"/>
+      <circle cx="30" cy="8" r="3" fill="#2193b0"/><circle cx="160" cy="44" r="3" fill="#11998e"/><circle cx="420" cy="20" r="3" fill="#6dd5ed"/>
+      <text x="160" y="40" fill="#11998e" font-size="8" text-anchor="middle" font-weight="700">84.75</text>
+    </svg>
+  </div>
+</div>
+<div class="sep"></div>
+
+<!-- 运动 -->
+<div class="sec">
+  <div class="sec-h"><div class="dot d3"></div><h2>运动</h2></div>
+  <div class="mc">
+    <div class="mr"><span class="ml">训练天数 / 次数</span><span><span class="mv tp">14天</span><span class="ms">/</span><span class="mv">15次</span></span></div>
+    <div class="mr"><span class="ml">总时长 / 消耗</span><span><span class="mv">19.5h</span><span class="ms">/</span><span class="mv to">6,838 kcal</span></span></div>
+    <div class="mr"><span class="ml">总容量</span><span class="mv">66t</span></div>
+  </div>
+  <div class="cb">
+    <div class="ct">运动分类</div>
+    <div class="er"><span class="el" style="background:linear-gradient(90deg,#11998e,#38ef7d);">篮球</span><div class="eb"><div class="ef fg" style="width:100%"></div></div><span class="ed">6.0h / 3,249kcal</span></div>
+    <div class="er"><span class="el" style="background:linear-gradient(90deg,#667eea,#764ba2);">背部</span><div class="eb"><div class="ef fp" style="width:72%"></div></div><span class="ed">4.5h / 1,168kcal</span></div>
+    <div class="er"><span class="el" style="background:linear-gradient(90deg,#2193b0,#6dd5ed);">胸肩</span><div class="eb"><div class="ef fb" style="width:68%"></div></div><span class="ed">4.1h / 933kcal</span></div>
+    <div class="er"><span class="el" style="background:linear-gradient(90deg,#00838f,#26c6da);">腿+有氧</span><div class="eb"><div class="ef fc" style="width:47%"></div></div><span class="ed">2.4h / 624kcal</span></div>
+    <div class="er"><span class="el" style="background:linear-gradient(90deg,#f2994a,#f2c94c);">康复</span><div class="eb"><div class="ef fo" style="width:39%"></div></div><span class="ed">2.0h / 400kcal</span></div>
+    <div class="er"><span class="el" style="background:#bbb;">其他</span><div class="eb"><div class="ef" style="width:20%;background:#ccc;"></div></div><span class="ed">1.2h / 472kcal</span></div>
+  </div>
+</div>
+<div class="sep"></div>
+
+<!-- 饮食 -->
+<div class="sec">
+  <div class="sec-h"><div class="dot d2"></div><h2>饮食</h2></div>
+  <div class="cb">
+    <div class="ct">每日热量热力图</div>
+    <div class="hm">
+      <div class="hc h2"></div><div class="hc h1"></div><div class="hc h2"></div><div class="hc h4"></div><div class="hc h3"></div>
+      <div class="hc h4"></div><div class="hc h3"></div><div class="hc h1"></div><div class="hc h2"></div><div class="hc h1"></div>
+      <div class="hc h3"></div><div class="hc h2"></div><div class="hc h4"></div><div class="hc h3"></div><div class="hc h1"></div>
+      <div class="hc h3"></div><div class="hc h3"></div><div class="hc h4"></div><div class="hc h4"></div><div class="hc h2"></div>
+      <div class="hc h4"></div><div class="hc h3"></div><div class="hc h1"></div><div class="hc h2"></div><div class="hc h3"></div>
+      <div class="hc h2"></div><div class="hc h0"></div><div class="hc h2"></div><div class="hc h3"></div><div class="hc h1"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;font-size:9px;color:#bbb;">
+      <span><span style="display:inline-block;width:8px;height:8px;background:#f0f0f0;border-radius:2px;vertical-align:middle;"></span>无</span>
+      <span><span style="display:inline-block;width:8px;height:8px;background:#c8e6c9;border-radius:2px;vertical-align:middle;"></span>&lt;1800</span>
+      <span><span style="display:inline-block;width:8px;height:8px;background:#66bb6a;border-radius:2px;vertical-align:middle;"></span>达标</span>
+      <span><span style="display:inline-block;width:8px;height:8px;background:#ffa726;border-radius:2px;vertical-align:middle;"></span>2500+</span>
+      <span><span style="display:inline-block;width:8px;height:8px;background:#ef5350;border-radius:2px;vertical-align:middle;"></span>&gt;3000</span>
+    </div>
+  </div>
+  <div class="cb">
+    <div class="ct">日均营养</div>
+    <div class="nr"><span class="nn">热量</span><div class="nb"><div class="nf fo" style="width:100%">2,406</div></div><span class="nt">/2000</span><span class="ng tg-h">超标</span></div>
+    <div class="nr"><span class="nn">蛋白</span><div class="nb"><div class="nf fb" style="width:83%">141g</div></div><span class="nt">/170g</span><span class="ng tg-l">不足</span></div>
+    <div class="nr"><span class="nn">碳水</span><div class="nb"><div class="nf fo" style="width:100%">209g</div></div><span class="nt">/170g</span><span class="ng tg-h">超标</span></div>
+    <div class="nr"><span class="nn">脂肪</span><div class="nb"><div class="nf fr" style="width:100%">108g</div></div><span class="nt">/65g</span><span class="ng tg-h">超标</span></div>
+  </div>
+</div>
+<div class="sep"></div>
+
+<!-- 总结与亮点 横排 -->
+<div class="sec">
+  <div class="sec-h"><div class="dot d5"></div><h2>总结与亮点</h2></div>
+  <div class="summary-card">
+    <div class="sum-row">
+      <div class="sum-item"><div class="ic">⚖️</div><div class="sv tg">-1.1</div><div class="sl">体重kg</div></div>
+      <div class="sum-item"><div class="ic">🔥</div><div class="sv to">+406</div><div class="sl">热量超标</div></div>
+      <div class="sum-item"><div class="ic">💪</div><div class="sv tb">-29g</div><div class="sl">蛋白缺口</div></div>
+      <div class="sum-item"><div class="ic">🏃</div><div class="sv tp">14天</div><div class="sl">运动</div></div>
+      <div class="sum-item"><div class="ic">💊</div><div class="sv tg">90%</div><div class="sl">补剂</div></div>
+      <div class="sum-item"><div class="ic">📝</div><div class="sv tg">100%</div><div class="sl">记录</div></div>
+    </div>
+    <div class="hl-row">
+      <div class="hl"><div class="t">最佳日</div><div class="d">6月9日</div><div class="v tg">2,125kcal</div><div class="ds">蛋白182g+胸肩</div></div>
+      <div class="hl"><div class="t">最差日</div><div class="d">6月19日</div><div class="v tr">5,145kcal</div><div class="ds">脂肪281g</div></div>
+      <div class="hl"><div class="t">最轻</div><div class="d">6月26日</div><div class="v tg">84.75kg</div><div class="ds">月内最低</div></div>
+      <div class="hl"><div class="t">最猛</div><div class="d">6月13日</div><div class="v tp">1,373kcal</div><div class="ds">篮球2h</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 专业建议 -->
+<div class="adv">
+  <div class="adv-t">7月干预方案</div>
+  <div class="adv-block">
+    <div class="adv-head"><span class="badge badge-red">P0</span> 脂肪摄入超标 +65%</div>
+    <div class="adv-body">月均 <span class="adv-metric">108g/天</span>，目标 ≤65g。主因：聚餐日红烧/油炸占比过高（6/19脂肪281g、6/4脂肪193g）。<br><b>执行方案：</b>聚餐前锁定一道清蒸/白灼蛋白源，其余选绿叶菜+粗粮，避免连续两天高脂。烹饪日用油 <span class="adv-metric">≤15g/餐</span>。</div>
+  </div>
+  <div class="adv-block">
+    <div class="adv-head"><span class="badge badge-orange">P1</span> 蛋白质缺口 -29g/天</div>
+    <div class="adv-body">月均 <span class="adv-metric">141g/天</span>，目标 170g（2.0g/kg）。仅53%天数达标。<br><b>执行方案：</b>每餐蛋白基线——早 ≥30g（蛋2+奶/蛋白粉）、午 ≥50g（肉/鱼200g）、晚 ≥60g。训练后30min内补 <span class="adv-metric">乳清蛋白1勺(25g)</span>。</div>
+  </div>
+  <div class="adv-block">
+    <div class="adv-head"><span class="badge badge-orange">P1</span> 热量盈余 +406kcal/天</div>
+    <div class="adv-body">月均摄入 <span class="adv-metric">2,406kcal</span>，TDEE约2,580kcal，训练抵消部分后实际盈余 <span class="adv-metric">+230kcal/天</span>。月减1.1kg中约0.5kg为水分波动。<br><b>执行方案：</b>非聚餐日控 <span class="adv-metric">1,800-2,000kcal</span>，为聚餐预留200-300kcal额度。目标月减纯脂 2kg。</div>
+  </div>
+  <div class="adv-block">
+    <div class="adv-head"><span class="badge badge-green">OK</span> 运动量达标，优化结构</div>
+    <div class="adv-body">14天/30天（47%），篮球占比最高（6h/3,249kcal），力量分布合理。<br><b>优化：</b>腿训仅2.4h偏少，7月增至 <span class="adv-metric">≥4h</span>（最大肌群，基础代谢提升最显著）。篮球保持每周1-2次，力量提升至每周4次。</div>
+  </div>
+  <div class="adv-block">
+    <div class="adv-head">🎯 7月目标</div>
+    <div class="adv-body">体重 <span class="adv-metric">≤83.5kg</span> · 蛋白达标率 <span class="adv-metric">≥60%</span> · 脂肪 ≤80g/天 · 腿训 ≥4h · 运动 <span class="adv-metric">≥16天</span></div>
+  </div>
+</div>
+
+<div class="ft">2026-06-30 · 627条记录 · 小虾健康管家</div>
+</body>
+</html>

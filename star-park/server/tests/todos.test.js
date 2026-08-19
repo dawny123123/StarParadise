@@ -217,4 +217,125 @@ describe('Todos API', () => {
       expect(res.body).toHaveProperty('error');
     });
   });
+
+  describe('父子任务', () => {
+    it('创建子任务 → 201，且继承父任务 child_id', async () => {
+      const parent = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '父任务'
+      });
+      expect(parent.status).toBe(201);
+
+      const child = await agent.post('/api/todos').send({
+        parent_id: parent.body.id,
+        title: '子任务'
+      });
+      expect(child.status).toBe(201);
+      expect(child.body.parent_id).toBe(parent.body.id);
+      expect(child.body.child_id).toBe(ids.child1Id);
+    });
+
+    it('parent_id 引用不存在的任务 → 400', async () => {
+      const res = await agent.post('/api/todos').send({
+        parent_id: 99999,
+        title: '孤儿任务'
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('父任务不存在');
+    });
+
+    it('禁止二级嵌套 → 400', async () => {
+      const parentA = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '父任务A'
+      });
+      const childB = await agent.post('/api/todos').send({
+        parent_id: parentA.body.id,
+        title: '子任务B'
+      });
+      expect(childB.status).toBe(201);
+
+      const childC = await agent.post('/api/todos').send({
+        parent_id: childB.body.id,
+        title: '子任务C'
+      });
+      expect(childC.status).toBe(400);
+      expect(childC.body.error).toContain('不支持多级嵌套');
+    });
+
+    it('GET 过滤 parent_id 参数', async () => {
+      const parent = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '父任务'
+      });
+      await agent.post('/api/todos').send({
+        parent_id: parent.body.id,
+        title: '子任务1'
+      });
+      await agent.post('/api/todos').send({
+        parent_id: parent.body.id,
+        title: '子任务2'
+      });
+
+      // 按 parent_id 筛选子任务
+      const children = await agent.get(`/api/todos?parent_id=${parent.body.id}`);
+      expect(children.status).toBe(200);
+      expect(children.body).toHaveLength(2);
+      expect(children.body.every(t => t.parent_id === parent.body.id)).toBe(true);
+
+      // parent_id=null 仅返回顶级任务
+      const topLevel = await agent.get('/api/todos?parent_id=null');
+      expect(topLevel.status).toBe(200);
+      expect(topLevel.body.every(t => t.parent_id === null)).toBe(true);
+      expect(topLevel.body.some(t => t.title === '父任务')).toBe(true);
+    });
+
+    it('PUT 设置/清除 parent_id', async () => {
+      const taskA = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '任务A'
+      });
+      const taskB = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '任务B'
+      });
+
+      // 设置 parent_id：B 成为 A 的子任务
+      const setParent = await agent.put(`/api/todos/${taskB.body.id}`).send({
+        parent_id: taskA.body.id
+      });
+      expect(setParent.status).toBe(200);
+      expect(setParent.body.parent_id).toBe(taskA.body.id);
+
+      // 清除 parent_id：B 恢复为独立任务
+      const clearParent = await agent.put(`/api/todos/${taskB.body.id}`).send({
+        parent_id: null
+      });
+      expect(clearParent.status).toBe(200);
+      expect(clearParent.body.parent_id).toBeNull();
+    });
+
+    it('DELETE 父任务级联删除子任务', async () => {
+      const parent = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '待删父任务'
+      });
+      await agent.post('/api/todos').send({
+        parent_id: parent.body.id,
+        title: '待删子任务1'
+      });
+      await agent.post('/api/todos').send({
+        parent_id: parent.body.id,
+        title: '待删子任务2'
+      });
+
+      const del = await agent.delete(`/api/todos/${parent.body.id}`);
+      expect(del.status).toBe(200);
+      expect(del.body.children_deleted).toBe(2);
+
+      // 确认所有任务都被删除
+      const list = await agent.get('/api/todos');
+      expect(list.body).toHaveLength(0);
+    });
+  });
 });

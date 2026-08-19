@@ -184,8 +184,9 @@
 |------|------|------|------|
 | child_id | number | 否 | 按孩子筛选 |
 | goal_id | number | 否 | 按关联目标筛选 |
+| parent_id | number/null | 否 | 按父任务ID筛选子任务。传 `null` 查询顶级任务（无父任务的待办） |
 
-> 两个筛选参数可同时传入，为 AND 关系。
+> 筛选参数可同时传入，为 AND 关系。
 
 #### 响应字段说明
 
@@ -193,6 +194,7 @@
 |------|------|------|
 | goal_id | number 或 null | 关联目标，`null` 表示未关联 |
 | child_id | number 或 null | 归属孩子，`null` 表示全局待办 |
+| parent_id | integer 或 null | 父任务ID，`null` 表示顶级任务 |
 | priority | string | 优先级：`high` / `medium` / `low` |
 | expected_points | number | 完成时奖励的预期积分 |
 | planned_date | string 或 null | 计划日期，格式 `YYYY-MM-DD` |
@@ -210,6 +212,7 @@
 | title | string | 是 | 待办名称 |
 | goal_id | number | 否 | 关联目标 ID，不传为 null |
 | child_id | number | 否 | 归属孩子 ID，不传为 null |
+| parent_id | integer | 否 | 父任务ID。设置后该待办成为指定任务的子任务。限制：父任务本身不能是子任务（仅支持单层嵌套）。子任务会自动继承父任务的 `child_id` |
 | creator | string | 否 | 创建人 |
 | priority | string | 否 | 优先级（默认 `medium`） |
 | expected_points | number | 否 | 预期积分（默认 0） |
@@ -221,13 +224,13 @@
 
 - **路径**: `/api/todos/:id`
 - **方法**: PUT
-- **说明**: 部分更新，未出现在请求体中的字段保持原值。`goal_id`、`child_id`、`planned_date`、`description` 显式传 `null` 表示清空；`expected_points` 显式传 `0` 表示置零；`completed` 可切换完成状态。待办不存在返回 404
+- **说明**: 部分更新，未出现在请求体中的字段保持原值。`goal_id`、`child_id`、`planned_date`、`description` 显式传 `null` 表示清空；`expected_points` 显式传 `0` 表示置零；`completed` 可切换完成状态；`parent_id` (integer|null, 可选) 设置或清除父任务关联，传 `null` 表示清除。待办不存在返回 404
 
 ### 删除待办
 
 - **路径**: `/api/todos/:id`
 - **方法**: DELETE
-- **说明**: 待办不存在返回 404
+- **说明**: 待办不存在返回 404。删除父任务时会自动级联删除其所有子任务。响应包含 `children_deleted` 字段表示被级联删除的子任务数量
 
 ### 获取打卡记录
 

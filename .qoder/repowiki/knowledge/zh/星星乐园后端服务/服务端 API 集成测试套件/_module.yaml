@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: server/tests
+title: 服务端 API 集成测试套件
+scope:
+    - star-park/server/tests/
+source_files: []
+depends_on: []
+related_to: []

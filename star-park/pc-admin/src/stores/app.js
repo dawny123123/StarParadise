@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { getChildren } from '../api'
+import { getChildren, createChild } from '../api'
 
 export const useAppStore = defineStore('app', () => {
   // 孩子列表
@@ -15,16 +15,31 @@ export const useAppStore = defineStore('app', () => {
     return children.value.find(c => c.id === currentChildId.value) || null
   })
 
-  // 孩子颜色映射
-  const childColors = {
+  // 孩子颜色映射（预设）
+  const childColorMap = {
     '甜甜': '#FF6B6B',
     '甄甄': '#4ECDC4',
     '欣甜': '#FFD93D'
   }
 
-  // 获取孩子颜色
+  // 颜色池：用于动态分配给新成员
+  const colorPool = [
+    '#FF6B6B', '#4ECDC4', '#FFD93D', '#A78BFA',
+    '#F97316', '#06B6D4', '#EC4899', '#84CC16'
+  ]
+
+  // 获取孩子颜色：优先匹配预设映射，否则按索引轮换分配
   const getChildColor = (childName) => {
-    return childColors[childName] || '#19C8B9'
+    if (childColorMap[childName]) return childColorMap[childName]
+    const idx = children.value.findIndex(c => c.name === childName)
+    if (idx >= 0) return colorPool[idx % colorPool.length]
+    return '#19C8B9'
+  }
+
+  // 添加新成员
+  const addChild = async (data) => {
+    await createChild(data)
+    await fetchChildren()
   }
 
   // 获取孩子列表
@@ -53,9 +68,10 @@ export const useAppStore = defineStore('app', () => {
     currentChildId,
     currentChild,
     loading,
-    childColors,
+    colorPool,
     getChildColor,
     fetchChildren,
-    setCurrentChild
+    setCurrentChild,
+    addChild
   }
 })

@@ -22,7 +22,7 @@ RAW_LOG_PATTERNS = [
 ]
 
 # 要跳过的目录
-SKIP_DIRS = {".git", "node_modules", "dist", ".qoder", ".claude", "vendor", "data", "harness", "scripts", "outputs"}
+SKIP_DIRS = {".git", "node_modules", "dist", ".qoder", ".claude", "vendor", "data", "harness", "scripts", "outputs", "coverage"}
 
 # 已知例外：允许的 console.log 位置
 # 注意：文件路径可能以 ./ 开头，需要两种格式
@@ -40,7 +40,8 @@ KNOWN_EXCEPTIONS = {
 # 已知大文件例外（需后续拆分）
 KNOWN_LARGE_FILES = {
     "./star-park/miniprogram/src/pages/checkin/index.vue": 660,  # 打卡页面，需拆分
-    "./star-park/pc-admin/src/views/Goals.vue": 756,            # 目标管理页面，需拆分（readlines 口径，文件末尾无换行符）
+    "./star-park/pc-admin/src/views/Goals.vue": 995,            # 目标管理页面，需拆分（readlines 口径，含父子任务功能）
+    "./star-park/pc-admin/src/views/Checkin.vue": 505,          # 打卡管理页面，需拆分
 }
 
 

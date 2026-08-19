@@ -3,25 +3,11 @@ schema_version: 1
 locale: zh-CN
 branch: main
 nodes_managed: true
-exported_at: "2026-08-01T07:54:23Z"
+exported_at: "2026-08-10T03:18:50Z"
 modules:
-    "":
-        dir_name: StarParadise 星星乐园 Monorepo（后端 + PC 管理端 + 小程序）
-        title: StarParadise 星星乐园 Monorepo（后端 + PC 管理端 + 小程序）
-        scope: []
-        source_files: []
-        children:
-            - docs
-            - harness
-            - scripts
-            - star_park_miniprogram
-            - star_park_pc_admin
-            - star_park_server
-        depends_on: []
-        related_to: []
     docs:
-        dir_name: StarParadise 项目文档与可执行需求规范
-        title: StarParadise 项目文档与可执行需求规范
+        dir_name: 项目文档与执行规范（设计文档、架构说明、API 文档、开发指南）
+        title: 项目文档与执行规范（设计文档、架构说明、API 文档、开发指南）
         scope:
             - docs/
         source_files: []
@@ -29,89 +15,70 @@ modules:
         depends_on: []
         related_to: []
     harness:
-        dir_name: StarParadise 项目运行与任务编排 Harness
-        title: StarParadise 项目运行与任务编排 Harness
+        dir_name: StarPark 全栈功能验证与任务编排 Harness
+        title: StarPark 全栈功能验证与任务编排 Harness
         scope:
             - harness/
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    scripts:
-        dir_name: 开发期验证与质量检查脚本集
-        title: 开发期验证与质量检查脚本集
-        scope:
-            - scripts/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: star_park_server
-    star_park_miniprogram:
-        dir_name: 星星乐园小程序（UniApp 多端应用）
-        title: 星星乐园小程序（UniApp 多端应用）
+    miniprogram:
+        dir_name: 星星乐园小程序（孩子打卡与奖励消费端）
+        title: 星星乐园小程序（孩子打卡与奖励消费端）
         scope:
             - star-park/miniprogram/
         source_files: []
-        children:
-            - star_park_miniprogram/core_features
-            - star_park_miniprogram/shared_infra
-            - star_park_miniprogram/user_assets
-        depends_on: []
-        related_to: []
-    star_park_miniprogram/core_features:
-        dir_name: 核心功能页面（首页仪表盘、打卡执行、记录查询）
-        title: 核心功能页面（首页仪表盘、打卡执行、记录查询）
-        scope:
-            - star-park/miniprogram/src/pages/index/
-            - star-park/miniprogram/src/pages/checkin/
-            - star-park/miniprogram/src/pages/records/
-        source_files: []
         children: []
         depends_on: []
         related_to: []
-    star_park_miniprogram/shared_infra:
-        dir_name: 小程序共享基础设施与通用组件
-        title: 小程序共享基础设施与通用组件
-        scope:
-            - star-park/miniprogram/src/api/
-            - star-park/miniprogram/src/components/
-            - star-park/miniprogram/src/static/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: star_park_server
-    star_park_miniprogram/user_assets:
-        dir_name: 用户资产与个人中心模块
-        title: 用户资产与个人中心模块
-        scope:
-            - star-park/miniprogram/src/pages/wallet/
-            - star-park/miniprogram/src/pages/rewards/
-            - star-park/miniprogram/src/pages/profile/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    star_park_pc_admin:
-        dir_name: 星星乐园 PC 端管理后台（Vue3 + Vite）
-        title: 星星乐园 PC 端管理后台（Vue3 + Vite）
+    pc_admin:
+        dir_name: 家长端 PC 管理后台（Star Park Admin）
+        title: 家长端 PC 管理后台（Star Park Admin）
         scope:
             - star-park/pc-admin/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: star_park_server
-    star_park_server:
-        dir_name: 星星乐园后端服务（Express + SQLite REST API）
-        title: 星星乐园后端服务（Express + SQLite REST API）
+        related_to: []
+    scripts:
+        dir_name: 构建与质量验证脚本集
+        title: 构建与质量验证脚本集
         scope:
-            - star-park/server/
+            - scripts/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: scripts
-            - path: star_park_miniprogram/shared_infra
-            - path: star_park_pc_admin
+        related_to: []
+    server:
+        dir_name: 星星乐园后端服务
+        title: 星星乐园后端服务
+        scope:
+            - star-park/server/
+        source_files: []
+        children:
+            - server/shared_infrastructure
+            - server/tests
+        depends_on: []
+        related_to: []
+    server/shared_infrastructure:
+        dir_name: 服务器启动与共享基础设施
+        title: 服务器启动与共享基础设施
+        scope:
+            - star-park/server/src/app.js
+            - star-park/server/src/database.js
+            - star-park/server/src/index.js
+            - star-park/server/src/seed.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    server/tests:
+        dir_name: 服务端 API 集成测试套件
+        title: 服务端 API 集成测试套件
+        scope:
+            - star-park/server/tests/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
