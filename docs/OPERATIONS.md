@@ -46,14 +46,22 @@ npm run start:mini      # 小程序 H5
 
 ### 1.3 CI/CD 流水线
 
-流水线名称 **star-park-nodejs-cicd**，触发方式：`main` 分支推送自动触发。
+流水线名称 **star-park-nodejs-cicd**（云效 Flow ID `5212797`），定义版本化于
+`.flow/star-park-nodejs-cicd.yml`。
 
-| 阶段 | 内容 | 卡点 |
-|------|------|------|
-| 代码检查 | 架构分层 lint + 代码质量 lint（`scripts/lint-*.py`） | 失败即中断 |
-| 单元测试 | `vitest run --coverage`（行覆盖率阈值 80%） | 失败即中断 |
-| 构建 | `npm ci` 干净安装 + pc-admin `vite build` + 打包制品 | 失败即中断 |
-| 部署 | 主机部署 → `deploy/deploy.sh` → 健康检查 | 健康检查失败自动回滚 |
+| 阶段 | 内容 | 卡点 | 状态 |
+|------|------|------|------|
+| 代码检查 | 架构分层 lint + 代码质量 lint（`scripts/lint-*.py`） | 失败即中断 | 已验证通过 |
+| 单元测试 | `vitest run --coverage`（行覆盖率阈值 80%） | 失败即中断 | 已验证通过 |
+| 构建 | `npm ci` 干净安装 + pc-admin `vite build` + 打包制品 | 失败即中断 | 已验证通过 |
+| 部署 | 主机部署 → `deploy/deploy.sh` → 健康检查 | 健康检查失败自动回滚 | **未接入** |
+
+> **部署阶段未接入的原因**：VMDeploy 组件的 `machineGroup` 只接受机器组 **uuid**，
+> 而 OpenAPI（`GetHostGroup`）只返回数字 id `359190`，不返回 uuid。
+> 需从 Flow 控制台主机组页面 URL 取 uuid 后补入 `deploy_stage`。
+>
+> **触发分支**：当前临时指向 `feat/nodejs-cicd-pipeline` 用于验证，
+> 合并后需改回 `main` 并开启推送触发。
 
 本地等价校验命令：
 
@@ -65,6 +73,19 @@ cd star-park/pc-admin && npm ci && npm run build          # 前端构建
 
 > 依赖目录 `node_modules/` 不入库。CI 必须执行 `npm ci` 干净安装，
 > 因为提交历史中曾包含 macOS arm64 原生二进制，复用会导致 Linux 构建失败。
+
+#### 1.3.1 云效公共构建镜像的硬约束
+
+云效北京公共构建集群镜像为 **Ubuntu 16.04**，以下三点是实测结论，修改流水线前务必确认：
+
+| 约束 | 影响 | 应对 |
+|------|------|------|
+| 只有 Python 3.5（apt 无更高版本、无 docker、pypi 不可达） | lint 脚本用 f-string 会直接语法错误 | `scripts/lint-*.py` 必须保持 3.5 兼容，用 `str.format()` |
+| NodeBuild 的 `version` 字段不生效，默认 Node 14.8.0 | npm 6 无法解析 `lockfileVersion 3` | 步骤内用镜像自带 nvm 显式 `nvm install 20` 并校验主版本 |
+| g++ 5.4 不支持 `-std=c++20`，且 GitHub Releases 超时 | better-sqlite3 无法源码编译，prebuild 下载失败 | `npm ci --ignore-scripts` + 从 npmmirror 取对应 ABI 的预编译产物 |
+
+> 自定义构建镜像（`runsOn.container`）无法通过 OpenAPI 配置——传该字段
+> `UpdatePipeline` 会直接返回 system error，只能在控制台设置。
 
 ### 1.4 服务管理与回滚
 

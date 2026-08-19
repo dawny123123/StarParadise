@@ -109,11 +109,33 @@ trap rollback ERR
 rm -rf "${RELEASE_DIR}/server/data"
 ln -sfn "${SHARED_DIR}/data" "${RELEASE_DIR}/server/data"
 
-# ---------- 5. 安装生产依赖（在目标机重编译 better-sqlite3 原生模块） ----------
+# ---------- 5. 安装生产依赖 ----------
+# 目标机没有 g++，better-sqlite3 一旦回退源码编译必然失败，
+# 因此失败时改用预编译产物（ABI 与 CI 构建机一致，均为 Node 20 / ABI 115）。
 log "安装生产依赖..."
 cd "${RELEASE_DIR}/server"
-npm ci --omit=dev --no-audit --no-fund
-node -e "require('better-sqlite3'); console.log('better-sqlite3 原生模块加载 OK')"
+
+BS3_MIRROR="https://registry.npmmirror.com/-/binary/better-sqlite3"
+
+install_bs3_prebuild() {
+  local abi bsv url
+  abi="$(node -p 'process.versions.modules')"
+  bsv="$(node -p "require('./node_modules/better-sqlite3/package.json').version")"
+  url="${BS3_MIRROR}/v${bsv}/better-sqlite3-v${bsv}-node-v${abi}-linux-x64.tar.gz"
+  log "获取 better-sqlite3 预编译产物: ${url}"
+  curl -fsSL --retry 3 --retry-delay 2 -o "${UNPACK_DIR}/bs3.tar.gz" "$url" \
+    || fail "预编译产物下载失败，且目标机无编译工具链: ${url}"
+  tar -xzf "${UNPACK_DIR}/bs3.tar.gz" -C node_modules/better-sqlite3
+}
+
+if ! npm ci --omit=dev --no-audit --no-fund; then
+  log "npm ci 失败（大概率为原生模块编译），改用 --ignore-scripts + 预编译产物"
+  rm -rf node_modules
+  npm ci --omit=dev --no-audit --no-fund --ignore-scripts
+  install_bs3_prebuild
+fi
+node -e "require('better-sqlite3'); console.log('better-sqlite3 原生模块加载 OK')" \
+  || fail "better-sqlite3 无法加载，中止部署"
 
 # ---------- 6. 环境变量文件（首次生成，后续保留人工修改） ----------
 if [ ! -f "$ENV_FILE" ]; then
