@@ -29,25 +29,13 @@ stages:
             step: Command
             name: 分层依赖与代码质量检查
             with:
-              # 构建机默认 python3 早于 3.6，无法解析 lint 脚本里的 f-string，
-              # 因此显式挑选可用的 Python 3.6+ 解释器
+              # 构建镜像为 Ubuntu 16.04，只提供 Python 3.5（apt 无更高版本、
+              # 无 docker、pypi 不可达），因此 lint 脚本保持 3.5 兼容，直接用 python3 运行。
               run: |
                 set -e
-                PY=""
-                for c in python3.12 python3.11 python3.10 python3.9 python3.8 python3; do
-                  command -v "$c" >/dev/null 2>&1 || continue
-                  v=$("$c" -c 'import sys;print(sys.version_info[0]*100+sys.version_info[1])' 2>/dev/null || echo 0)
-                  if [ "$v" -ge 306 ]; then PY="$c"; break; fi
-                done
-                if [ -z "$PY" ]; then
-                  echo "未找到 Python 3.6+，尝试安装 python3.11"
-                  yum install -y python3.11 >/dev/null 2>&1 || true
-                  command -v python3.11 >/dev/null 2>&1 && PY=python3.11
-                fi
-                [ -n "$PY" ] || { echo "无可用 Python 3.6+ 解释器" >&2; exit 1; }
-                echo "使用解释器: $PY ($("$PY" -V 2>&1))"
-                "$PY" scripts/lint-deps.py
-                "$PY" scripts/lint-quality.py
+                python3 -V
+                python3 scripts/lint-deps.py
+                python3 scripts/lint-quality.py
   test_stage:
     name: 单元测试
     jobs:

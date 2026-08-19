@@ -7,6 +7,9 @@
 # - 无 console.error 直接输出（应统一错误处理）
 #
 # 用法：python3 scripts/lint-quality.py
+#
+# 兼容性约束：云效公共构建镜像（Ubuntu 16.04）只有 Python 3.5，
+# 本脚本必须保持 3.5 兼容 —— 禁止 f-string，请用 str.format()。
 import os
 import re
 import sys
@@ -66,7 +69,9 @@ def check_file(filepath, violations):
                 "file": filepath,
                 "line": 1,
                 "rule": "file-size",
-                "message": f"File has {line_count} lines (max {MAX_FILE_LINES}). Consider splitting into smaller modules.",
+                "message": "File has {} lines (max {}). Consider splitting into smaller modules.".format(
+                    line_count, MAX_FILE_LINES
+                ),
             })
 
     # 获取已知例外
@@ -94,7 +99,9 @@ def check_file(filepath, violations):
                     "file": filepath,
                     "line": line_num,
                     "rule": rule,
-                    "message": f"{message}. In server code, use a structured logger. In frontend code, remove before commit.",
+                    "message": "{}. In server code, use a structured logger. In frontend code, remove before commit.".format(
+                        message
+                    ),
                 })
 
 
@@ -113,9 +120,9 @@ def main():
         print("✓ All quality checks passed")
         sys.exit(0)
 
-    print(f"✗ Found {len(violations)} quality violations:\n")
+    print("✗ Found {} quality violations:\n".format(len(violations)))
     for v in violations:
-        print(f"{v['file']}:{v['line']} [{v['rule']}]: {v['message']}")
+        print("{}:{} [{}]: {}".format(v["file"], v["line"], v["rule"], v["message"]))
 
     sys.exit(1)
 
