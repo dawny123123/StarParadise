@@ -67,8 +67,9 @@ npm run start:mini      # 小程序 H5
 > **触发分支**：当前临时指向 `feat/nodejs-cicd-pipeline` 用于验证，
 > 合并后需改回 `main` 并开启推送触发。
 >
-> **端口 3002 访问控制**：安全组 `sg-0jlcfjm7lp3p2dmwag8d` 中已按**来源白名单**放通，
-> 未在白名单内的公网地址无法访问，属预期行为。当前白名单见下表。
+> **端口 3002 访问控制**：外网访问需同时穿过**两层**，缺一层都不通。
+
+**第 1 层 — 安全组 `sg-0jlcfjm7lp3p2dmwag8d`（来源白名单）**
 
 | 端口 | 来源 CIDR | 规则 ID | 说明 |
 |------|-----------|---------|------|
@@ -86,6 +87,29 @@ aliyun ecs RevokeSecurityGroup --RegionId cn-wulanchabu \
   --SecurityGroupId sg-0jlcfjm7lp3p2dmwag8d \
   --IpProtocol tcp --PortRange 3002/3002 --SourceCidrIp <CIDR>
 ```
+
+**第 2 层 — 目标机 firewalld（易被忽略）**
+
+目标机 firewalld 处于 running，`public` zone 默认只放通 `ssh(22) / cockpit(9090) / 8000 / 8080`，
+其余端口一律 `reject with icmpx admin-prohibited`。**只改安全组不改 firewalld 依然不通。**
+
+```bash
+# 查看当前放通情况
+firewall-cmd --list-all
+
+# 放通 3002（rich rule 限定来源，与安全组构成双层白名单）
+firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=<CIDR> port port=3002 protocol=tcp accept'
+firewall-cmd --reload
+
+# 回收
+firewall-cmd --permanent --remove-rich-rule='rule family=ipv4 source address=<CIDR> port port=3002 protocol=tcp accept'
+firewall-cmd --reload
+```
+
+**排障判别**：`curl` 在**约一个 RTT（~40ms）内快速失败** → firewalld reject；
+**一直超时到 timeout** → 安全组丢包。ICMP 能 ping 通不代表 TCP 可达。
+
+> 注：同机 `game-guess`(3001) 同样未在 firewalld 放通，对外不可达，属其既有状态，本次未改动。
 
 本地等价校验命令：
 
