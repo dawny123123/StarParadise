@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: ""
+title: StarParadise 星星乐园 Monorepo
+scope:
+    - Makefile
+    - AGENTS.md
+    - .gitignore
+    - .design.json
+    - .design-state.json
+    - .canvas-meta.json
+    - miniprogram-screens.html
+    - pc-dashboard.html
+source_files: []
+depends_on: []
+related_to: []

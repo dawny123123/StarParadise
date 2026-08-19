@@ -17,9 +17,9 @@
     <div v-loading="loading">
       <!-- 余额展示 -->
       <div class="balance-display card" :style="balanceStyle">
-        <div class="balance-label">当前余额</div>
+        <div class="balance-label">当前积分</div>
         <div class="balance-amount">
-          {{ balance }} <span class="balance-unit">元</span>
+          {{ balance }} <span class="balance-unit">积分</span>
         </div>
       </div>
 

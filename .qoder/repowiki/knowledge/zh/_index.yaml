@@ -3,17 +3,40 @@ schema_version: 1
 locale: zh-CN
 branch: main
 nodes_managed: true
-exported_at: "2026-08-10T03:18:50Z"
+exported_at: "2026-08-19T03:37:49Z"
 modules:
+    "":
+        dir_name: StarParadise 星星乐园 Monorepo
+        title: StarParadise 星星乐园 Monorepo
+        scope:
+            - Makefile
+            - AGENTS.md
+            - .gitignore
+            - .design.json
+            - .design-state.json
+            - .canvas-meta.json
+            - miniprogram-screens.html
+            - pc-dashboard.html
+        source_files: []
+        children:
+            - docs
+            - harness
+            - miniprogram
+            - pc_admin
+            - scripts
+            - server
+        depends_on: []
+        related_to: []
     docs:
-        dir_name: 项目文档与执行规范（设计文档、架构说明、API 文档、开发指南）
-        title: 项目文档与执行规范（设计文档、架构说明、API 文档、开发指南）
+        dir_name: StarParadise 项目文档与可执行规格
+        title: StarParadise 项目文档与可执行规格
         scope:
             - docs/
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: server
     harness:
         dir_name: StarPark 全栈功能验证与任务编排 Harness
         title: StarPark 全栈功能验证与任务编排 Harness
@@ -22,7 +45,8 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: server
     miniprogram:
         dir_name: 星星乐园小程序（孩子打卡与奖励消费端）
         title: 星星乐园小程序（孩子打卡与奖励消费端）
@@ -31,28 +55,31 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: server
     pc_admin:
-        dir_name: 家长端 PC 管理后台（Star Park Admin）
-        title: 家长端 PC 管理后台（Star Park Admin）
+        dir_name: 家长端 PC 管理后台（Vue 3 + Vite）
+        title: 家长端 PC 管理后台（Vue 3 + Vite）
         scope:
             - star-park/pc-admin/
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: server
     scripts:
-        dir_name: 构建与质量验证脚本集
-        title: 构建与质量验证脚本集
+        dir_name: CI_CD 质量验证与冒烟测试脚本集
+        title: CI/CD 质量验证与冒烟测试脚本集
         scope:
             - scripts/
         source_files: []
         children: []
         depends_on: []
-        related_to: []
+        related_to:
+            - path: server
     server:
-        dir_name: 星星乐园后端服务
-        title: 星星乐园后端服务
+        dir_name: 星星乐园服务端（Express + SQLite）
+        title: 星星乐园服务端（Express + SQLite）
         scope:
             - star-park/server/
         source_files: []
@@ -60,7 +87,12 @@ modules:
             - server/shared_infrastructure
             - server/tests
         depends_on: []
-        related_to: []
+        related_to:
+            - path: docs
+            - path: harness
+            - path: miniprogram
+            - path: pc_admin
+            - path: scripts
     server/shared_infrastructure:
         dir_name: 服务器启动与共享基础设施
         title: 服务器启动与共享基础设施
