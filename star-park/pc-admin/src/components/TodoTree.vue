@@ -65,7 +65,6 @@
           <span v-else class="text-muted">选择目标</span>
         </template>
       </el-table-column>
-      <el-table-column prop="creator" label="创建人" width="80" />
       <el-table-column label="优先级" width="80">
         <template #default="{ row }">
           <el-tag :type="getPriorityType(row.priority)" size="small">
