@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: miniprogram
+title: 星星乐园小程序（孩子打卡与奖励消费端）
+scope:
+    - star-park/miniprogram/
+source_files: []
+depends_on: []
+related_to:
+    - path: server

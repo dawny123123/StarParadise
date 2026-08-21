@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 
 const childrenRouter = require('./routes/children');
 const tasksRouter = require('./routes/tasks');
@@ -31,5 +33,18 @@ app.use('/api/todos', todosRouter);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// 静态资源托管：仅生产部署设置 STATIC_DIR（目标机未装 nginx，由后端直接托管前端产物）
+/* v8 ignore start */
+const staticDir = process.env.STATIC_DIR;
+if (staticDir && fs.existsSync(staticDir)) {
+  app.use(express.static(staticDir));
+  app.get(/^\/(?!api\/).*/, (req, res, next) => {
+    const indexFile = path.join(staticDir, 'index.html');
+    if (!fs.existsSync(indexFile)) return next();
+    res.sendFile(indexFile);
+  });
+}
+/* v8 ignore stop */
 
 module.exports = app;

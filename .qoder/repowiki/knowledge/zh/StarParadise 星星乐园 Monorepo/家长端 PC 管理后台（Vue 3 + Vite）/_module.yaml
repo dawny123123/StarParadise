@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: pc_admin
+title: 家长端 PC 管理后台（Vue 3 + Vite）
+scope:
+    - star-park/pc-admin/
+source_files: []
+depends_on: []
+related_to:
+    - path: server

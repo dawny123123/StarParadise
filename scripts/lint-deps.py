@@ -5,6 +5,9 @@
 # 每个层只能导入较低的层。
 #
 # 用法：python3 scripts/lint-deps.py
+#
+# 兼容性约束：云效公共构建镜像（Ubuntu 16.04）只有 Python 3.5，
+# 本脚本必须保持 3.5 兼容 —— 禁止 f-string，请用 str.format()。
 import os
 import re
 import sys
@@ -196,13 +199,18 @@ def check_file(file_path, violations):
                 "current_layer": current_layer,
                 "import_layer": import_layer,
                 "message": (
-                    f"{file_dir} (Layer {current_layer}) imports {resolved} (Layer {import_layer}).\n"
-                    f"  Layer {current_layer} modules can only import from layers < {current_layer}.\n"
-                    f"\n"
-                    f"  Fix options:\n"
-                    f"  1. Move the needed functionality down to Layer {current_layer} or lower\n"
-                    f"  2. Pass the dependency as a parameter (dependency injection)\n"
-                    f"  3. Define an interface in Layer {current_layer} that Layer {import_layer} implements"
+                    "{module} (Layer {cur}) imports {imp} (Layer {impl}).\n"
+                    "  Layer {cur} modules can only import from layers < {cur}.\n"
+                    "\n"
+                    "  Fix options:\n"
+                    "  1. Move the needed functionality down to Layer {cur} or lower\n"
+                    "  2. Pass the dependency as a parameter (dependency injection)\n"
+                    "  3. Define an interface in Layer {cur} that Layer {impl} implements"
+                ).format(
+                    module=file_dir,
+                    cur=current_layer,
+                    imp=resolved,
+                    impl=import_layer,
                 ),
             })
 
@@ -216,10 +224,16 @@ def check_file(file_path, violations):
                 "current_layer": current_layer,
                 "import_layer": import_layer,
                 "message": (
-                    f"FORBIDDEN: {file_dir} (Layer {current_layer}) → {resolved} (Layer {import_layer})\n"
-                    f"  {FORBIDDEN_IMPORTS[key]}\n"
-                    f"\n"
-                    f"  Fix: Use HTTP API client instead of direct import"
+                    "FORBIDDEN: {module} (Layer {cur}) → {imp} (Layer {impl})\n"
+                    "  {reason}\n"
+                    "\n"
+                    "  Fix: Use HTTP API client instead of direct import"
+                ).format(
+                    module=file_dir,
+                    cur=current_layer,
+                    imp=resolved,
+                    impl=import_layer,
+                    reason=FORBIDDEN_IMPORTS[key],
                 ),
             })
 
@@ -240,10 +254,10 @@ def main():
         print("✓ All package dependencies follow the layer hierarchy")
         sys.exit(0)
 
-    print(f"✗ Found {len(violations)} dependency violations:\n")
+    print("✗ Found {} dependency violations:\n".format(len(violations)))
     for v in violations:
-        print(f"{v['file']}:")
-        print(f"  {v['message']}")
+        print("{}:".format(v["file"]))
+        print("  {}".format(v["message"]))
         print()
 
     sys.exit(1)
