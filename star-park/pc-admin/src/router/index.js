@@ -38,12 +38,6 @@ const routes = [
         meta: { title: '奖励管理', icon: 'Present' }
       },
       {
-        path: 'stats',
-        name: 'Stats',
-        component: () => import('../views/Stats.vue'),
-        meta: { title: '数据统计', icon: 'TrendCharts' }
-      },
-      {
         path: 'best-practices',
         name: 'BestPractices',
         component: () => import('../views/BestPractices.vue'),
