@@ -219,7 +219,12 @@ const filteredTodos = computed(() => {
   } else if (filter.value === 'completed') {
     list = visibleTodos.value.filter(t => t.completed)
   }
-  return list
+  return [...list].sort((a, b) => {
+    if (!a.plannedDate && !b.plannedDate) return 0
+    if (!a.plannedDate) return 1
+    if (!b.plannedDate) return -1
+    return a.plannedDate.localeCompare(b.plannedDate)
+  })
 })
 
 const treeTodos = computed(() => buildTodoTree(filteredTodos.value))
