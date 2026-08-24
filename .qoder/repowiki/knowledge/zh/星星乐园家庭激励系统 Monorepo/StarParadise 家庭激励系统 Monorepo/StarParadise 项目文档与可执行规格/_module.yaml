@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: 29f34e3d-5235-4b23-8568-d545695a51ca/86deb952-e7e8-4d3d-8cb5-8004f7251894
+title: StarParadise 项目文档与可执行规格
+scope:
+    - docs/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,19 +1,10 @@
 ---
 kind: dependency_management
 name: StarParadise Monorepo 依赖管理：多子项目 npm + 锁定文件 + 架构层依赖校验
+slug: dependency_management
 category: dependency_management
 scope:
     - '**'
-source_files:
-    - star-park/package.json
-    - star-park/miniprogram/package.json
-    - star-park/pc-admin/package.json
-    - star-park/server/package.json
-    - star-park/miniprogram/package-lock.json
-    - star-park/pc-admin/package-lock.json
-    - star-park/server/package-lock.json
-    - scripts/lint-deps.py
-    - Makefile
 ---
 
 ## 1. 使用的系统/方法

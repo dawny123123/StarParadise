@@ -113,6 +113,18 @@ db.exec(`
     FOREIGN KEY (goal_id) REFERENCES goals(id),
     FOREIGN KEY (child_id) REFERENCES children(id)
   );
+
+  CREATE TABLE IF NOT EXISTS best_practices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    problem_description TEXT,
+    key_points TEXT,
+    file_url TEXT,
+    file_name TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    updated_at TEXT DEFAULT (datetime('now', 'localtime'))
+  );
 `);
 
 // 迁移：给 children 表添加 points_balance 字段（如果不存在）
@@ -187,7 +199,7 @@ try {
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */
-  const tables = ['todos', 'goals', 'points', 'transactions', 'checkins', 'rewards', 'tasks', 'children'];
+  const tables = ['todos', 'goals', 'points', 'transactions', 'checkins', 'rewards', 'tasks', 'children', 'best_practices'];
   for (const table of tables) {
     /* v8 ignore next */
     db.exec(`DELETE FROM ${table}`);

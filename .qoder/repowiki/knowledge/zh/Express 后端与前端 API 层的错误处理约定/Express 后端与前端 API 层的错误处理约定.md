@@ -1,18 +1,10 @@
 ---
 kind: error_handling
 name: Express 后端与前端 API 层的错误处理约定
+slug: error_handling
 category: error_handling
 scope:
     - '**'
-source_files:
-    - star-park/server/src/app.js
-    - star-park/server/src/database.js
-    - star-park/server/src/routes/checkins.js
-    - star-park/server/src/routes/rewards.js
-    - star-park/server/src/routes/points.js
-    - star-park/server/src/index.js
-    - star-park/miniprogram/src/api/index.js
-    - star-park/pc-admin/src/api/index.js
 ---
 
 ## 1. 整体方案

@@ -1,13 +1,24 @@
 # 知识卡导出索引文件
 schema_version: 1
 locale: zh-CN
-branch: main
+branch: feat/nodejs-cicd-pipeline
 nodes_managed: true
-exported_at: "2026-08-19T03:37:49Z"
+exported_at: "2026-08-21T08:41:17Z"
 modules:
     "":
-        dir_name: StarParadise 星星乐园 Monorepo
-        title: StarParadise 星星乐园 Monorepo
+        dir_name: 星星乐园家庭激励系统 Monorepo
+        title: 星星乐园家庭激励系统 Monorepo
+        scope: []
+        source_files: []
+        children:
+            - 29f34e3d-5235-4b23-8568-d545695a51ca
+            - 84b82afd-e3e8-4a3d-9367-c04665560327
+            - deploy
+        depends_on: []
+        related_to: []
+    29f34e3d-5235-4b23-8568-d545695a51ca:
+        dir_name: StarParadise 家庭激励系统 Monorepo
+        title: StarParadise 家庭激励系统 Monorepo
         scope:
             - Makefile
             - AGENTS.md
@@ -19,25 +30,14 @@ modules:
             - pc-dashboard.html
         source_files: []
         children:
-            - docs
-            - harness
-            - miniprogram
-            - pc_admin
-            - scripts
-            - server
+            - 29f34e3d-5235-4b23-8568-d545695a51ca/2cd7c4fd-88f5-45f8-8bc1-025e4c20bdca
+            - 29f34e3d-5235-4b23-8568-d545695a51ca/84c3f16a-b194-40fd-a216-5157566f8e83
+            - 29f34e3d-5235-4b23-8568-d545695a51ca/86deb952-e7e8-4d3d-8cb5-8004f7251894
+            - 29f34e3d-5235-4b23-8568-d545695a51ca/875b5f02-5e26-4dca-8ed6-a0d217733475
+            - 29f34e3d-5235-4b23-8568-d545695a51ca/f9951cdd-5744-4667-8d72-256e50a79a68
         depends_on: []
         related_to: []
-    docs:
-        dir_name: StarParadise 项目文档与可执行规格
-        title: StarParadise 项目文档与可执行规格
-        scope:
-            - docs/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: server
-    harness:
+    29f34e3d-5235-4b23-8568-d545695a51ca/2cd7c4fd-88f5-45f8-8bc1-025e4c20bdca:
         dir_name: StarPark 全栈功能验证与任务编排 Harness
         title: StarPark 全栈功能验证与任务编排 Harness
         scope:
@@ -46,8 +46,38 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: server
-    miniprogram:
+            - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15
+    29f34e3d-5235-4b23-8568-d545695a51ca/84c3f16a-b194-40fd-a216-5157566f8e83:
+        dir_name: Star-Park 项目质量与验证脚本集
+        title: Star-Park 项目质量与验证脚本集
+        scope:
+            - scripts/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15
+    29f34e3d-5235-4b23-8568-d545695a51ca/86deb952-e7e8-4d3d-8cb5-8004f7251894:
+        dir_name: StarParadise 项目文档与可执行规格
+        title: StarParadise 项目文档与可执行规格
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    29f34e3d-5235-4b23-8568-d545695a51ca/875b5f02-5e26-4dca-8ed6-a0d217733475:
+        dir_name: 家长端 PC 管理后台（Vue3 + Vite）
+        title: 家长端 PC 管理后台（Vue3 + Vite）
+        scope:
+            - star-park/pc-admin/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: 29f34e3d-5235-4b23-8568-d545695a51ca/f9951cdd-5744-4667-8d72-256e50a79a68
+            - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15
+    29f34e3d-5235-4b23-8568-d545695a51ca/f9951cdd-5744-4667-8d72-256e50a79a68:
         dir_name: 星星乐园小程序（孩子打卡与奖励消费端）
         title: 星星乐园小程序（孩子打卡与奖励消费端）
         scope:
@@ -56,56 +86,37 @@ modules:
         children: []
         depends_on: []
         related_to:
-            - path: server
-    pc_admin:
-        dir_name: 家长端 PC 管理后台（Vue 3 + Vite）
-        title: 家长端 PC 管理后台（Vue 3 + Vite）
-        scope:
-            - star-park/pc-admin/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: server
-    scripts:
-        dir_name: CI_CD 质量验证与冒烟测试脚本集
-        title: CI/CD 质量验证与冒烟测试脚本集
-        scope:
-            - scripts/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: server
-    server:
-        dir_name: 星星乐园服务端（Express + SQLite）
-        title: 星星乐园服务端（Express + SQLite）
-        scope:
-            - star-park/server/
-        source_files: []
-        children:
-            - server/shared_infrastructure
-            - server/tests
-        depends_on: []
-        related_to:
-            - path: docs
-            - path: harness
-            - path: miniprogram
-            - path: pc_admin
-            - path: scripts
-    server/shared_infrastructure:
-        dir_name: 服务器启动与共享基础设施
-        title: 服务器启动与共享基础设施
+            - path: 29f34e3d-5235-4b23-8568-d545695a51ca/875b5f02-5e26-4dca-8ed6-a0d217733475
+            - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15
+    84b82afd-e3e8-4a3d-9367-c04665560327:
+        dir_name: 星星乐园后端服务启动与基础设施
+        title: 星星乐园后端服务启动与基础设施
         scope:
             - star-park/server/src/app.js
             - star-park/server/src/database.js
             - star-park/server/src/index.js
             - star-park/server/src/seed.js
         source_files: []
-        children: []
+        children:
+            - 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15
         depends_on: []
         related_to: []
-    server/tests:
+    84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15:
+        dir_name: 星星乐园后端服务
+        title: 星星乐园后端服务
+        scope:
+            - star-park/server/
+        source_files: []
+        children:
+            - 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15/813f3d4c-bb4b-4998-b304-316065ddc251
+        depends_on: []
+        related_to:
+            - path: 29f34e3d-5235-4b23-8568-d545695a51ca/2cd7c4fd-88f5-45f8-8bc1-025e4c20bdca
+            - path: 29f34e3d-5235-4b23-8568-d545695a51ca/84c3f16a-b194-40fd-a216-5157566f8e83
+            - path: 29f34e3d-5235-4b23-8568-d545695a51ca/875b5f02-5e26-4dca-8ed6-a0d217733475
+            - path: 29f34e3d-5235-4b23-8568-d545695a51ca/f9951cdd-5744-4667-8d72-256e50a79a68
+            - path: deploy
+    84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15/813f3d4c-bb4b-4998-b304-316065ddc251:
         dir_name: 服务端 API 集成测试套件
         title: 服务端 API 集成测试套件
         scope:
@@ -114,3 +125,13 @@ modules:
         children: []
         depends_on: []
         related_to: []
+    deploy:
+        dir_name: Star Park 服务端生产部署与回滚
+        title: Star Park 服务端生产部署与回滚
+        scope:
+            - deploy/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15

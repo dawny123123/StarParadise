@@ -60,7 +60,8 @@ const staticMenuItems = [
   { path: '/dashboard', title: '仪表盘', icon: 'DataBoard' },
   { path: '/balance', title: '积分记录', icon: 'Wallet', hidden: true },
   { path: '/rewards', title: '奖励管理', icon: 'Present' },
-  { path: '/stats', title: '数据统计', icon: 'TrendCharts' }
+  { path: '/stats', title: '数据统计', icon: 'TrendCharts' },
+  { path: '/best-practices', title: '轻眉沉淀', icon: 'Collection' }
 ]
 
 // 动态生成目标管理子菜单

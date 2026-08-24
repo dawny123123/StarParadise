@@ -1,25 +1,10 @@
 ---
 kind: build_system
 name: Monorepo 构建与验证流水线（Makefile + scripts + harness）
+slug: build_system
 category: build_system
 scope:
     - '**'
-source_files:
-    - Makefile
-    - scripts/validate.py
-    - scripts/lint-deps.py
-    - scripts/lint-quality.py
-    - scripts/run-api-tests.sh
-    - scripts/check-db-consistency.sh
-    - scripts/generate-api-doc.sh
-    - harness/scripts/setup-env.sh
-    - harness/scripts/start-server.sh
-    - harness/scripts/teardown-env.sh
-    - star-park/package.json
-    - star-park/server/package.json
-    - star-park/pc-admin/package.json
-    - star-park/miniprogram/package.json
-    - star-park/server/vitest.config.js
 ---
 
 ## 1. 系统概览

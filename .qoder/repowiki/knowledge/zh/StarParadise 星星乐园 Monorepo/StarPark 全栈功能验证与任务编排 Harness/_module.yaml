@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: harness
-title: StarPark 全栈功能验证与任务编排 Harness
-scope:
-    - harness/
-source_files: []
-depends_on: []
-related_to:
-    - path: server

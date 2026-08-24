@@ -42,6 +42,12 @@ const routes = [
         name: 'Stats',
         component: () => import('../views/Stats.vue'),
         meta: { title: '数据统计', icon: 'TrendCharts' }
+      },
+      {
+        path: 'best-practices',
+        name: 'BestPractices',
+        component: () => import('../views/BestPractices.vue'),
+        meta: { title: '轻眉沉淀', icon: 'Collection' }
       }
     ]
   }

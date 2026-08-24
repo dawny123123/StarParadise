@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: 29f34e3d-5235-4b23-8568-d545695a51ca
+title: StarParadise 家庭激励系统 Monorepo
+scope:
+    - Makefile
+    - AGENTS.md
+    - .gitignore
+    - .design.json
+    - .design-state.json
+    - .canvas-meta.json
+    - miniprogram-screens.html
+    - pc-dashboard.html
+source_files: []
+depends_on: []
+related_to: []

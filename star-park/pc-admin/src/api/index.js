@@ -122,4 +122,11 @@ export const triggerGoalAutoAssociation = async (todo, goals = []) => {
   return res.json()
 }
 
+// ========== 最佳实践 ==========
+export const getBestPractices = (params) => api.get('/best-practices', { params })
+export const createBestPractice = (data) => api.post('/best-practices', data)
+export const updateBestPractice = (id, data) => api.put(`/best-practices/${id}`, data)
+export const deleteBestPractice = (id) => api.delete(`/best-practices/${id}`)
+export const uploadBestPracticeFile = (formData) => api.post('/best-practices/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+
 export default api
