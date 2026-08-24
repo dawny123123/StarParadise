@@ -21,13 +21,13 @@ router.get('/', (req, res) => {
 // POST /api/goals - 创建目标
 router.post('/', (req, res) => {
   try {
-    const { child_id, title, status, progress, target } = req.body;
+    const { child_id, title, status, progress, target, description } = req.body;
     if (!title) {
       return res.status(400).json({ error: 'title 为必填项' });
     }
     const result = db.prepare(
-      'INSERT INTO goals (child_id, title, status, progress, target) VALUES (?, ?, ?, ?, ?)'
-    ).run(child_id ?? null, title, status || 'todo', progress ?? 0, target ?? 1);
+      'INSERT INTO goals (child_id, title, status, progress, target, description) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(child_id ?? null, title, status || 'todo', progress ?? 0, target ?? 1, description ?? '');
     const goal = db.prepare('SELECT * FROM goals WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(goal);
   } catch (err) { /* v8 ignore next */
@@ -43,13 +43,14 @@ router.put('/:id', (req, res) => {
     if (!existing) {
       return res.status(404).json({ error: '目标不存在' });
     }
-    const { child_id, title, status, progress, target } = req.body;
+    const { child_id, title, status, progress, target, description } = req.body;
     let sql = `UPDATE goals SET
         title = COALESCE(?, title),
         status = COALESCE(?, status),
         progress = COALESCE(?, progress),
-        target = COALESCE(?, target)`;
-    const params = [title ?? null, status ?? null, progress ?? null, target ?? null];
+        target = COALESCE(?, target),
+        description = COALESCE(?, description)`;
+    const params = [title ?? null, status ?? null, progress ?? null, target ?? null, description ?? null];
     // child_id 需区分"未传"(保持原值)与"显式传 null"(清空归属)，不能用 COALESCE
     if ('child_id' in req.body) {
       sql += `, child_id = ?`;

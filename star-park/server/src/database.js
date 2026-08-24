@@ -196,6 +196,16 @@ try {
   db.exec(`CREATE INDEX IF NOT EXISTS idx_todos_parent_id ON todos(parent_id)`);
 } catch (err) { /* 忽略已存在 */ }
 
+// 迁移：给 goals 表添加 description 字段（如果不存在）
+try {
+  db.exec(`ALTER TABLE goals ADD COLUMN description TEXT DEFAULT ''`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('description 迁移失败:', err.message);
+    throw err;
+  }
+}
+
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */

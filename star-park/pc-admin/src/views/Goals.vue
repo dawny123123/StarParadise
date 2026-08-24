@@ -26,6 +26,7 @@
           <div class="goal-card-content">
             <span :class="['goal-status', goal.status]">{{ getStatusLabel(goal.status) }}</span>
             <div class="goal-title">{{ goal.title }}</div>
+            <div class="goal-description" v-if="goal.description">{{ goal.description }}</div>
             <div class="goal-progress">
               <div class="goal-progress-bar">
                 <div class="goal-progress-fill" :style="{ width: getProgressPercent(goal) + '%' }"></div>
@@ -82,6 +83,9 @@
             <el-option value="happy" label="快乐" />
             <el-option value="study" label="学习" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="goalForm.description" type="textarea" :rows="3" placeholder="请输入目标描述（可选）" />
         </el-form-item>
         <el-form-item label="进度/目标">
           <div class="progress-input-row">
@@ -242,6 +246,7 @@ const editingGoal = ref(null)
 const goalForm = reactive({
   title: '',
   status: 'todo',
+  description: '',
   progress: 0,
   target: 1
 })
@@ -274,6 +279,7 @@ const mapGoalFromApi = (g) => ({
   childName: store.children.find(c => c.id === g.child_id)?.name || null,
   title: g.title,
   status: g.status,
+  description: g.description || '',
   progress: g.progress,
   target: g.target
 })
@@ -395,10 +401,10 @@ const openGoalTasks = (goal) => {
 const openGoalModal = (goal = null) => {
   if (goal) {
     editingGoal.value = goal
-    Object.assign(goalForm, { title: goal.title, status: goal.status, progress: goal.progress, target: goal.target })
+    Object.assign(goalForm, { title: goal.title, status: goal.status, description: goal.description || '', progress: goal.progress, target: goal.target })
   } else {
     editingGoal.value = null
-    Object.assign(goalForm, { title: '', status: 'todo', progress: 0, target: 1 })
+    Object.assign(goalForm, { title: '', status: 'todo', description: '', progress: 0, target: 1 })
   }
   goalDialogVisible.value = true
 }
@@ -411,6 +417,7 @@ const saveGoal = async () => {
   const payload = {
     title: goalForm.title,
     status: goalForm.status,
+    description: goalForm.description || '',
     progress: goalForm.progress,
     target: goalForm.target
   }
@@ -758,6 +765,18 @@ onMounted(async () => {
   font-weight: 600;
   color: var(--text);
   margin-bottom: 12px;
+}
+
+.goal-description {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 12px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .goal-progress {
