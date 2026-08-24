@@ -1,17 +1,10 @@
 ---
 kind: logging_system
 name: 原生 console 直打式日志（无统一日志框架）
+slug: logging_system
 category: logging_system
 scope:
     - '**'
-source_files:
-    - star-park/server/src/index.js
-    - star-park/server/src/app.js
-    - star-park/server/src/database.js
-    - star-park/server/src/seed.js
-    - star-park/server/package.json
-    - star-park/pc-admin/src/api/index.js
-    - star-park/pc-admin/src/stores/app.js
 ---
 
 ## 1. 使用的系统/方案

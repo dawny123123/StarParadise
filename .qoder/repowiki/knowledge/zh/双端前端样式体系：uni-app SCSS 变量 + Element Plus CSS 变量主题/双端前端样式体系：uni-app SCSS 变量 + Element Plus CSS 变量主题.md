@@ -1,16 +1,10 @@
 ---
 kind: frontend_style
 name: 双端前端样式体系：uni-app SCSS 变量 + Element Plus CSS 变量主题
+slug: frontend_style
 category: frontend_style
 scope:
     - '**'
-source_files:
-    - star-park/miniprogram/src/uni.scss
-    - star-park/pc-admin/src/styles/main.css
-    - star-park/miniprogram/package.json
-    - star-park/pc-admin/package.json
-    - star-park/miniprogram/src/pages/index/index.vue
-    - star-park/pc-admin/src/views/Dashboard.vue
 ---
 
 ## 1. 使用的系统与工具

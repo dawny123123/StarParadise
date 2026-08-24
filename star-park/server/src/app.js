@@ -11,12 +11,16 @@ const statsRouter = require('./routes/stats');
 const pointsRouter = require('./routes/points');
 const goalsRouter = require('./routes/goals');
 const todosRouter = require('./routes/todos');
+const bestPracticesRouter = require('./routes/best-practices');
 
 const app = express();
 
 // 中间件
 app.use(cors());
 app.use(express.json());
+
+// uploads 静态文件服务
+app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
 
 // 路由
 app.use('/api/children', childrenRouter);
@@ -28,6 +32,7 @@ app.use('/api/dashboard', statsRouter);
 app.use('/api/points', pointsRouter);
 app.use('/api/goals', goalsRouter);
 app.use('/api/todos', todosRouter);
+app.use('/api/best-practices', bestPracticesRouter);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
