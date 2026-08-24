@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: 29f34e3d-5235-4b23-8568-d545695a51ca
-title: StarParadise 家庭激励系统 Monorepo
+title: StarPark Monorepo 根编排层
 scope:
     - Makefile
     - AGENTS.md

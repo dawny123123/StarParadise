@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: 29f34e3d-5235-4b23-8568-d545695a51ca/875b5f02-5e26-4dca-8ed6-a0d217733475
-title: 家长端 PC 管理后台（Vue3 + Vite）
+title: 家长端 PC 管理后台（Star Park Admin）
 scope:
     - star-park/pc-admin/
 source_files: []
