@@ -1,8 +1,13 @@
 <template>
   <div class="page-container fade-in-up">
     <div class="welcome-section">
-      <h1 class="welcome-title">⭐ 目标</h1>
-      <p class="welcome-date">{{ todayStr }}</p>
+      <div>
+        <h1 class="welcome-title">⭐ 目标</h1>
+        <p class="welcome-date">{{ todayStr }}</p>
+      </div>
+      <el-button type="danger" round class="grant-flowers-btn" @click="openFlowersModal">
+        🌸 发放红花
+      </el-button>
     </div>
 
     <!-- 孩子卡片区域 -->
@@ -56,6 +61,37 @@
         <el-button type="primary" :loading="submitting" @click="handleAddChild">确认</el-button>
       </template>
     </el-dialog>
+
+    <!-- 发放红花弹窗 -->
+    <el-dialog v-model="showFlowersModal" title="发放红花" width="420px" center>
+      <div class="points-modal">
+        <div class="points-form">
+          <div class="form-item">
+            <label>选择孩子</label>
+            <el-select v-model="flowersChildId" placeholder="请选择孩子" style="width: 100%">
+              <el-option
+                v-for="child in children"
+                :key="child.id"
+                :label="child.name"
+                :value="child.id"
+              />
+            </el-select>
+          </div>
+          <div class="form-item">
+            <label>红花数量</label>
+            <el-input-number v-model="flowersAmount" :min="1" :max="9999" style="width: 100%" placeholder="输入红花数量" />
+          </div>
+          <div class="form-item">
+            <label>奖励理由</label>
+            <el-input v-model="flowersReason" type="textarea" :rows="2" placeholder="输入奖励原因" />
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showFlowersModal = false">取消</el-button>
+        <el-button type="primary" @click="submitFlowers">确认发放</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -65,7 +101,7 @@ import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useAppStore } from '../stores/app'
-import { getDashboard } from '../api'
+import { getDashboard, addFlowers } from '../api'
 import ChildCard from '../components/ChildCard.vue'
 
 const store = useAppStore()
@@ -83,6 +119,12 @@ const addForm = ref({
   focus: '',
   avatar_color: '#FF6B6B'
 })
+
+// 红花发放相关
+const showFlowersModal = ref(false)
+const flowersChildId = ref(null)
+const flowersAmount = ref(1)
+const flowersReason = ref('')
 
 const formRules = {
   name: [{ required: true, message: '请输入孩子姓名', trigger: 'blur' }]
@@ -139,6 +181,35 @@ const fetchDashboard = async () => {
   }
 }
 
+// 打开红花发放弹窗
+const openFlowersModal = (childId) => {
+  flowersChildId.value = childId || (children.value.length > 0 ? children.value[0].id : null)
+  flowersAmount.value = 1
+  flowersReason.value = ''
+  showFlowersModal.value = true
+}
+
+// 提交红花奖励
+const submitFlowers = async () => {
+  if (!flowersChildId.value || !flowersAmount.value) {
+    ElMessage.warning('请填写完整信息')
+    return
+  }
+  try {
+    await addFlowers({
+      child_id: flowersChildId.value,
+      amount: flowersAmount.value,
+      reason: flowersReason.value || '特殊红花奖励'
+    })
+    ElMessage.success(`发放成功！+${flowersAmount.value}红花`)
+    showFlowersModal.value = false
+    await fetchDashboard()
+  } catch (err) {
+    ElMessage.error('红花发放失败')
+    console.error('红花发放失败:', err)
+  }
+}
+
 onMounted(() => {
   fetchDashboard()
 })
@@ -146,6 +217,9 @@ onMounted(() => {
 
 <style scoped>
 .welcome-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 24px;
 }
 
@@ -159,6 +233,10 @@ onMounted(() => {
   font-size: 14px;
   color: var(--text-light);
   margin-top: 6px;
+}
+
+.grant-flowers-btn {
+  font-weight: 600;
 }
 
 /* 孩子卡片区域 */
@@ -227,5 +305,28 @@ onMounted(() => {
 .color-dot.selected {
   border-color: var(--text);
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--text);
+}
+
+/* 红花发放弹窗样式（复用 Checkin.vue 积分弹窗结构） */
+.points-modal {
+  padding: 8px 0;
+}
+
+.points-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-item label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
 }
 </style>
