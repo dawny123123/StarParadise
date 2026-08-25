@@ -1,6 +1,26 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database');
 const router = express.Router();
+
+// 确保 uploads 目录存在
+const UPLOADS_DIR = path.join(__dirname, '..', '..', '..', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// multer 配置：文件保存到 uploads/ 目录
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+    cb(null, name);
+  }
+});
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 // GET /api/todos?child_id=x&goal_id=y&parent_id=z - 获取待办列表(可筛选)
 router.get('/', (req, res) => {
@@ -35,7 +55,7 @@ router.get('/', (req, res) => {
 // POST /api/todos - 创建待办
 router.post('/', (req, res) => {
   try {
-    const { goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id } = req.body;
+    const { goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name } = req.body;
     if (!title) {
       return res.status(400).json({ error: 'title 为必填项' });
     }
@@ -53,8 +73,8 @@ router.post('/', (req, res) => {
       resolvedChildId = parent.child_id;
     }
     const result = db.prepare(
-      `INSERT INTO todos (goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO todos (goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       goal_id ?? null,
       resolvedChildId ?? null,
@@ -65,7 +85,9 @@ router.post('/', (req, res) => {
       planned_date || null,
       description || null,
       completed ? 1 : 0,
-      parent_id ?? null
+      parent_id ?? null,
+      file_url || null,
+      file_name || null
     );
     const todo = db.prepare('SELECT * FROM todos WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(todo);
@@ -89,7 +111,7 @@ router.put('/:id', (req, res) => {
         priority = COALESCE(?, priority)`;
     const params = [title ?? null, creator ?? null, priority ?? null];
     // 以下字段需区分"未传"(保持原值)与"显式传 null/0"(清空或置零)，不能用 COALESCE
-    const nullableFields = ['goal_id', 'child_id', 'planned_date', 'description', 'parent_id'];
+    const nullableFields = ['goal_id', 'child_id', 'planned_date', 'description', 'parent_id', 'file_url', 'file_name'];
     for (const field of nullableFields) {
       if (field in req.body) {
         sql += `, ${field} = ?`;
@@ -125,6 +147,20 @@ router.delete('/:id', (req, res) => {
     const childResult = db.prepare('DELETE FROM todos WHERE parent_id = ?').run(id);
     db.prepare('DELETE FROM todos WHERE id = ?').run(id);
     res.json({ message: '待办已删除', children_deleted: childResult.changes });
+  } catch (err) { /* v8 ignore next */
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/todos/upload - 待办描述附件上传
+router.post('/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '请选择要上传的文件' });
+    }
+    const file_url = `/uploads/${req.file.filename}`;
+    const file_name = req.file.originalname;
+    res.json({ file_url, file_name });
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }

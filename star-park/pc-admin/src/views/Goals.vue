@@ -147,6 +147,27 @@
         <el-form-item label="描述">
           <el-input v-model="todoForm.description" type="textarea" :rows="3" placeholder="请输入任务描述（可选）" />
         </el-form-item>
+        <el-form-item label="附件">
+          <div class="todo-attachment-row">
+            <el-upload
+              :http-request="handleTodoUpload"
+              :show-file-list="false"
+              :before-upload="beforeTodoUpload"
+            >
+              <el-button type="info" plain>
+                <el-icon><Upload /></el-icon>
+                {{ todoForm.fileName || '上传附件' }}
+              </el-button>
+            </el-upload>
+            <el-button v-if="todoForm.fileUrl" text size="small" type="danger" @click="clearTodoAttachment">
+              清除
+            </el-button>
+          </div>
+          <a v-if="todoForm.fileUrl" :href="todoForm.fileUrl" target="_blank" class="todo-file-link">
+            <el-icon><Document /></el-icon>
+            {{ todoForm.fileName || '查看附件' }}
+          </a>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="todoDialogVisible = false">取消</el-button>
@@ -212,12 +233,13 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Plus, Edit, Delete, DocumentCopy } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, DocumentCopy, Upload, Document } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   triggerGoalAutoAssociation, addPoints,
   getGoals, createGoal, updateGoal, deleteGoal as deleteGoalApi,
-  getTodos, createTodo, updateTodo, deleteTodo as deleteTodoApi
+  getTodos, createTodo, updateTodo, deleteTodo as deleteTodoApi,
+  uploadTodoFile
 } from '../api'
 import { useAppStore } from '../stores/app'
 import TodoTree from '../components/TodoTree.vue'
@@ -263,7 +285,9 @@ const todoForm = reactive({
   expectedPoints: 0,
   plannedDate: '',
   description: '',
-  parentId: null
+  parentId: null,
+  fileUrl: '',
+  fileName: ''
 })
 
 const todayStr = computed(() => {
@@ -296,7 +320,9 @@ const mapTodoFromApi = (t) => ({
   plannedDate: t.planned_date,
   description: t.description,
   completed: t.completed === 1,
-  parentId: t.parent_id ?? null
+  parentId: t.parent_id ?? null,
+  fileUrl: t.file_url || '',
+  fileName: t.file_name || ''
 })
 
 const fetchGoals = async () => {
@@ -493,10 +519,10 @@ const toggleTodo = async (id) => {
 const openTodoModal = (todo = null, parentTodo = null) => {
   if (todo) {
     editingTodo.value = todo
-    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '', parentId: todo.parentId || null })
+    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '', parentId: todo.parentId || null, fileUrl: todo.fileUrl || '', fileName: todo.fileName || '' })
   } else {
     editingTodo.value = null
-    Object.assign(todoForm, { title: '', goalId: parentTodo?.goalId || null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '', parentId: parentTodo?.id || null })
+    Object.assign(todoForm, { title: '', goalId: parentTodo?.goalId || null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '', parentId: parentTodo?.id || null, fileUrl: '', fileName: '' })
   }
   todoDialogVisible.value = true
 }
@@ -514,7 +540,9 @@ const saveTodo = async () => {
     expected_points: todoForm.expectedPoints || 0,
     planned_date: todoForm.plannedDate || null,
     description: todoForm.description || null,
-    parent_id: todoForm.parentId ?? null
+    parent_id: todoForm.parentId ?? null,
+    file_url: todoForm.fileUrl || null,
+    file_name: todoForm.fileName || null
   }
   try {
     let savedTodo
@@ -559,6 +587,38 @@ const deleteTodo = async (id) => {
   }
 }
 
+const beforeTodoUpload = (file) => {
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    ElMessage.error('文件大小不能超过 10MB')
+    return false
+  }
+  return true
+}
+
+const handleTodoUpload = async ({ file }) => {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await uploadTodoFile(formData)
+    if (res && res.file_url) {
+      todoForm.fileUrl = res.file_url
+      todoForm.fileName = res.file_name || res.file_url.split('/').pop()
+      ElMessage.success('附件上传成功')
+    } else {
+      ElMessage.error('附件上传失败')
+    }
+  } catch (err) {
+    ElMessage.error('附件上传失败')
+    console.error(err)
+  }
+}
+
+const clearTodoAttachment = () => {
+  todoForm.fileUrl = ''
+  todoForm.fileName = ''
+}
+
 const cloneTodo = (todo) => {
   Object.assign(todoForm, {
     title: `${todo.title}（复制）`,
@@ -567,7 +627,9 @@ const cloneTodo = (todo) => {
     priority: todo.priority,
     expectedPoints: todo.expectedPoints || 0,
     plannedDate: todo.plannedDate,
-    description: todo.description || ''
+    description: todo.description || '',
+    fileUrl: todo.fileUrl || '',
+    fileName: todo.fileName || ''
   })
   editingTodo.value = null
   todoDialogVisible.value = true
@@ -859,6 +921,25 @@ onMounted(async () => {
 
 .progress-divider {
   color: var(--text-light);
+}
+
+.todo-attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.todo-file-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.todo-file-link:hover {
+  text-decoration: underline;
 }
 
 /* 响应式 */

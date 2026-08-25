@@ -206,6 +206,24 @@ try {
   }
 }
 
+// 迁移：给 todos 表添加附件字段（任务描述支持上传附件）
+try {
+  db.exec(`ALTER TABLE todos ADD COLUMN file_url TEXT`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('todos.file_url 迁移失败:', err.message);
+    throw err;
+  }
+}
+try {
+  db.exec(`ALTER TABLE todos ADD COLUMN file_name TEXT`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('todos.file_name 迁移失败:', err.message);
+    throw err;
+  }
+}
+
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */

@@ -99,6 +99,21 @@ describe('Todos API', () => {
       expect(res.body.creator).toBeNull();
       expect(res.body.planned_date).toBeNull();
       expect(res.body.description).toBeNull();
+      expect(res.body.file_url).toBeNull();
+      expect(res.body.file_name).toBeNull();
+    });
+
+    it('创建待办时应保存附件信息', async () => {
+      const res = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '带附件待办',
+        description: '描述内容',
+        file_url: '/uploads/test-file.pdf',
+        file_name: 'test-file.pdf'
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.file_url).toBe('/uploads/test-file.pdf');
+      expect(res.body.file_name).toBe('test-file.pdf');
     });
   });
 
@@ -195,6 +210,34 @@ describe('Todos API', () => {
       expect(res.body.title).toBe('仅改标题');
       expect(res.body.planned_date).toBe('2026-08-15');
       expect(res.body.description).toBe('原描述');
+    });
+
+    it('应更新待办附件信息', async () => {
+      const created = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '待加附件'
+      });
+      const res = await agent.put(`/api/todos/${created.body.id}`).send({
+        file_url: '/uploads/updated.pdf',
+        file_name: 'updated.pdf'
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.file_url).toBe('/uploads/updated.pdf');
+      expect(res.body.file_name).toBe('updated.pdf');
+    });
+
+    it('显式传 file_url: null 应清除附件', async () => {
+      const created = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '待清除附件',
+        file_url: '/uploads/old.pdf',
+        file_name: 'old.pdf'
+      });
+      expect(created.body.file_url).toBe('/uploads/old.pdf');
+      const res = await agent.put(`/api/todos/${created.body.id}`).send({ file_url: null, file_name: null });
+      expect(res.status).toBe(200);
+      expect(res.body.file_url).toBeNull();
+      expect(res.body.file_name).toBeNull();
     });
   });
 
@@ -336,6 +379,23 @@ describe('Todos API', () => {
       // 确认所有任务都被删除
       const list = await agent.get('/api/todos');
       expect(list.body).toHaveLength(0);
+    });
+  });
+
+  describe('POST /api/todos/upload', () => {
+    it('应上传附件并返回 file_url 与 file_name', async () => {
+      const res = await agent
+        .post('/api/todos/upload')
+        .attach('file', Buffer.from('todo attachment content'), 'todo-note.txt');
+      expect(res.status).toBe(200);
+      expect(res.body.file_url).toMatch(/^\/uploads\/[\d]+-[a-z0-9]+\.txt$/);
+      expect(res.body.file_name).toBe('todo-note.txt');
+    });
+
+    it('未上传文件应返回 400', async () => {
+      const res = await agent.post('/api/todos/upload');
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('error');
     });
   });
 });

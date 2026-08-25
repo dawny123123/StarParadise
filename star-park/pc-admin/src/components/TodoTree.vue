@@ -77,10 +77,13 @@
           <span class="points-tag">{{ row.expectedPoints || 0 }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip>
+      <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip>
         <template #default="{ row }">
           <span v-if="row.description">{{ row.description }}</span>
           <span v-else class="text-muted">-</span>
+          <a v-if="row.fileUrl" :href="row.fileUrl" target="_blank" class="todo-attach-link" title="查看附件" @click.stop>
+            <el-icon><Document /></el-icon>
+          </a>
         </template>
       </el-table-column>
       <el-table-column label="计划日期" width="100">
@@ -167,7 +170,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight } from '@element-plus/icons-vue'
+import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight, Document } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateTodo } from '../api'
 
@@ -431,6 +434,18 @@ const handleDrop = (event, row) => {
 .date-text {
   font-size: 13px;
   color: var(--text-light);
+}
+
+.todo-attach-link {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  color: var(--primary);
+  vertical-align: middle;
+}
+
+.todo-attach-link:hover {
+  color: var(--primary-dark, #0d8a9c);
 }
 
 :deep(.droppable-parent) {
