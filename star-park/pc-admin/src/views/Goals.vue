@@ -540,7 +540,18 @@ const openTodoModal = (todo = null, parentTodo = null) => {
     Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '', parentId: todo.parentId || null, attachments: todo.attachments ? [...todo.attachments.map(a => ({ ...a }))] : [] })
   } else {
     editingTodo.value = null
-    Object.assign(todoForm, { title: '', goalId: parentTodo?.goalId || null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '', parentId: parentTodo?.id || null, attachments: [] })
+    Object.assign(todoForm, {
+      title: '',
+      goalId: parentTodo?.goalId || null,
+      creator: '晓',
+      priority: 'medium',
+      expectedPoints: 0,
+      plannedDate: '',
+      // 添加子任务时复用父任务描述与附件（截图），PONR-15
+      description: parentTodo?.description || '',
+      parentId: parentTodo?.id || null,
+      attachments: parentTodo?.attachments ? [...parentTodo.attachments.map(a => ({ ...a }))] : []
+    })
   }
   todoDialogVisible.value = true
 }

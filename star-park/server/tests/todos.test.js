@@ -334,6 +334,32 @@ describe('Todos API', () => {
       expect(child.body.child_id).toBe(ids.child1Id);
     });
 
+    it('创建子任务时应保存描述与多附件（副本描述/截图支持，PONR-15）', async () => {
+      const parent = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '父任务',
+        description: '父任务描述',
+        attachments: [
+          { file_url: '/uploads/parent-a.png', file_name: '截图A.png' },
+          { file_url: '/uploads/parent-b.png', file_name: '截图B.png' }
+        ]
+      });
+      expect(parent.status).toBe(201);
+
+      const child = await agent.post('/api/todos').send({
+        parent_id: parent.body.id,
+        title: '子任务副本',
+        description: parent.body.description,
+        attachments: parent.body.attachments
+      });
+      expect(child.status).toBe(201);
+      expect(child.body.parent_id).toBe(parent.body.id);
+      expect(child.body.description).toBe('父任务描述');
+      expect(child.body.attachments).toHaveLength(2);
+      expect(child.body.attachments[0].file_name).toBe('截图A.png');
+      expect(child.body.attachments[1].file_url).toBe('/uploads/parent-b.png');
+    });
+
     it('parent_id 引用不存在的任务 → 400', async () => {
       const res = await agent.post('/api/todos').send({
         parent_id: 99999,
