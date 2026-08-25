@@ -116,6 +116,29 @@ describe('Stats API', () => {
       expect(child1).toBeDefined();
       expect(child1.streak).toBe(1);
     });
+
+    it('应过滤名称为「测试」且积分为0的孩子（PONR-11）', async () => {
+      const db = getTestDb();
+      db.prepare('INSERT INTO children (name, age, grade, focus, avatar_color, points_balance) VALUES (?, ?, ?, ?, ?, ?)')
+        .run('测试', 5, '幼儿园', '测试', '#FF0000', 0);
+
+      const res = await agent.get('/api/dashboard');
+      expect(res.status).toBe(200);
+      const testChild = res.body.find(c => c.name === '测试');
+      expect(testChild).toBeUndefined();
+    });
+
+    it('不应过滤名称为「测试」但积分不为0的孩子（PONR-11）', async () => {
+      const db = getTestDb();
+      db.prepare('INSERT INTO children (name, age, grade, focus, avatar_color, points_balance) VALUES (?, ?, ?, ?, ?, ?)')
+        .run('测试', 5, '幼儿园', '测试', '#FF0000', 100);
+
+      const res = await agent.get('/api/dashboard');
+      expect(res.status).toBe(200);
+      const testChild = res.body.find(c => c.name === '测试');
+      expect(testChild).toBeDefined();
+      expect(testChild.points_balance).toBe(100);
+    });
   });
 
   describe('GET /api/health', () => {

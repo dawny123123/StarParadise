@@ -107,7 +107,7 @@ router.get('/', (req, res) => {
     const weekStart = dayjs().startOf('week').format('YYYY-MM-DD');
     const weekEnd = dayjs().endOf('week').format('YYYY-MM-DD');
 
-    const children = db.prepare('SELECT * FROM children ORDER BY id').all();
+    const children = db.prepare("SELECT * FROM children WHERE NOT (name = '测试' AND COALESCE(points_balance, 0) = 0) ORDER BY id").all();
     const dashboardData = children.map(child => {
       // 今日打卡情况
       const todayCheckins = db.prepare(
