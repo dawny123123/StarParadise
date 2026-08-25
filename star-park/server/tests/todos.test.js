@@ -392,6 +392,14 @@ describe('Todos API', () => {
       expect(res.body.file_name).toBe('todo-note.txt');
     });
 
+    it('中文文件名上传后不应乱码', async () => {
+      const res = await agent
+        .post('/api/todos/upload')
+        .attach('file', Buffer.from('pptx content'), '南大交流材料准备.pptx');
+      expect(res.status).toBe(200);
+      expect(res.body.file_name).toBe('南大交流材料准备.pptx');
+    });
+
     it('未上传文件应返回 400', async () => {
       const res = await agent.post('/api/todos/upload');
       expect(res.status).toBe(400);
