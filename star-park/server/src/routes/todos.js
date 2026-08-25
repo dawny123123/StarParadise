@@ -159,6 +159,11 @@ router.put('/:id', (req, res) => {
         params.push(req.body[field] ?? null);
       }
     }
+    // 向后兼容：显式清除 file_url 时同步清除 attachments（PONR-14）
+    if ('file_url' in req.body && !req.body.file_url && !('attachments' in req.body)) {
+      sql += `, attachments = ?`;
+      params.push(null);
+    }
     // attachments 数组字段（多附件支持，PONR-14）
     if ('attachments' in req.body) {
       const atts = req.body.attachments;
