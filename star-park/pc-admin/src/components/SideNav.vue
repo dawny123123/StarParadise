@@ -63,12 +63,14 @@ const staticMenuItems = [
   { path: '/best-practices', title: '轻眉沉淀', icon: 'Collection' }
 ]
 
-// 动态生成目标管理子菜单
+// 动态生成目标管理子菜单（过滤掉"测试"孩子，不在导航中显示）
 const goalsMenuItem = computed(() => {
-  const childrenMenu = store.children.map(child => ({
-    path: `/goals/${child.name}`,
-    title: `${child.name}目标管理`
-  }))
+  const childrenMenu = store.children
+    .filter(child => child.name !== '测试')
+    .map(child => ({
+      path: `/goals/${child.name}`,
+      title: `${child.name}目标管理`
+    }))
   return {
     path: '/goals',
     title: '目标管理',
