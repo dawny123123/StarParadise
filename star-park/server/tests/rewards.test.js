@@ -133,6 +133,34 @@ describe('Rewards API', () => {
       expect(res.body.redeemed_at).toBeTruthy();
     });
 
+    it('达成后应可兑换（红花）', async () => {
+      const db = getTestDb();
+      // 充值红花
+      db.prepare('UPDATE children SET flowers_balance = 100 WHERE id = ?').run(ids.child2Id);
+      // 创建红花奖励并达成
+      const result = db.prepare(
+        'INSERT INTO rewards (child_id, title, target_amount, current_amount, reward_unit, is_achieved) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(ids.child2Id, '红花奖励', 10, 10, '红花', 1);
+
+      const res = await agent.post(`/api/rewards/${result.lastInsertRowid}/redeem`);
+      expect(res.status).toBe(200);
+      expect(res.body.redeemed_at).toBeTruthy();
+    });
+
+    it('红花余额不足时兑换应返回 400', async () => {
+      const db = getTestDb();
+      // 确保 child2 的 flowers_balance 为 0
+      db.prepare('UPDATE children SET flowers_balance = 0 WHERE id = ?').run(ids.child2Id);
+      // 创建红花奖励并达成
+      const result = db.prepare(
+        'INSERT INTO rewards (child_id, title, target_amount, current_amount, reward_unit, is_achieved) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(ids.child2Id, '红花奖励不足', 10, 10, '红花', 1);
+
+      const res = await agent.post(`/api/rewards/${result.lastInsertRowid}/redeem`);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('红花余额不足');
+    });
+
     it('已兑换不能重复', async () => {
       const db = getTestDb();
       db.prepare("INSERT INTO transactions (child_id, type, amount, description) VALUES (?, 'earn', 100, '充值')").run(ids.child1Id);

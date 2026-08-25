@@ -168,6 +168,7 @@ router.get('/', (req, res) => {
         weekly_rate: weeklyRate,
         balance,
         points_balance: child.points_balance || 0,
+        flowers_balance: child.flowers_balance || 0,
         rewards
       };
     });

@@ -41,6 +41,14 @@
             <span class="points-entry__arrow">›</span>
           </div>
 
+          <!-- 红花奖励入口 -->
+          <div class="flowers-entry" @click="openFlowersModal(child.id)">
+            <span class="flowers-entry__icon">🌸</span>
+            <span class="flowers-entry__text">红花奖励</span>
+            <span class="flowers-entry__badge">+红花</span>
+            <span class="flowers-entry__arrow">›</span>
+          </div>
+
           <div
             v-for="task in getChildTasks(child.id)"
             :key="task.id"
@@ -117,6 +125,37 @@
     </template>
   </el-dialog>
 
+  <!-- 红花奖励弹窗 -->
+  <el-dialog v-model="showFlowersModal" title="红花奖励" width="420px" center>
+    <div class="points-modal">
+      <div class="points-form">
+        <div class="form-item">
+          <label>选择孩子</label>
+          <el-select v-model="flowersChildId" placeholder="请选择孩子" style="width: 100%">
+            <el-option
+              v-for="child in children"
+              :key="child.id"
+              :label="child.name"
+              :value="child.id"
+            />
+          </el-select>
+        </div>
+        <div class="form-item">
+          <label>红花数量</label>
+          <el-input-number v-model="flowersAmount" :min="1" :max="9999" style="width: 100%" placeholder="输入红花数量" />
+        </div>
+        <div class="form-item">
+          <label>奖励理由</label>
+          <el-input v-model="flowersReason" type="textarea" :rows="2" placeholder="输入奖励原因" />
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="showFlowersModal = false">取消</el-button>
+      <el-button type="primary" @click="submitFlowers">确认发放</el-button>
+    </template>
+  </el-dialog>
+
   <!-- 打卡积分确认弹窗 -->
   <el-dialog v-model="showCheckinPointsModal" title="完成任务并奖励积分" width="420px" center>
     <div class="points-modal">
@@ -143,7 +182,7 @@ import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { useAppStore } from '../stores/app'
-import { getTasks, getCheckins, createCheckin, autoCheckinAll, getPoints, addPoints } from '../api'
+import { getTasks, getCheckins, createCheckin, autoCheckinAll, getPoints, addPoints, addFlowers } from '../api'
 
 const store = useAppStore()
 const loading = ref(false)
@@ -156,6 +195,12 @@ const showPointsModal = ref(false)
 const pointsChildId = ref(null)
 const pointsAmount = ref(1)
 const pointsReason = ref('')
+
+// 红花相关
+const showFlowersModal = ref(false)
+const flowersChildId = ref(null)
+const flowersAmount = ref(1)
+const flowersReason = ref('')
 
 // 打卡积分确认
 const showCheckinPointsModal = ref(false)
@@ -320,6 +365,34 @@ const submitPoints = async () => {
     console.error('积分发放失败:', err)
   }
 }
+
+// 打开红花弹窗
+const openFlowersModal = (childId) => {
+  flowersChildId.value = childId || (children.value.length > 0 ? children.value[0].id : null)
+  flowersAmount.value = 1
+  flowersReason.value = ''
+  showFlowersModal.value = true
+}
+
+// 提交红花奖励
+const submitFlowers = async () => {
+  if (!flowersChildId.value || !flowersAmount.value) {
+    ElMessage.warning('请填写完整信息')
+    return
+  }
+  try {
+    await addFlowers({
+      child_id: flowersChildId.value,
+      amount: flowersAmount.value,
+      reason: flowersReason.value || '特殊红花奖励'
+    })
+    ElMessage.success(`发放成功！+${flowersAmount.value}红花`)
+    showFlowersModal.value = false
+  } catch (err) {
+    ElMessage.error('红花发放失败')
+    console.error('红花发放失败:', err)
+  }
+}
 </script>
 
 <style scoped>
@@ -472,6 +545,50 @@ const submitPoints = async () => {
 .points-entry__arrow {
   font-size: 20px;
   color: #B8860B;
+}
+
+/* 红花奖励入口 */
+.flowers-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFE0EC 100%);
+  border: 2px solid #FF69B4;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.flowers-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
+}
+
+.flowers-entry__icon {
+  font-size: 24px;
+}
+
+.flowers-entry__text {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #C71585;
+}
+
+.flowers-entry__badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #E9165D;
+  background: #FFE0EC;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.flowers-entry__arrow {
+  font-size: 20px;
+  color: #C71585;
 }
 
 /* 积分弹窗样式 */

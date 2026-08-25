@@ -12,22 +12,42 @@ function getMoneyBalance(childId) {
 }
 
 // 金额类奖励的进度与累计余额对齐：已攒 = min(余额, 目标)，达成 = 余额 >= 目标
+// 红花类奖励同理，与 flowers_balance 对齐
 function syncMoneyRewardProgress(rewards) {
   const balanceCache = {};
+  const flowerCache = {};
   for (const reward of rewards) {
     const unit = reward.reward_unit || '元';
-    if (unit !== '元' || reward.redeemed_at) continue;
-    if (!(reward.child_id in balanceCache)) {
-      balanceCache[reward.child_id] = getMoneyBalance(reward.child_id);
-    }
-    const balance = balanceCache[reward.child_id];
-    const newCurrent = Math.min(balance, reward.target_amount);
-    const newAchieved = balance >= reward.target_amount ? 1 : 0;
-    if (newCurrent !== reward.current_amount || newAchieved !== reward.is_achieved) {
-      db.prepare('UPDATE rewards SET current_amount = ?, is_achieved = ? WHERE id = ?')
-        .run(newCurrent, newAchieved, reward.id);
-      reward.current_amount = newCurrent;
-      reward.is_achieved = newAchieved;
+    if (unit !== '元' && unit !== '红花') continue;
+    if (reward.redeemed_at) continue;
+
+    if (unit === '元') {
+      if (!(reward.child_id in balanceCache)) {
+        balanceCache[reward.child_id] = getMoneyBalance(reward.child_id);
+      }
+      const balance = balanceCache[reward.child_id];
+      const newCurrent = Math.min(balance, reward.target_amount);
+      const newAchieved = balance >= reward.target_amount ? 1 : 0;
+      if (newCurrent !== reward.current_amount || newAchieved !== reward.is_achieved) {
+        db.prepare('UPDATE rewards SET current_amount = ?, is_achieved = ? WHERE id = ?')
+          .run(newCurrent, newAchieved, reward.id);
+        reward.current_amount = newCurrent;
+        reward.is_achieved = newAchieved;
+      }
+    } else if (unit === '红花') {
+      if (!(reward.child_id in flowerCache)) {
+        const child = db.prepare('SELECT flowers_balance FROM children WHERE id = ?').get(reward.child_id);
+        flowerCache[reward.child_id] = child?.flowers_balance || 0;
+      }
+      const balance = flowerCache[reward.child_id];
+      const newCurrent = Math.min(balance, reward.target_amount);
+      const newAchieved = balance >= reward.target_amount ? 1 : 0;
+      if (newCurrent !== reward.current_amount || newAchieved !== reward.is_achieved) {
+        db.prepare('UPDATE rewards SET current_amount = ?, is_achieved = ? WHERE id = ?')
+          .run(newCurrent, newAchieved, reward.id);
+        reward.current_amount = newCurrent;
+        reward.is_achieved = newAchieved;
+      }
     }
   }
   return rewards;
@@ -168,6 +188,27 @@ router.post('/:id/redeem', (req, res) => {
           'INSERT INTO points (child_id, amount, reason) VALUES (?, ?, ?)'
         ).run(reward.child_id, -redeemAmount, `兑换奖励「${reward.title}」`);
 
+      } else if (unit === '红花') {
+        // 查询孩子红花余额
+        const child = db.prepare('SELECT flowers_balance FROM children WHERE id = ?').get(reward.child_id);
+
+        if ((child?.flowers_balance || 0) < redeemAmount) {
+          throw new Error('红花余额不足，无法兑换');
+        }
+
+        // 标记兑换时间
+        db.prepare("UPDATE rewards SET redeemed_at = datetime('now', 'localtime') WHERE id = ?").run(id);
+
+        // 扣减红花余额
+        db.prepare(
+          'UPDATE children SET flowers_balance = flowers_balance - ? WHERE id = ?'
+        ).run(redeemAmount, reward.child_id);
+
+        // 创建红花兑换记录
+        db.prepare(
+          'INSERT INTO flowers (child_id, amount, reason) VALUES (?, ?, ?)'
+        ).run(reward.child_id, -redeemAmount, `兑换奖励「${reward.title}」`);
+
       } else {
         throw new Error(`不支持的奖励单位: ${unit}`);
       }
@@ -179,7 +220,7 @@ router.post('/:id/redeem', (req, res) => {
     res.json(redeemed);
   } catch (err) {
     /* v8 ignore start */
-    const knownErrors = ['余额不足', '积分余额不足', '不支持的奖励单位', '尚未达成', '已兑换'];
+    const knownErrors = ['余额不足', '积分余额不足', '红花余额不足', '不支持的奖励单位', '尚未达成', '已兑换'];
     if (knownErrors.some(msg => err.message.includes(msg))) {
       return res.status(400).json({ error: err.message });
     }

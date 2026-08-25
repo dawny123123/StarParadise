@@ -68,6 +68,10 @@ export const getTransactions = (childId, params) => api.get(`/children/${childId
 export const getPoints = (params) => api.get('/points', { params })
 export const addPoints = (data) => api.post('/points', data)
 
+// ========== 红花相关 ==========
+export const getFlowers = (params) => api.get('/flowers', { params })
+export const addFlowers = (data) => api.post('/flowers', data)
+
 // ========== QoderWake 自动化触发 ==========
 export const triggerQoderWake = async (prompt = '') => {
   const url = import.meta.env.VITE_QODERWAKE_INVOKE_URL

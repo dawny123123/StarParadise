@@ -87,6 +87,15 @@ db.exec(`
     FOREIGN KEY (child_id) REFERENCES children(id)
   );
 
+  CREATE TABLE IF NOT EXISTS flowers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    child_id INTEGER NOT NULL,
+    amount INTEGER NOT NULL,
+    reason TEXT,
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (child_id) REFERENCES children(id)
+  );
+
   CREATE TABLE IF NOT EXISTS goals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     child_id INTEGER,
@@ -133,6 +142,16 @@ try {
 } catch (err) {
   /* v8 ignore next */
   // 如果字段已存在会报错，忽略即可
+}
+
+// 迁移：给 children 表添加 flowers_balance 字段（红花余额，PONR-5）
+try {
+  db.exec(`ALTER TABLE children ADD COLUMN flowers_balance INTEGER DEFAULT 0`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('flowers_balance 迁移失败:', err.message);
+    throw err;
+  }
 }
 
 // 迁移：给 rewards 表添加 description 字段（如果不存在）
@@ -244,7 +263,7 @@ try {
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */
-  const tables = ['todos', 'goals', 'points', 'transactions', 'checkins', 'rewards', 'tasks', 'children', 'best_practices'];
+  const tables = ['todos', 'goals', 'flowers', 'points', 'transactions', 'checkins', 'rewards', 'tasks', 'children', 'best_practices'];
   for (const table of tables) {
     /* v8 ignore next */
     db.exec(`DELETE FROM ${table}`);

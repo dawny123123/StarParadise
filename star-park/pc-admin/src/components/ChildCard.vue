@@ -21,6 +21,12 @@
           {{ child.points_balance || 0 }}
         </span>
       </div>
+      <div class="stat-row">
+        <span class="stat-label">红花</span>
+        <span class="stat-value flowers-value">
+          {{ child.flowers_balance || 0 }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -121,5 +127,11 @@ const goToBalance = () => {
   font-size: 16px;
   font-weight: 700;
   color: #FF6B00;
+}
+
+.stat-value.flowers-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #E9165D;
 }
 </style>

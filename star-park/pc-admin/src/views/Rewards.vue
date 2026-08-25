@@ -61,7 +61,7 @@
           </div>
         </div>
         <div class="reward-unit-tag">
-          <el-tag size="small" :type="reward.rewardUnit === '星星' ? 'warning' : ''">
+          <el-tag size="small" :type="reward.rewardUnit === '星星' ? 'warning' : reward.rewardUnit === '红花' ? 'danger' : ''">
             {{ reward.rewardUnit }}
           </el-tag>
         </div>
@@ -132,6 +132,7 @@
           <el-select v-model="form.rewardUnit" style="width: 120px;">
             <el-option label="元" value="元" />
             <el-option label="星星" value="星星" />
+            <el-option label="红花" value="红花" />
           </el-select>
         </el-form-item>
       </el-form>

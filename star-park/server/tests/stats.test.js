@@ -80,6 +80,7 @@ describe('Stats API', () => {
       expect(child).toHaveProperty('weekly_rate');
       expect(child).toHaveProperty('balance');
       expect(child).toHaveProperty('points_balance');
+      expect(child).toHaveProperty('flowers_balance');
       expect(child).toHaveProperty('rewards');
     });
 
