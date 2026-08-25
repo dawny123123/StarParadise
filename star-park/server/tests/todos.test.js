@@ -101,6 +101,7 @@ describe('Todos API', () => {
       expect(res.body.description).toBeNull();
       expect(res.body.file_url).toBeNull();
       expect(res.body.file_name).toBeNull();
+      expect(res.body.attachments).toEqual([]);
     });
 
     it('创建待办时应保存附件信息', async () => {
@@ -114,6 +115,26 @@ describe('Todos API', () => {
       expect(res.status).toBe(201);
       expect(res.body.file_url).toBe('/uploads/test-file.pdf');
       expect(res.body.file_name).toBe('test-file.pdf');
+      expect(res.body.attachments).toHaveLength(1);
+      expect(res.body.attachments[0].file_url).toBe('/uploads/test-file.pdf');
+      expect(res.body.attachments[0].file_name).toBe('test-file.pdf');
+    });
+
+    it('创建待办时应保存多个附件（attachments 数组）', async () => {
+      const res = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '多附件待办',
+        attachments: [
+          { file_url: '/uploads/file1.pdf', file_name: 'file1.pdf' },
+          { file_url: '/uploads/file2.jpg', file_name: 'file2.jpg' },
+          { file_url: '/uploads/file3.docx', file_name: 'file3.docx' }
+        ]
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.attachments).toHaveLength(3);
+      expect(res.body.attachments[0].file_url).toBe('/uploads/file1.pdf');
+      expect(res.body.attachments[1].file_name).toBe('file2.jpg');
+      expect(res.body.attachments[2].file_name).toBe('file3.docx');
     });
   });
 
@@ -224,6 +245,40 @@ describe('Todos API', () => {
       expect(res.status).toBe(200);
       expect(res.body.file_url).toBe('/uploads/updated.pdf');
       expect(res.body.file_name).toBe('updated.pdf');
+      expect(res.body.attachments).toHaveLength(1);
+      expect(res.body.attachments[0].file_url).toBe('/uploads/updated.pdf');
+    });
+
+    it('应更新为多个附件', async () => {
+      const created = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '多附件更新'
+      });
+      const res = await agent.put(`/api/todos/${created.body.id}`).send({
+        attachments: [
+          { file_url: '/uploads/a.pdf', file_name: 'a.pdf' },
+          { file_url: '/uploads/b.png', file_name: 'b.png' }
+        ]
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.attachments).toHaveLength(2);
+      expect(res.body.attachments[0].file_url).toBe('/uploads/a.pdf');
+      expect(res.body.attachments[1].file_name).toBe('b.png');
+    });
+
+    it('显式传空 attachments 数组应清除所有附件', async () => {
+      const created = await agent.post('/api/todos').send({
+        child_id: ids.child1Id,
+        title: '待清除附件',
+        attachments: [
+          { file_url: '/uploads/a.pdf', file_name: 'a.pdf' },
+          { file_url: '/uploads/b.pdf', file_name: 'b.pdf' }
+        ]
+      });
+      expect(created.body.attachments).toHaveLength(2);
+      const res = await agent.put(`/api/todos/${created.body.id}`).send({ attachments: [] });
+      expect(res.status).toBe(200);
+      expect(res.body.attachments).toHaveLength(0);
     });
 
     it('显式传 file_url: null 应清除附件', async () => {
@@ -238,6 +293,7 @@ describe('Todos API', () => {
       expect(res.status).toBe(200);
       expect(res.body.file_url).toBeNull();
       expect(res.body.file_name).toBeNull();
+      expect(res.body.attachments).toEqual([]);
     });
   });
 
@@ -386,18 +442,33 @@ describe('Todos API', () => {
     it('应上传附件并返回 file_url 与 file_name', async () => {
       const res = await agent
         .post('/api/todos/upload')
-        .attach('file', Buffer.from('todo attachment content'), 'todo-note.txt');
+        .attach('files', Buffer.from('todo attachment content'), 'todo-note.txt');
       expect(res.status).toBe(200);
-      expect(res.body.file_url).toMatch(/^\/uploads\/[\d]+-[a-z0-9]+\.txt$/);
-      expect(res.body.file_name).toBe('todo-note.txt');
+      expect(res.body.files).toHaveLength(1);
+      expect(res.body.files[0].file_url).toMatch(/^\/uploads\/[\d]+-[a-z0-9]+\.txt$/);
+      expect(res.body.files[0].file_name).toBe('todo-note.txt');
     });
 
     it('中文文件名上传后不应乱码', async () => {
       const res = await agent
         .post('/api/todos/upload')
-        .attach('file', Buffer.from('pptx content'), '南大交流材料准备.pptx');
+        .attach('files', Buffer.from('pptx content'), '南大交流材料准备.pptx');
       expect(res.status).toBe(200);
-      expect(res.body.file_name).toBe('南大交流材料准备.pptx');
+      expect(res.body.files[0].file_name).toBe('南大交流材料准备.pptx');
+    });
+
+    it('应支持多文件上传', async () => {
+      const res = await agent
+        .post('/api/todos/upload')
+        .attach('files', Buffer.from('file1 content'), 'file1.txt')
+        .attach('files', Buffer.from('file2 content'), 'file2.txt')
+        .attach('files', Buffer.from('file3 content'), 'file3.txt');
+      expect(res.status).toBe(200);
+      expect(res.body.files).toHaveLength(3);
+      expect(res.body.files[0].file_name).toBe('file1.txt');
+      expect(res.body.files[1].file_name).toBe('file2.txt');
+      expect(res.body.files[2].file_name).toBe('file3.txt');
+      expect(res.body.files.every(f => f.file_url.match(/^\/uploads\/[\d]+-[a-z0-9]+\.txt$/))).toBe(true);
     });
 
     it('未上传文件应返回 400', async () => {

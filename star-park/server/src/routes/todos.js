@@ -29,6 +29,28 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
+// 解析 attachments JSON 字段，兼容旧的 file_url/file_name 单附件
+function parseAttachments(todo) {
+  let attachments = [];
+  if (todo.attachments) {
+    try {
+      const parsed = JSON.parse(todo.attachments);
+      if (Array.isArray(parsed)) {
+        attachments = parsed;
+      }
+    } catch {
+      // JSON 解析失败，忽略
+    }
+  }
+  // 向后兼容：如果 attachments 为空但旧字段有值，从旧字段构造
+  if (attachments.length === 0 && todo.file_url) {
+    attachments = [{ file_url: todo.file_url, file_name: todo.file_name || todo.file_url }];
+  }
+  // 在响应中附加 attachments 数组
+  const { attachments: _omit, ...rest } = todo;
+  return { ...rest, attachments };
+}
+
 // GET /api/todos?child_id=x&goal_id=y&parent_id=z - 获取待办列表(可筛选)
 router.get('/', (req, res) => {
   try {
@@ -53,7 +75,7 @@ router.get('/', (req, res) => {
     }
     const where = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
     const todos = db.prepare(`SELECT * FROM todos${where} ORDER BY id ASC`).all(...params);
-    res.json(todos);
+    res.json(todos.map(parseAttachments));
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
@@ -62,7 +84,7 @@ router.get('/', (req, res) => {
 // POST /api/todos - 创建待办
 router.post('/', (req, res) => {
   try {
-    const { goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name } = req.body;
+    const { goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name, attachments } = req.body;
     if (!title) {
       return res.status(400).json({ error: 'title 为必填项' });
     }
@@ -79,9 +101,20 @@ router.post('/', (req, res) => {
       // 子任务自动继承父任务的 child_id
       resolvedChildId = parent.child_id;
     }
+    // 构造 attachments JSON 字符串（多附件支持，PONR-14）
+    let attachmentsJson = null;
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      attachmentsJson = JSON.stringify(attachments.map(a => ({
+        file_url: a.file_url || a.fileUrl || null,
+        file_name: a.file_name || a.fileName || null
+      })).filter(a => a.file_url));
+    } else if (file_url) {
+      // 向后兼容：旧的单附件字段
+      attachmentsJson = JSON.stringify([{ file_url, file_name: file_name || file_url }]);
+    }
     const result = db.prepare(
-      `INSERT INTO todos (goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO todos (goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name, attachments)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       goal_id ?? null,
       resolvedChildId ?? null,
@@ -94,10 +127,11 @@ router.post('/', (req, res) => {
       completed ? 1 : 0,
       parent_id ?? null,
       file_url || null,
-      file_name || null
+      file_name || null,
+      attachmentsJson
     );
     const todo = db.prepare('SELECT * FROM todos WHERE id = ?').get(result.lastInsertRowid);
-    res.status(201).json(todo);
+    res.status(201).json(parseAttachments(todo));
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
@@ -111,7 +145,7 @@ router.put('/:id', (req, res) => {
     if (!existing) {
       return res.status(404).json({ error: '待办不存在' });
     }
-    const { title, creator, priority } = req.body;
+    const { title, creator, priority, attachments } = req.body;
     let sql = `UPDATE todos SET
         title = COALESCE(?, title),
         creator = COALESCE(?, creator),
@@ -125,6 +159,18 @@ router.put('/:id', (req, res) => {
         params.push(req.body[field] ?? null);
       }
     }
+    // attachments 数组字段（多附件支持，PONR-14）
+    if ('attachments' in req.body) {
+      const atts = req.body.attachments;
+      const attachmentsJson = Array.isArray(atts) && atts.length > 0
+        ? JSON.stringify(atts.map(a => ({
+            file_url: a.file_url || a.fileUrl || null,
+            file_name: a.file_name || a.fileName || null
+          })).filter(a => a.file_url))
+        : null;
+      sql += `, attachments = ?`;
+      params.push(attachmentsJson);
+    }
     if ('expected_points' in req.body) {
       sql += `, expected_points = ?`;
       params.push(req.body.expected_points ?? 0);
@@ -136,7 +182,7 @@ router.put('/:id', (req, res) => {
     sql += ` WHERE id = ?`;
     db.prepare(sql).run(...params, id);
     const updated = db.prepare('SELECT * FROM todos WHERE id = ?').get(id);
-    res.json(updated);
+    res.json(parseAttachments(updated));
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
@@ -159,15 +205,19 @@ router.delete('/:id', (req, res) => {
   }
 });
 
-// POST /api/todos/upload - 待办描述附件上传
-router.post('/upload', upload.single('file'), (req, res) => {
+// POST /api/todos/upload - 待办描述附件上传（支持多文件，PONR-14）
+router.post('/upload', upload.array('files', 10), (req, res) => {
   try {
-    if (!req.file) {
+    // 兼容旧的单文件字段名 'file'
+    let files = req.files && req.files.length > 0 ? req.files : (req.file ? [req.file] : []);
+    if (!files || files.length === 0) {
       return res.status(400).json({ error: '请选择要上传的文件' });
     }
-    const file_url = `/uploads/${req.file.filename}`;
-    const file_name = decodeOriginalName(req.file.originalname);
-    res.json({ file_url, file_name });
+    const result = files.map(f => ({
+      file_url: `/uploads/${f.filename}`,
+      file_name: decodeOriginalName(f.originalname)
+    }));
+    res.json({ files: result });
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }

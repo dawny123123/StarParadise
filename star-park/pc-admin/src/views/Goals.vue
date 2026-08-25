@@ -153,20 +153,25 @@
               :http-request="handleTodoUpload"
               :show-file-list="false"
               :before-upload="beforeTodoUpload"
+              multiple
             >
               <el-button type="info" plain>
                 <el-icon><Upload /></el-icon>
-                {{ todoForm.fileName || '上传附件' }}
+                上传附件
               </el-button>
             </el-upload>
-            <el-button v-if="todoForm.fileUrl" text size="small" type="danger" @click="clearTodoAttachment">
-              清除
-            </el-button>
           </div>
-          <a v-if="todoForm.fileUrl" :href="todoForm.fileUrl" target="_blank" class="todo-file-link">
-            <el-icon><Document /></el-icon>
-            {{ todoForm.fileName || '查看附件' }}
-          </a>
+          <div v-if="todoForm.attachments.length > 0" class="todo-file-list">
+            <div v-for="(att, idx) in todoForm.attachments" :key="idx" class="todo-file-item">
+              <a :href="att.fileUrl" target="_blank" class="todo-file-link">
+                <el-icon><Document /></el-icon>
+                {{ att.fileName || '附件' + (idx + 1) }}
+              </a>
+              <el-button text size="small" type="danger" @click="removeAttachment(idx)">
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -233,13 +238,13 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Plus, Edit, Delete, DocumentCopy, Upload, Document } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, DocumentCopy, Upload, Document, Close } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   triggerGoalAutoAssociation, addPoints,
   getGoals, createGoal, updateGoal, deleteGoal as deleteGoalApi,
   getTodos, createTodo, updateTodo, deleteTodo as deleteTodoApi,
-  uploadTodoFile
+  uploadTodoFiles
 } from '../api'
 import { useAppStore } from '../stores/app'
 import TodoTree from '../components/TodoTree.vue'
@@ -286,8 +291,7 @@ const todoForm = reactive({
   plannedDate: '',
   description: '',
   parentId: null,
-  fileUrl: '',
-  fileName: ''
+  attachments: []
 })
 
 const todayStr = computed(() => {
@@ -308,22 +312,36 @@ const mapGoalFromApi = (g) => ({
   target: g.target
 })
 
-const mapTodoFromApi = (t) => ({
-  id: t.id,
-  goalId: t.goal_id,
-  childId: t.child_id,
-  childName: store.children.find(c => c.id === t.child_id)?.name || null,
-  title: t.title,
-  creator: t.creator,
-  priority: t.priority,
-  expectedPoints: t.expected_points,
-  plannedDate: t.planned_date,
-  description: t.description,
-  completed: t.completed === 1,
-  parentId: t.parent_id ?? null,
-  fileUrl: t.file_url || '',
-  fileName: t.file_name || ''
-})
+const mapTodoFromApi = (t) => {
+  // 映射 attachments 数组（多附件，PONR-14），兼容旧的单附件字段
+  let attachments = []
+  if (Array.isArray(t.attachments)) {
+    attachments = t.attachments.map(a => ({
+      fileUrl: a.file_url || '',
+      fileName: a.file_name || ''
+    })).filter(a => a.fileUrl)
+  }
+  if (attachments.length === 0 && t.file_url) {
+    attachments = [{ fileUrl: t.file_url, fileName: t.file_name || t.file_url }]
+  }
+  return {
+    id: t.id,
+    goalId: t.goal_id,
+    childId: t.child_id,
+    childName: store.children.find(c => c.id === t.child_id)?.name || null,
+    title: t.title,
+    creator: t.creator,
+    priority: t.priority,
+    expectedPoints: t.expected_points,
+    plannedDate: t.planned_date,
+    description: t.description,
+    completed: t.completed === 1,
+    parentId: t.parent_id ?? null,
+    fileUrl: attachments[0]?.fileUrl || '',
+    fileName: attachments[0]?.fileName || '',
+    attachments
+  }
+}
 
 const fetchGoals = async () => {
   loading.value = true
@@ -519,10 +537,10 @@ const toggleTodo = async (id) => {
 const openTodoModal = (todo = null, parentTodo = null) => {
   if (todo) {
     editingTodo.value = todo
-    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '', parentId: todo.parentId || null, fileUrl: todo.fileUrl || '', fileName: todo.fileName || '' })
+    Object.assign(todoForm, { title: todo.title, goalId: todo.goalId, creator: todo.creator, priority: todo.priority, expectedPoints: todo.expectedPoints || 0, plannedDate: todo.plannedDate, description: todo.description || '', parentId: todo.parentId || null, attachments: todo.attachments ? [...todo.attachments.map(a => ({ ...a }))] : [] })
   } else {
     editingTodo.value = null
-    Object.assign(todoForm, { title: '', goalId: parentTodo?.goalId || null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '', parentId: parentTodo?.id || null, fileUrl: '', fileName: '' })
+    Object.assign(todoForm, { title: '', goalId: parentTodo?.goalId || null, creator: '晓', priority: 'medium', expectedPoints: 0, plannedDate: '', description: '', parentId: parentTodo?.id || null, attachments: [] })
   }
   todoDialogVisible.value = true
 }
@@ -541,8 +559,7 @@ const saveTodo = async () => {
     planned_date: todoForm.plannedDate || null,
     description: todoForm.description || null,
     parent_id: todoForm.parentId ?? null,
-    file_url: todoForm.fileUrl || null,
-    file_name: todoForm.fileName || null
+    attachments: todoForm.attachments.map(a => ({ file_url: a.fileUrl, file_name: a.fileName }))
   }
   try {
     let savedTodo
@@ -599,11 +616,15 @@ const beforeTodoUpload = (file) => {
 const handleTodoUpload = async ({ file }) => {
   try {
     const formData = new FormData()
-    formData.append('file', file)
-    const res = await uploadTodoFile(formData)
-    if (res && res.file_url) {
-      todoForm.fileUrl = res.file_url
-      todoForm.fileName = res.file_name || res.file_url.split('/').pop()
+    formData.append('files', file)
+    const res = await uploadTodoFiles(formData)
+    if (res && res.files && res.files.length > 0) {
+      for (const f of res.files) {
+        todoForm.attachments.push({
+          fileUrl: f.file_url,
+          fileName: f.file_name || f.file_url.split('/').pop()
+        })
+      }
       ElMessage.success('附件上传成功')
     } else {
       ElMessage.error('附件上传失败')
@@ -614,9 +635,8 @@ const handleTodoUpload = async ({ file }) => {
   }
 }
 
-const clearTodoAttachment = () => {
-  todoForm.fileUrl = ''
-  todoForm.fileName = ''
+const removeAttachment = (idx) => {
+  todoForm.attachments.splice(idx, 1)
 }
 
 const cloneTodo = (todo) => {
@@ -628,8 +648,7 @@ const cloneTodo = (todo) => {
     expectedPoints: todo.expectedPoints || 0,
     plannedDate: todo.plannedDate,
     description: todo.description || '',
-    fileUrl: todo.fileUrl || '',
-    fileName: todo.fileName || ''
+    attachments: todo.attachments ? todo.attachments.map(a => ({ ...a })) : []
   })
   editingTodo.value = null
   todoDialogVisible.value = true
@@ -929,13 +948,23 @@ onMounted(async () => {
   gap: 12px;
 }
 
+.todo-file-list {
+  margin-top: 8px;
+}
+
+.todo-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
 .todo-file-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   color: var(--primary);
   font-size: 13px;
-  margin-top: 8px;
 }
 
 .todo-file-link:hover {

@@ -81,7 +81,20 @@
         <template #default="{ row }">
           <span v-if="row.description">{{ row.description }}</span>
           <span v-else class="text-muted">-</span>
-          <a v-if="row.fileUrl" :href="row.fileUrl" target="_blank" class="todo-attach-link" title="查看附件" @click.stop>
+          <template v-if="row.attachments && row.attachments.length > 0">
+            <a
+              v-for="(att, idx) in row.attachments"
+              :key="idx"
+              :href="att.fileUrl"
+              target="_blank"
+              class="todo-attach-link"
+              :title="att.fileName || ('附件' + (idx + 1))"
+              @click.stop
+            >
+              <el-icon><Document /></el-icon>
+            </a>
+          </template>
+          <a v-else-if="row.fileUrl" :href="row.fileUrl" target="_blank" class="todo-attach-link" title="查看附件" @click.stop>
             <el-icon><Document /></el-icon>
           </a>
         </template>
