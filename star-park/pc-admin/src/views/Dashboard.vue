@@ -17,6 +17,7 @@
         :key="child.id"
         :child="child"
         :color="getChildColor(child.name)"
+        @show-flowers="openFlowerDetailModal"
       />
       <!-- 添加成员卡片 -->
       <div class="child-card card add-card" @click="showAddDialog = true">

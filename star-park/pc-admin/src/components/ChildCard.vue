@@ -21,7 +21,7 @@
           {{ child.points_balance || 0 }}
         </span>
       </div>
-      <div class="stat-row">
+      <div class="stat-row flowers-row" @click="$emit('show-flowers', child)">
         <span class="stat-label">红花</span>
         <span class="stat-value flowers-value">
           {{ child.flowers_balance || 0 }}
@@ -45,6 +45,8 @@ const props = defineProps({
     default: '#19C8B9'
   }
 })
+
+defineEmits(['show-flowers'])
 
 const router = useRouter()
 
@@ -133,5 +135,9 @@ const goToBalance = () => {
   font-size: 16px;
   font-weight: 700;
   color: #E9165D;
+}
+
+.flowers-row {
+  cursor: pointer;
 }
 </style>
