@@ -93,6 +93,33 @@
         <el-button type="primary" @click="submitFlowers">确认发放</el-button>
       </template>
     </el-dialog>
+
+    <!-- 红花明细弹窗 -->
+    <el-dialog
+      v-model="flowerDetailVisible"
+      :title="`${selectedFlowerChild?.name || ''} 的红花记录`"
+      width="520px"
+      center
+      @closed="closeFlowerDetailModal"
+    >
+      <div v-loading="flowerLoading">
+        <el-table :data="flowerRecords" stripe style="width: 100%;" empty-text="暂无红花记录">
+          <el-table-column label="时间" width="160">
+            <template #default="{ row }">
+              {{ formatFlowerTime(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="数量" width="100" align="center">
+            <template #default="{ row }">
+              <span :class="row.amount > 0 ? 'flower-amount--positive' : 'flower-amount--negative'">
+                {{ row.amount > 0 ? '+' : '' }}{{ row.amount }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="reason" label="说明" min-width="180" show-overflow-tooltip />
+        </el-table>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -170,6 +197,10 @@ const children = computed(() => {
 const todayStr = computed(() => {
   return dayjs().format('YYYY年MM月DD日 dddd')
 })
+
+const formatFlowerTime = (time) => {
+  return time ? dayjs(time).format('YYYY-MM-DD HH:mm') : '-'
+}
 
 const getChildColor = (name) => {
   return store.getChildColor(name)
@@ -365,5 +396,15 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
+}
+
+.flower-amount--positive {
+  color: #67C23A;
+  font-weight: 600;
+}
+
+.flower-amount--negative {
+  color: #F56C6C;
+  font-weight: 600;
 }
 </style>
