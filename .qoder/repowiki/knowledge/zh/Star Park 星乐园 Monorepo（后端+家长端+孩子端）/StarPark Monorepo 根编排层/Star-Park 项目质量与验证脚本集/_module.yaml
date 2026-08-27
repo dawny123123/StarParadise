@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: 29f34e3d-5235-4b23-8568-d545695a51ca/84c3f16a-b194-40fd-a216-5157566f8e83
-title: Star-Park 项目质量与验证脚本集
-scope:
-    - scripts/
-source_files: []
-depends_on: []
-related_to:
-    - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15

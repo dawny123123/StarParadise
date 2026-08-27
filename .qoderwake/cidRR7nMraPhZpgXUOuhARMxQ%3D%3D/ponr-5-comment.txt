@@ -1,0 +1,49 @@
+PONR-5 需求实现报告
+
+一、需求分析理解
+
+需求标题：仪表盘中增加特殊奖励
+需求描述：仪表盘有金额、积分，增加特殊奖励，单位红花
+
+分析：现有仪表盘展示两种货币体系：
+- 金额（transactions 表，earn - spend/redeem 计算）
+- 积分（points 账本表 + children.points_balance 缓存余额）
+
+需新增第三种货币「红花」，与金额/积分并列展示，支持手动发放、余额展示和奖励兑换。
+
+根因：系统缺少第三种奖励载体的数据模型和展示能力，需从数据层到API层到展示层全链路扩展。
+
+二、代码主要变更
+
+数据层（database.js）
+- 新建 flowers 账本表（镜像 points 表：id/child_id/amount/reason/created_at）
+- children 表新增 flowers_balance INTEGER DEFAULT 0 字段（通过 try/catch ALTER TABLE 迁移）
+
+后端 API（3 个文件）
+- flowers.js（新文件）：GET /api/flowers 查询红花记录+余额，POST /api/flowers 手动发放红花
+- stats.js：仪表盘 API 返回新增 flowers_balance 字段
+- rewards.js：奖励进度同步扩展支持红花单位；兑换逻辑新增红花分支（余额校验到扣减到流水记录）
+- app.js：注册 /api/flowers 路由
+
+前端（4 个文件）
+- ChildCard.vue：仪表盘卡片新增红花余额行（玫瑰色）
+- Rewards.vue：奖励单位下拉新增红花选项 + 标签颜色区分（danger type）
+- Checkin.vue：打卡页新增红花奖励入口（粉色渐变）+ 发放弹窗
+- api/index.js：新增 getFlowers/addFlowers API 函数
+
+测试（3 个文件）
+- flowers.test.js（新文件）：5 个用例覆盖 GET/POST 全流程
+- rewards.test.js：新增红花兑换成功 + 余额不足 400 两个用例
+- stats.test.js：仪表盘断言新增 flowers_balance 字段
+
+三、关键 SOP 步骤执行记录
+
+1. 需求确认：通过 projex-search-workitems 检索获取 PONR-5 详情（id: 1dbc4044254b57e80cf776b3ef）
+2. 本地验证：make lint-arch 通过 + npm run build 通过（4.06s）
+3. Commit：9929a818 feat: 仪表盘增加红花特殊奖励（第三货币体系） ReqId: PONR-5
+4. Push：feat/nodejs-cicd-pipeline 到 codeup，合并 main 到 codeup
+5. 流水线：flow-create-pipeline-run 触发 run 24，四阶段全部 SUCCESS
+6. 生产验证：health check 通过 + /api/dashboard 返回 flowers_balance: 0 确认新字段已部署
+7. Projex 状态：projex-update-workitem 更新为已完成(100014)
+
+总计：16 文件变更，+397 行 / -20 行，全流程零人工操作完成。

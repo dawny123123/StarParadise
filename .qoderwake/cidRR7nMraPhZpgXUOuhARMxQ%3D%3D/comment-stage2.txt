@@ -1,0 +1,19 @@
+【阶段2：根因分析】
+
+现状分析：
+- 现有仪表盘展示两种货币：金额（transactions 表，earn-spend/redeem 计算）和积分（points 账本表 + children.points_balance 缓存余额）
+- 奖励系统支持「元」和「星星」两种单位，兑换时分别扣减金钱和积分余额
+- 系统缺少第三种奖励载体的数据模型和展示能力
+
+根因定位：
+- 需从数据层到API层到展示层全链路扩展，新增「红花」货币体系
+
+设计方案：
+- 新建 flowers 账本表（镜像 points 表结构：id/child_id/amount/reason/created_at）
+- children 表新增 flowers_balance 字段（缓存余额，通过 try/catch ALTER TABLE 迁移）
+- 新建 /api/flowers 路由（GET 查询记录+余额，POST 手动发放）
+- 仪表盘 API 返回新增 flowers_balance 字段
+- 奖励兑换逻辑扩展支持「红花」单位（余额校验 + 扣减 + 流水记录）
+- 前端 ChildCard 仪表盘卡片新增红花余额行
+- 打卡页新增红花奖励入口和发放弹窗
+- 奖励管理下拉新增红花单位选项

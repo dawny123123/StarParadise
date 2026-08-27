@@ -3,11 +3,11 @@ schema_version: 1
 locale: zh-CN
 branch: feat/nodejs-cicd-pipeline
 nodes_managed: true
-exported_at: "2026-08-24T03:00:32Z"
+exported_at: "2026-08-27T09:45:58Z"
 modules:
     "":
-        dir_name: Star Park 星乐园 Monorepo（后端+家长端+孩子端）
-        title: Star Park 星乐园 Monorepo（后端+家长端+孩子端）
+        dir_name: Star Park 星乐园 Monorepo（后端 + 家长端 + 孩子端）
+        title: Star Park 星乐园 Monorepo（后端 + 家长端 + 孩子端）
         scope: []
         source_files: []
         children:
@@ -48,8 +48,8 @@ modules:
         related_to:
             - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15
     29f34e3d-5235-4b23-8568-d545695a51ca/84c3f16a-b194-40fd-a216-5157566f8e83:
-        dir_name: Star-Park 项目质量与验证脚本集
-        title: Star-Park 项目质量与验证脚本集
+        dir_name: 构建与质量验证脚本集
+        title: 构建与质量验证脚本集
         scope:
             - scripts/
         source_files: []
@@ -67,8 +67,8 @@ modules:
         depends_on: []
         related_to: []
     29f34e3d-5235-4b23-8568-d545695a51ca/875b5f02-5e26-4dca-8ed6-a0d217733475:
-        dir_name: 家长端 PC 管理后台（Star Park Admin）
-        title: 家长端 PC 管理后台（Star Park Admin）
+        dir_name: 家长端 PC 管理后台（Vue 3 + Vite）
+        title: 家长端 PC 管理后台（Vue 3 + Vite）
         scope:
             - star-park/pc-admin/
         source_files: []
@@ -89,8 +89,8 @@ modules:
             - path: 29f34e3d-5235-4b23-8568-d545695a51ca/875b5f02-5e26-4dca-8ed6-a0d217733475
             - path: 84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15
     84b82afd-e3e8-4a3d-9367-c04665560327:
-        dir_name: 星乐园后端服务启动骨架
-        title: 星乐园后端服务启动骨架
+        dir_name: Star Park 后端服务启动骨架
+        title: Star Park 后端服务启动骨架
         scope:
             - star-park/server/src/app.js
             - star-park/server/src/database.js
@@ -102,8 +102,8 @@ modules:
         depends_on: []
         related_to: []
     84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15:
-        dir_name: 星乐园后端服务（Express + SQLite）
-        title: 星乐园后端服务（Express + SQLite）
+        dir_name: Star Park 后端服务（Express + SQLite）
+        title: Star Park 后端服务（Express + SQLite）
         scope:
             - star-park/server/
         source_files: []
@@ -117,8 +117,8 @@ modules:
             - path: 29f34e3d-5235-4b23-8568-d545695a51ca/f9951cdd-5744-4667-8d72-256e50a79a68
             - path: deploy
     84b82afd-e3e8-4a3d-9367-c04665560327/460e19d2-d207-4a35-9b01-ff586f667e15/813f3d4c-bb4b-4998-b304-316065ddc251:
-        dir_name: 服务端 API 集成测试套件
-        title: 服务端 API 集成测试套件
+        dir_name: 服务器端 API 集成测试套件
+        title: 服务器端 API 集成测试套件
         scope:
             - star-park/server/tests/
         source_files: []

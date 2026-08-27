@@ -1,0 +1,5 @@
+{
+  "hookEventName": "SessionStart",
+  "additionalContext": "# qoderwake_memory bootstrap\n\nTemporary sessions have no project memory scope.\nWhen the user explicitly asks you to remember something in a temporary session, use scope=waker with the current Waker ID.\nAgent Team Task Memory is searchable through memory_search and is not injected at session start.",
+  "agentName": "pdsa轻眉（数字员工）"
+}

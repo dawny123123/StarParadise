@@ -1,0 +1,8 @@
+fix: 将红花发放入口从孤儿 Checkin 页迁移至 Dashboard（PONR-5 UI 可达化整改）
+
+- Dashboard.vue 新增「发放红花」按钮 + 红花发放弹窗，复用原 Checkin.vue 的 openFlowersModal/submitFlowers 逻辑与弹窗样式
+- 从 Checkin.vue 移除红花奖励入口、弹窗、状态、提交逻辑及相关样式，避免死代码堆积
+- 更新 scripts/lint-quality.py 中 Checkin.vue 的 KNOWN_LARGE_FILES 行数（622 → 505）
+- 同步更新 pc-admin 生产构建产物 dist/index.html
+
+ReqId: PONR-5

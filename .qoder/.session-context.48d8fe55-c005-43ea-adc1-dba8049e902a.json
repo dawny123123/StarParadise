@@ -1,0 +1,5 @@
+{
+  "hookEventName": "SessionStart",
+  "additionalContext": "# qoderwake_memory bootstrap\n\nTemporary sessions have no project memory scope.\nWhen the user explicitly asks you to remember something in a temporary session, use scope=waker with the current Waker ID.\nAgent Team Task Memory is searchable through memory_search and is not injected at session start.\n\n## Waker Memory\n\n- PD数字员工 是基于 product-manager 角色创建的 Waker，长期工作重点是面向软件产品的 AI 原生产品管理角色，专注目标驱动的需求全生命周期管理、PRD 生成、用户反馈分析、竞品研究和发布沟通，并对外部写入设置明确审批门禁。。",
+  "agentName": "PD数字员工"
+}

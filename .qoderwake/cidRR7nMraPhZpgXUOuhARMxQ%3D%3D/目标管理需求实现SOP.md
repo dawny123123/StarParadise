@@ -2,8 +2,8 @@
 
 > **适用范围**：星星乐园（StarParadise）项目，以后端 Express + 前端 Vue 3 + 云效 Flow CI/CD 为主的技术栈。  
 > **文档目标**：把「目标管理任务列表移除创建人列」这一需求的完整落地过程沉淀为标准流程，供后续新需求复用。  
-> **版本**：v1.1  
-> **最后更新**：2026-08-21
+> **版本**：v2.0
+> **最后更新**：2026-08-25
 
 ---
 
@@ -20,6 +20,11 @@
 | 7. 分支合并 | 部署验证通过后，将特性分支合并至 `main` | 合并记录 / MR | 开发 / 维护者 |
 | 8. 验收 | 按验收标准逐项确认 | 验收结论 | 产品经理 |
 | 9. 结项 | 更新 Projex 需求状态、更新文档、关闭任务、记录经验 | 结项记录 | 产品经理 |
+
+> **跨阶段实践：Projex 评论同步（v2.0 新增）**
+> 每个阶段完成后，应通过 `aliyun devops projex-create-workitem-comment` 在对应需求的评论中追加一条阶段记录，
+> 描述该阶段的关键动作、决策和产出。评论内容为纯文本（云效评论 API 不支持 markdown 特殊符号和 emoji）。
+> 此实践确保需求全生命周期可追溯，便于复盘和审计。详见 §14。
 
 ---
 
@@ -455,6 +460,7 @@ git push origin main
 | 生产健康检查 | `curl http://127.0.0.1:3002/api/health` |
 | 服务日志 | `journalctl -u star-park-server -n 100 --no-pager` |
 | 回滚 | `bash /opt/star-park/current/deploy/rollback.sh` |
+| 需求评论同步 | `aliyun devops projex-create-workitem-comment --id <workitemId> --content <内容>` |
 
 ---
 
@@ -468,6 +474,7 @@ git push origin main
 | 端口不通 | 安全组已放通但 `curl` 仍失败 | 同时检查目标机 `firewalld`；`curl` 快速失败是主机 reject，超时是安全组丢包 |
 | 原生模块编译失败 | `better-sqlite3` 在云效构建机无法编译 | `npm ci --ignore-scripts` + 从 npmmirror 下对应 ABI 的预编译产物 |
 | 合并后需求状态未更新 | Projex 状态仍停留在「开发中」 | 检查 MR/Commit 是否正确关联需求 ID；确认自动化规则已开启；必要时手动更新 |
+| Projex 评论发布失败 | API 返回 400："评论失败，请检查是否存在特殊符号或者表情符号" | 评论内容使用纯文本，去除 emoji、markdown 特殊符号（`#`、`**`、`_` 等），保留中文和普通标点 |
 
 ---
 
@@ -479,6 +486,7 @@ git push origin main
 - [ ] Projex 需求链接与需求 ID 已提取并记录
 - [ ] 影响范围（前端/后端/数据库/文档）已评估
 - [ ] 方案已确认并记录
+- [ ] Projex 评论已追加「阶段1：需求确认」和「阶段2：根因分析」
 
 ### 13.2 开发阶段
 
@@ -486,6 +494,7 @@ git push origin main
 - [ ] Commit / MR 标题已关联需求 ID
 - [ ] 改动最小化，符合分层架构
 - [ ] 数据层与展示层变更已区分
+- [ ] Projex 评论已追加「阶段3：代码修改」
 
 ### 13.3 验证阶段
 
@@ -493,6 +502,7 @@ git push origin main
 - [ ] 涉及子项目构建通过
 - [ ] 页面/功能已人工验证
 - [ ] 无新增 console.log 调试语句
+- [ ] Projex 评论已追加「阶段4：本地验证」
 
 ### 13.4 发布阶段
 
@@ -501,6 +511,7 @@ git push origin main
 - [ ] 生产环境健康检查通过
 - [ ] 特性分支已合并至 `main`
 - [ ] `main` 分支流水线运行成功
+- [ ] Projex 评论已追加「阶段5：Commit + Push」和「阶段6：流水线」
 
 ### 13.5 验收与结项
 
@@ -509,6 +520,80 @@ git push origin main
 - [ ] 相关文档已更新
 - [ ] 需求/任务状态已关闭
 - [ ] 经验教训已记录
+- [ ] Projex 评论已追加「阶段7：生产验证 + 状态更新」
+
+---
+
+## 14. Projex 评论同步（v2.0 新增）
+
+### 14.1 目的
+
+每个 SOP 阶段完成后，在云效 Projex 对应需求的评论区追加一条阶段记录，
+确保需求全生命周期的关键动作、决策和产出可追溯，便于复盘和审计。
+
+### 14.2 评论时机
+
+| 阶段 | 评论标题前缀 | 触发时机 |
+|------|-------------|----------|
+| 需求确认 | 阶段1：需求确认 | 通过 CLI 检索到需求详情后 |
+| 根因分析 | 阶段2：根因分析 | 完成现状分析和设计方案后 |
+| 代码修改 | 阶段3：代码修改 | 代码改动完成后（含文件数、行数统计） |
+| 本地验证 | 阶段4：本地验证 | lint + build 通过后 |
+| 提交推送 | 阶段5：Commit + Push | commit 和 push 成功后 |
+| 流水线 | 阶段6：流水线触发 + 验证 | 流水线运行成功后 |
+| 生产验证 | 阶段7：生产验证 + 状态更新 | 健康检查通过且 Projex 状态已更新 |
+
+### 14.3 CLI 命令
+
+```bash
+# 创建评论（需 PAT 认证）
+aliyun devops projex-create-workitem-comment \
+  --yunxiao-access-token <PAT> \
+  --organization-id 625d2340cfea268afc2158c5 \
+  --id <工作项ID> \
+  --content <评论内容>
+
+# 批量评论（Python 脚本方式）
+python3 -c "
+import subprocess
+content = open('comment-file.txt').read()
+result = subprocess.run([
+    'aliyun', 'devops', 'projex-create-workitem-comment',
+    '--yunxiao-access-token', '<PAT>',
+    '--organization-id', '625d2340cfea268afc2158c5',
+    '--id', '<工作项ID>',
+    '--content', content
+], capture_output=True, text=True)
+print('stdout:', result.stdout)
+"
+```
+
+### 14.4 评论内容约束
+
+- 纯文本格式，不支持 markdown 特殊符号（`#`、`**`、`-` 等列表符号可用纯文本替代）
+- 不支持 emoji（会触发 API 400 错误："评论失败，请检查是否存在特殊符号或者表情符号"）
+- 建议每条评论内容以 `【阶段N：标题】` 开头，便于快速识别
+
+### 14.5 评论内容模板
+
+```
+【阶段N：标题】
+
+关键动作：[本阶段做了什么]
+决策/结论：[重要决策或分析结论]
+产出：[本阶段产出物，如 commit hash、流水线 run 编号、验证结果]
+```
+
+### 14.6 示例（PONR-5）
+
+PONR-5「仪表盘中增加特殊奖励」需求的 7 条评论记录：
+- 阶段1：需求确认（comment_id: 22804444）
+- 阶段2：根因分析（comment_id: 22805140）
+- 阶段3：代码修改（comment_id: 22804445）
+- 阶段4：本地验证（comment_id: 22806868）
+- 阶段5：Commit + Push（comment_id: 22807061）
+- 阶段6：流水线触发 + 验证（comment_id: 22805231）
+- 阶段7：生产验证 + 状态更新（comment_id: 22804447）
 
 ---
 

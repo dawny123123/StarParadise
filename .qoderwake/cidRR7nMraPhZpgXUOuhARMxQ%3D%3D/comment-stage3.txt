@@ -1,0 +1,25 @@
+【阶段3：代码修改】
+
+共 16 文件变更，+397 行 / -20 行。
+
+数据层（database.js）：
+- 新建 flowers 账本表（镜像 points 表结构：id/child_id/amount/reason/created_at）
+- children 表新增 flowers_balance INTEGER DEFAULT 0 字段（try/catch ALTER TABLE 迁移模式）
+- resetForTest() 表列表加入 flowers
+
+后端 API（4 个文件）：
+- flowers.js（新文件）：GET /api/flowers 查询红花记录+余额，POST /api/flowers 手动发放红花（镜像 points.js 的事务模式）
+- app.js：注册 app.use('/api/flowers', flowersRouter)
+- stats.js：仪表盘 API 返回新增 flowers_balance: child.flowers_balance || 0
+- rewards.js：syncMoneyRewardProgress 扩展支持红花单位进度同步（flowers_balance 对齐）；兑换逻辑新增 else if (unit === '红花') 分支（余额校验到扣减到流水记录）；knownErrors 新增红花余额不足
+
+前端（4 个文件）：
+- ChildCard.vue：仪表盘卡片新增红花余额行（玫瑰色 #E9165D，font-weight: 700）
+- Rewards.vue：奖励单位下拉新增红花选项；单位标签颜色区分（danger type）
+- Checkin.vue：打卡页新增红花奖励入口（粉色渐变背景 #FF69B4）+ 发放弹窗（选择孩子/数量/理由）
+- api/index.js：新增 getFlowers/addFlowers API 函数
+
+测试（3 个文件）：
+- flowers.test.js（新文件）：5 个用例覆盖 GET 查询+余额、POST 发放+默认理由+累计+校验
+- rewards.test.js：新增红花兑换成功 + 余额不足返回 400 两个用例
+- stats.test.js：仪表盘断言新增 flowers_balance 字段

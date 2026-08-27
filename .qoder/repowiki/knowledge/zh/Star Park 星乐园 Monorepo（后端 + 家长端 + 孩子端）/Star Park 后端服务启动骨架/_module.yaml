@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: 84b82afd-e3e8-4a3d-9367-c04665560327
+title: Star Park 后端服务启动骨架
+scope:
+    - star-park/server/src/app.js
+    - star-park/server/src/database.js
+    - star-park/server/src/index.js
+    - star-park/server/src/seed.js
+source_files: []
+depends_on: []
+related_to: []

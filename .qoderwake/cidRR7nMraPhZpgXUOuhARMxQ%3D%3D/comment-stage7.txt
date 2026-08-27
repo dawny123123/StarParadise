@@ -1,0 +1,13 @@
+【阶段7：生产验证 + Projex 状态更新】
+
+生产环境验证：
+- 健康检查：GET http://8.147.58.185:3002/api/health 返回 {"status":"ok"}
+- 功能验证：GET /api/dashboard 返回 flowers_balance: 0（新字段已上线）
+- 部署版本：main 分支 commit 9929a818
+
+Projex 状态更新：
+- 命令：aliyun devops projex-update-workitem --id 1dbc4044254b57e80cf776b3ef --biz-body '{"status":"100014"}'
+- 状态：待处理（100005）更新为 已完成（100014）
+- 更新时间：2026-08-25 17:13:05
+
+SOP 全流程零人工操作完成，所有阶段自动化闭环。
