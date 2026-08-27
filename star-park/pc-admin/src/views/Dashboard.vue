@@ -102,7 +102,7 @@ import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useAppStore } from '../stores/app'
-import { getDashboard, addFlowers } from '../api'
+import { getDashboard, addFlowers, getFlowers } from '../api'
 import ChildCard from '../components/ChildCard.vue'
 
 const store = useAppStore()
@@ -126,6 +126,12 @@ const showFlowersModal = ref(false)
 const flowersChildId = ref(null)
 const flowersAmount = ref(1)
 const flowersReason = ref('')
+
+// 红花明细弹窗相关
+const flowerDetailVisible = ref(false)
+const selectedFlowerChild = ref(null)
+const flowerRecords = ref([])
+const flowerLoading = ref(false)
 
 const formRules = {
   name: [{ required: true, message: '请输入孩子姓名', trigger: 'blur' }]
@@ -209,6 +215,36 @@ const submitFlowers = async () => {
     ElMessage.error('红花发放失败')
     console.error('红花发放失败:', err)
   }
+}
+
+// 打开红花明细弹窗
+const openFlowerDetailModal = (child) => {
+  selectedFlowerChild.value = child
+  flowerDetailVisible.value = true
+  flowerRecords.value = []
+  loadFlowerRecords(child.id)
+}
+
+// 加载红花记录
+const loadFlowerRecords = async (childId) => {
+  if (!childId) return
+  flowerLoading.value = true
+  try {
+    const res = await getFlowers({ child_id: childId })
+    flowerRecords.value = res?.records || []
+  } catch (err) {
+    ElMessage.error('加载红花记录失败')
+    console.error('加载红花记录失败:', err)
+  } finally {
+    flowerLoading.value = false
+  }
+}
+
+// 关闭红花明细弹窗
+const closeFlowerDetailModal = () => {
+  flowerDetailVisible.value = false
+  selectedFlowerChild.value = null
+  flowerRecords.value = []
 }
 
 onMounted(() => {
