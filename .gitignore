@@ -30,6 +30,7 @@ coverage/
 
 # ─── 运行时数据与日志（SQLite 数据库属于运行时状态，不入库） ───
 star-park/server/data/
+star-park/uploads/
 *.log
 
 # ─── OS 噪声文件 ───

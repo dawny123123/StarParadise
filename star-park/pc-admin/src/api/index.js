@@ -135,4 +135,10 @@ export const updateBestPractice = (id, data) => api.put(`/best-practices/${id}`,
 export const deleteBestPractice = (id) => api.delete(`/best-practices/${id}`)
 export const uploadBestPracticeFile = (formData) => api.post('/best-practices/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 
+// ========== 需求自主交付（Qoder Forward 模版，经后端代理）==========
+export const getForwardDeliveryConfig = () => api.get('/forward-delivery/config')
+export const getForwardDeliveries = () => api.get('/forward-delivery')
+export const createForwardDelivery = (data) => api.post('/forward-delivery', data, { timeout: 60000 })
+export const getForwardDelivery = (id) => api.get(`/forward-delivery/${id}`, { timeout: 30000 })
+
 export default api

@@ -13,6 +13,7 @@ const flowersRouter = require('./routes/flowers');
 const goalsRouter = require('./routes/goals');
 const todosRouter = require('./routes/todos');
 const bestPracticesRouter = require('./routes/best-practices');
+const forwardDeliveryRouter = require('./routes/forward-delivery');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/flowers', flowersRouter);
 app.use('/api/goals', goalsRouter);
 app.use('/api/todos', todosRouter);
 app.use('/api/best-practices', bestPracticesRouter);
+app.use('/api/forward-delivery', forwardDeliveryRouter);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

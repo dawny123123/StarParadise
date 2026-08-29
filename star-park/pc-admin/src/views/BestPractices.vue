@@ -2,10 +2,13 @@
   <div class="page-container fade-in-up">
     <div class="page-header">
       <h1 class="page-title">📝 轻眉沉淀 / 最佳实践</h1>
-      <el-button type="primary" @click="openDialog()">
-        <el-icon><Plus /></el-icon>
-        新建实践
-      </el-button>
+      <div class="header-buttons">
+        <ForwardDeliveryDialog :practices="list" @saved="fetchList" />
+        <el-button type="primary" @click="openDialog()">
+          <el-icon><Plus /></el-icon>
+          新建实践
+        </el-button>
+      </div>
     </div>
 
     <!-- 搜索过滤 -->
@@ -150,6 +153,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Edit, Delete, Search, Upload, Document } from '@element-plus/icons-vue'
 import { MdEditor, MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
+import ForwardDeliveryDialog from '../components/ForwardDeliveryDialog.vue'
 import {
   getBestPractices,
   createBestPractice,
@@ -432,5 +436,12 @@ onMounted(() => {
   text-align: right;
   padding-top: 8px;
   border-top: 1px solid #F0EDE6;
+}
+
+/* 需求自主交付 */
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

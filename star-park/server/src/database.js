@@ -134,6 +134,22 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now', 'localtime')),
     updated_at TEXT DEFAULT (datetime('now', 'localtime'))
   );
+
+  CREATE TABLE IF NOT EXISTS forward_deliveries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    requirement TEXT NOT NULL,
+    title TEXT,
+    practice_id INTEGER,
+    template_id TEXT,
+    session_id TEXT,
+    status TEXT DEFAULT 'pending',
+    stop_reason TEXT,
+    result TEXT,
+    error TEXT,
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    updated_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (practice_id) REFERENCES best_practices(id)
+  );
 `);
 
 // 迁移：给 children 表添加 points_balance 字段（如果不存在）
@@ -263,7 +279,7 @@ try {
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */
-  const tables = ['todos', 'goals', 'flowers', 'points', 'transactions', 'checkins', 'rewards', 'tasks', 'children', 'best_practices'];
+  const tables = ['forward_deliveries', 'todos', 'goals', 'flowers', 'points', 'transactions', 'checkins', 'rewards', 'tasks', 'children', 'best_practices'];
   for (const table of tables) {
     /* v8 ignore next */
     db.exec(`DELETE FROM ${table}`);
