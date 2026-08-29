@@ -139,15 +139,30 @@ node -e "require('better-sqlite3'); console.log('better-sqlite3 原生模块加�
 
 # ---------- 6. 环境变量文件（首次生成，后续保留人工修改） ----------
 if [ ! -f "$ENV_FILE" ]; then
-  cat > "$ENV_FILE" <<EOF
+  cat > "$ENV_FILE" <<'ENVEOF'
 NODE_ENV=production
-PORT=${APP_PORT}
-STATIC_DIR=${CURRENT_LINK}/pc-admin
-EOF
+PORT=3002
+STATIC_DIR=/opt/star-park/current/pc-admin
+# ── Qoder 需求自主交付（ForwardDelivery）──────────────────────────
+# 配置后「需求自主交付」按钮将可用；留空则按钮显示为灰色不可点击。
+# 获取途径：Qoder 控制台 → 个人设置 → Personal Access Token
+QODER_FORWARD_TOKEN=
+# 以下两项有内置默认值，通常无需修改
+# QODER_FORWARD_IDENTITY_ID=idn_40351b70be50576e0c107f17
+# QODER_FORWARD_TEMPLATE_ID=tmpl_6aa804df653ef220a520beb2
+ENVEOF
+  # 用实际端口替换占位符
+  sed -i "s/^PORT=.*/PORT=${APP_PORT}/" "$ENV_FILE"
+  sed -i "s|^STATIC_DIR=.*|STATIC_DIR=${CURRENT_LINK}/pc-admin|" "$ENV_FILE"
   chmod 600 "$ENV_FILE"
   log "已生成 ${ENV_FILE}"
+  log "⚠️  QODER_FORWARD_TOKEN 未配置 — 请编辑 ${ENV_FILE} 填入 Token 后重启服务，否则「需求自主交付」按钮将保持灰色不可用"
 else
   log "复用既有 ${ENV_FILE}"
+fi
+# 检查关键 Token 是否已配置（非阻断，仅提醒）
+if ! grep -q "^QODER_FORWARD_TOKEN=.\+" "$ENV_FILE" 2>/dev/null; then
+  log "⚠️  WARNING: ${ENV_FILE} 中 QODER_FORWARD_TOKEN 为空，「需求自主交付」功能将不可用"
 fi
 
 # ---------- 7. 安装 systemd unit ----------
