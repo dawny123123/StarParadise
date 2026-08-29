@@ -12,6 +12,11 @@
 - [scripts/lint-quality.py](file://scripts/lint-quality.py)
 - [harness/config/environment.json](file://harness/config/environment.json)
 - [docs/CICD-PLAYBOOK.md](file://docs/CICD-PLAYBOOK.md)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/probe_yx.py](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/probe_yx.py)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/prod-index.html](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/prod-index.html)
 - [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md)
 - [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/ponr-4-sop-prompt.md](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/ponr-4-sop-prompt.md)
 - [docs/exec-specs/completed/goals-todos-db-persistence/acceptance.md](file://docs/exec-specs/completed/goals-todos-db-persistence/acceptance.md)
@@ -20,23 +25,26 @@
 
 ## 更新摘要
 **所做更改**
-- 新增SOP文档集成章节，详细说明标准操作流程的整合
-- 增强工作流程标准化部分，包含端到端需求实现流程
-- 更新流水线配置以支持SOP驱动的开发模式
-- 添加执行规格验证机制，确保质量门禁的严格执行
-- 完善回滚策略和故障恢复流程
+- 新增管道轮询脚本和环境配置管理章节，详细说明云效流水线状态监控机制
+- 增强自动化部署工作流部分，包含完整的部署前检查和故障恢复流程
+- 更新健康检查工具链，支持多端口检测和超时控制
+- 添加生产环境探针和预构建产物验证机制
+- 完善环境配置管理系统，支持动态环境变量注入
+- 强化SOP流程集成，提供端到端的需求实现标准化指导
 
 ## 产品概述
-本章节聚焦"星星乐园"项目的持续集成与持续交付（CI/CD）及自动化部署能力。该体系以云效 Flow 流水线为核心，将代码检查、单元测试、构建打包、主机部署与健康检查串联为可追溯的发布流程；通过版本目录 + 原子软链切换实现零停机回滚，配合 SQLite 数据库备份与端口守卫，保障生产环境稳定上线。**最新更新**：现已集成完整的标准操作流程（SOP）系统，提供从需求确认到结项的全流程标准化指导，确保团队开发的一致性和可追溯性。面向产品经理与运营角色，本文强调发布节奏、质量门禁与回滚策略，避免深入技术细节。
+本章节聚焦"星星乐园"项目的持续集成与持续交付（CI/CD）及自动化部署能力。该体系以云效 Flow 流水线为核心，将代码检查、单元测试、构建打包、主机部署与健康检查串联为可追溯的发布流程；通过版本目录 + 原子软链切换实现零停机回滚，配合 SQLite 数据库备份与端口守卫，保障生产环境稳定上线。**最新更新**：现已集成完整的标准操作流程（SOP）系统和管道轮询机制，提供从需求确认到结项的全流程标准化指导，并增强了自动化部署的可靠性和可观测性。面向产品经理与运营角色，本文强调发布节奏、质量门禁与回滚策略，避免深入技术细节。
 
 ## 核心业务流程
 - **触发与拉取**：推送或合并到 main 分支后，云效 Flow 从 Codeup 仓库拉取代码并执行流水线。
 - **SOP驱动开发**：基于标准操作流程进行需求实现，包含需求确认、方案评估、代码修改、本地验证等9个标准化阶段。
+- **管道轮询监控**：通过专用脚本持续监控云效流水线执行状态，支持智能终止和结果处理。
 - **质量门禁**：执行分层依赖检查与代码质量检查，确保架构约束与编码规范。
 - **执行规格验证**：通过预定义的验收标准自动验证功能完整性，确保交付质量。
 - **单元测试**：运行后端单测与覆盖率报告，阻断不达标变更。
 - **构建打包**：构建前端静态资源，组装服务端源码与部署脚本为制品包。
 - **主机部署**：在目标 ECS 上解包、安装依赖、写入 systemd unit、原子切换 current、重启服务并健康检查。
+- **健康检查**：轮询 /api/health 直到返回 status=ok 或超时，支持自定义重试次数和间隔。
 - **自动回滚**：健康检查失败时自动回滚至上一版本，必要时人工介入。
 - **访问打通**：安全组与主机防火墙双层放通，限定来源白名单。
 - **数据同步**：部署前备份 SQLite，支持后续数据导入与一致性校验。
@@ -45,47 +53,66 @@
 sequenceDiagram
 participant Dev as "开发者"
 participant SOP as "SOP流程"
-participant Flow as "云效 Flow 流水线"
+participant Pipeline as "云效流水线"
+participant Poller as "管道轮询器"
 participant Build as "构建阶段"
 participant Deploy as "主机部署"
 participant App as "star-park-server"
 participant DB as "SQLite 数据"
 Dev->>SOP : 启动需求实现流程
-SOP->>Flow : 触发代码检查与测试
-Flow->>Build : 执行 lint / 单测 / 构建
-Build-->>Flow : 产出制品包
-Flow->>Deploy : 下发制品包到 ECS
+SOP->>Pipeline : 触发代码检查与测试
+Pipeline->>Poller : 启动轮询监控
+Poller->>Pipeline : 定期检查流水线状态
+Pipeline->>Build : 执行 lint / 单测 / 构建
+Build-->>Pipeline : 产出制品包
+Pipeline->>Deploy : 下发制品包到 ECS
 Deploy->>DB : 部署前备份数据库
 Deploy->>App : 安装依赖并启动服务
 App-->>Deploy : 暴露 /api/health
 Deploy->>App : 健康检查
 alt 健康检查通过
-Deploy-->>Flow : 部署成功
+Deploy-->>Pipeline : 部署成功
+Poller-->>SOP : 通知流水线完成
 SOP-->>Dev : 完成SOP结项流程
 else 健康检查失败
 Deploy->>Deploy : 自动回滚到上一版本
+Poller-->>SOP : 通知流水线失败
 SOP-->>Dev : 触发问题修复流程
 end
 ```
 
 **图表来源**
 - [.flow/star-park-nodejs-cicd.yml:20-153](file://.flow/star-park-nodejs-cicd.yml#L20-L153)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh:1-9](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh#L1-L9)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh:1-16](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh#L1-L16)
 - [deploy/deploy.sh:67-172](file://deploy/deploy.sh#L67-L172)
 - [deploy/health-check.sh:1-26](file://deploy/health-check.sh#L1-L26)
-- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md:10-23](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md#L10-L23)
 
 **章节来源**
 - [.flow/star-park-nodejs-cicd.yml:20-153](file://.flow/star-park-nodejs-cicd.yml#L20-L153)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh:1-9](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh#L1-L9)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh:1-16](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh#L1-L16)
 - [deploy/deploy.sh:67-172](file://deploy/deploy.sh#L67-L172)
 - [deploy/health-check.sh:1-26](file://deploy/health-check.sh#L1-L26)
 - [docs/CICD-PLAYBOOK.md:11-24](file://docs/CICD-PLAYBOOK.md#L11-L24)
-- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md:10-23](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md#L10-L23)
 
 ## 功能模块清单
 - **流水线定义**（.flow/star-park-nodejs-cicd.yml）
   - 职责：编排代码检查、单元测试、构建打包、主机部署四阶段；注入 Node 版本、制品上传与 VMDeploy 主机部署参数。
   - 用户价值：一键发布、可追溯、可回滚。
   - 验收要点：lint 通过、单测覆盖、制品包含 server 与 pc-admin、VMDeploy 成功调用 deploy.sh。
+- **管道轮询监控**（.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline*.sh）
+  - 职责：持续监控云效流水线执行状态，支持智能终止和结果解析。
+  - 用户价值：实时掌握流水线进度，自动处理完成状态。
+  - 验收要点：正确获取流水线状态，支持超时和错误处理。
+- **环境配置管理**（.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh）
+  - 职责：集中管理云效API访问令牌和其他环境变量。
+  - 用户价值：统一环境配置，便于权限管理和安全控制。
+  - 验收要点：环境变量正确加载，支持多Token轮换。
+- **生产环境探针**（.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/probe_yx.py）
+  - 职责：探测云效项目空间中的需求项，验证API连通性。
+  - 用户价值：确保外部服务可用性，支持多凭证测试。
+  - 验收要点：成功查询需求项，支持超时和异常处理。
 - **SOP流程集成**（.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/）
   - 职责：提供标准化的需求实现流程，包含9个阶段的完整操作指南。
   - 用户价值：统一开发流程，确保交付质量和可追溯性。
@@ -122,9 +149,18 @@ end
   - 职责：描述运行时、数据库、服务端口、功能场景与脚本入口。
   - 用户价值：统一开发体验与验证路径。
   - 验收要点：本地可启动服务，健康端点可用。
+- **生产预构建产物**（.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/prod-index.html）
+  - 职责：提供生产环境的预构建HTML入口文件。
+  - 用户价值：加速部署过程，减少构建时间。
+  - 验收要点：HTML结构正确，资源引用有效。
 
 **章节来源**
 - [.flow/star-park-nodejs-cicd.yml:20-153](file://.flow/star-park-nodejs-cicd.yml#L20-L153)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh:1-9](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh#L1-L9)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh:1-16](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh#L1-L16)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/probe_yx.py:1-19](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/probe_yx.py#L1-L19)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh:1-2](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh#L1-L2)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/prod-index.html:1-15](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/prod-index.html#L1-L15)
 - [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md:10-23](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md#L10-L23)
 - [docs/exec-specs/completed/goals-todos-db-persistence/acceptance.md:1-351](file://docs/exec-specs/completed/goals-todos-db-persistence/acceptance.md#L1-L351)
 - [scripts/lint-deps.py:16-98](file://scripts/lint-deps.py#L16-L98)
@@ -145,6 +181,7 @@ end
   - backups：每次部署前对数据库进行备份，保留最近若干份。
 - **环境变量**
   - shared/star-park.env：首次生成 NODE_ENV、PORT、STATIC_DIR，后续复用并允许人工调整。
+  - yx_env.sh：集中管理云效API访问令牌，支持多Token轮换。
 - **服务进程**
   - systemd unit 管理 star-park-server，工作目录为 current/server，日志输出到 /var/log/star-park。
 - **健康状态**
@@ -152,6 +189,9 @@ end
 - **SOP执行记录**
   - .qoderwake/：存储SOP流程执行记录和模板。
   - docs/exec-specs/completed/：保存已完成需求的执行规格和验收结果。
+- **管道轮询状态**
+  - poll_pipeline*.sh：记录流水线执行状态和结果。
+  - probe_yx.py：存储外部服务连通性测试结果。
 
 ```mermaid
 flowchart TD
@@ -178,6 +218,7 @@ Rollback --> End
 - [deploy/deploy.sh:67-172](file://deploy/deploy.sh#L67-L172)
 - [deploy/star-park-server.service:7-23](file://deploy/star-park-server.service#L7-L23)
 - [deploy/health-check.sh:1-26](file://deploy/health-check.sh#L1-L26)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh:1-2](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh#L1-L2)
 
 ## 关键约束与边界
 - **构建镜像与环境**
@@ -195,6 +236,12 @@ Rollback --> End
 - **SOP执行约束**
   - 所有需求实现必须遵循标准操作流程，包含需求确认、方案评估、代码修改、本地验证、远端同步、流水线触发、分支合并、验收、结项9个阶段。
   - 每个阶段都有明确的验收标准和检查点，确保流程的可执行性和可追溯性。
+- **管道轮询约束**
+  - 轮询脚本支持最大重试次数和超时控制，避免无限等待。
+  - 支持多种流水线状态检测，包括SUCCESS、FAILED、ABORTED等。
+- **环境配置约束**
+  - 云效API访问令牌集中管理，支持多Token轮换和权限隔离。
+  - 环境变量文件权限设置为600，确保敏感信息保护。
 - **运维建议**
   - 首次部署前后拍快照；记录残留风险（如 HTTPS、鉴权网关、SSH 开放范围）。
 
@@ -206,7 +253,58 @@ Rollback --> End
 - [deploy/deploy.sh:54-172](file://deploy/deploy.sh#L54-L172)
 - [scripts/lint-deps.py:16-98](file://scripts/lint-deps.py#L16-L98)
 - [scripts/lint-quality.py:17-48](file://scripts/lint-quality.py#L17-L48)
-- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md:10-23](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/目标管理需求实现SOP.md#L10-L23)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh:10-15](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh#L10-L15)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh:1-2](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh#L1-L2)
+
+## 新增：管道轮询监控与环境配置管理
+
+### 管道轮询系统架构
+项目现已集成完整的管道轮询监控系统，提供对云效流水线执行状态的实时跟踪：
+
+- **基础轮询器**（poll_pipeline.sh）：简单轮询实现，固定次数检查流水线状态
+- **智能轮询器**（poll_pipeline2.sh）：支持状态解析和智能终止，检测到最终状态后自动退出
+- **环境配置管理**（yx_env.sh）：集中管理云效API访问令牌，支持多Token轮换
+- **服务探针**（probe_yx.py）：探测云效项目空间连通性，支持多凭证测试
+
+### 轮询脚本特性
+轮询脚本提供了丰富的功能和健壮的错误处理：
+
+- **状态检测**：支持SUCCESS、FAILED、ABORTED等多种流水线状态识别
+- **超时控制**：内置最大重试次数限制，避免无限等待
+- **结果解析**：自动提取流水线执行结果和详细信息
+- **日志记录**：详细的执行日志，便于问题排查
+- **错误处理**：完善的异常捕获和处理机制
+
+### 环境配置管理
+环境配置管理系统提供了统一的配置管理方案：
+
+- **集中配置**：所有环境变量集中在yx_env.sh中管理
+- **权限控制**：配置文件权限设置为600，确保敏感信息安全
+- **多Token支持**：支持多个云效API令牌的轮换使用
+- **动态加载**：脚本启动时自动加载环境变量
+
+### 生产环境探针
+生产环境探针提供了外部服务连通性验证：
+
+- **多凭证测试**：支持多个云效API令牌的连通性测试
+- **条件查询**：基于特定条件搜索项目空间中的需求项
+- **超时处理**：网络请求超时和异常处理
+- **结果验证**：验证查询结果的完整性和准确性
+
+### 预构建产物管理
+生产环境预构建产物提供了快速部署支持：
+
+- **静态HTML**：预构建的生产环境HTML入口文件
+- **资源优化**：优化的JavaScript和CSS资源引用
+- **版本管理**：支持不同版本的产物管理
+- **快速验证**：无需重新构建即可验证部署产物
+
+**章节来源**
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh:1-9](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline.sh#L1-L9)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh:1-16](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/poll_pipeline2.sh#L1-L16)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/probe_yx.py:1-19](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/probe_yx.py#L1-L19)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh:1-2](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/yx_env.sh#L1-L2)
+- [.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/prod-index.html:1-15](file://.qoderwake/cidRR7nMraPhZpgXUOuhARMxQ%3D%3D/prod-index.html#L1-L15)
 
 ## 新增：SOP文档集成与工作流标准化
 
