@@ -72,6 +72,7 @@
           <MdEditor
             v-model="form.problemDescription"
             style="height: 300px"
+            :preview="false"
             :toolbars-exclude="['github']"
           />
         </el-form-item>
@@ -277,10 +278,12 @@ const beforeUpload = (file) => {
 }
 
 const onUploadSuccess = (response) => {
-  if (response && response.url) {
-    form.value.fileUrl = response.url
-    form.value.fileName = response.fileName || response.url.split('/').pop()
+  if (response && response.file_url) {
+    form.value.fileUrl = response.file_url
+    form.value.fileName = response.file_name || response.file_url.split('/').pop()
     ElMessage.success('文件上传成功')
+  } else {
+    ElMessage.error('文件上传失败：服务器返回异常')
   }
 }
 
