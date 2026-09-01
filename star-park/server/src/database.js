@@ -276,6 +276,23 @@ try {
   // JSON 函数不可用或数据已迁移，忽略
 }
 
+// 迁移：给 best_practices 表添加 attachments 字段（JSON 数组，支持多附件，PONR-27）
+try {
+  db.exec(`ALTER TABLE best_practices ADD COLUMN attachments TEXT`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('best_practices.attachments 迁移失败:', err.message);
+    throw err;
+  }
+}
+// 数据迁移：将旧的 file_url/file_name 单附件数据迁移到 attachments JSON 数组
+/* v8 ignore next 4 */
+try {
+  db.exec(`UPDATE best_practices SET attachments = json('[{"file_url":"' || file_url || '","file_name":"' || COALESCE(file_name, file_url) || '"}]') WHERE attachments IS NULL AND file_url IS NOT NULL`);
+} catch (err) {
+  // JSON 函数不可用或数据已迁移，忽略
+}
+
 // 测试辅助：重置所有表数据
 function resetForTest() {
   /* v8 ignore next */

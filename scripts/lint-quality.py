@@ -44,6 +44,7 @@ KNOWN_EXCEPTIONS = {
 KNOWN_LARGE_FILES = {
     "./star-park/miniprogram/src/pages/checkin/index.vue": 660,  # 打卡页面，需拆分
     "./star-park/pc-admin/src/views/Goals.vue": 997,            # 目标管理页面，需拆分（readlines 口径，含父子任务功能）
+    "./star-park/pc-admin/src/views/BestPractices.vue": 540,    # 轻眉沉淀页面，多附件功能后需拆分（PONR-27）
     "./star-park/pc-admin/src/views/Checkin.vue": 505,          # 打卡管理页面，需拆分（PONR-5 红花发放入口已迁移至 Dashboard.vue）
     "./star-park/server/tests/todos.test.js": 506,             # 待办测试集，随多附件/父子任务扩展，后续拆分
 }
