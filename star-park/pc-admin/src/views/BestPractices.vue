@@ -46,9 +46,9 @@
         </div>
         <div class="practice-meta">
           <span class="meta-date">{{ formatDate(item.createdAt) }}</span>
-          <el-tag v-if="item.fileName" size="small" type="info">
+          <el-tag v-if="attachmentCount(item)" size="small" type="info">
             <el-icon><Document /></el-icon>
-            {{ item.fileName }}
+            附件 × {{ attachmentCount(item) }}
           </el-tag>
         </div>
       </div>
@@ -85,18 +85,31 @@
           />
         </el-form-item>
         <el-form-item label="文档上传">
-          <el-upload
-            :action="uploadUrl"
-            :show-file-list="false"
-            :on-success="onUploadSuccess"
-            :on-error="onUploadError"
-            :before-upload="beforeUpload"
-          >
-            <el-button type="info" plain>
-              <el-icon><Upload /></el-icon>
-              {{ form.fileName || '选择文件' }}
-            </el-button>
-          </el-upload>
+          <div class="attachment-row">
+            <el-upload
+              :http-request="handleUpload"
+              :show-file-list="false"
+              :before-upload="beforeUpload"
+              multiple
+            >
+              <el-button type="info" plain>
+                <el-icon><Upload /></el-icon>
+                上传附件（可多选）
+              </el-button>
+            </el-upload>
+            <span class="attachment-hint">单文件 ≤ 10MB，最多 10 个</span>
+          </div>
+          <div v-if="form.attachments.length > 0" class="attachment-list">
+            <div v-for="(att, idx) in form.attachments" :key="idx" class="attachment-item">
+              <a :href="att.fileUrl" target="_blank" class="attachment-link">
+                <el-icon><Document /></el-icon>
+                {{ att.fileName || '附件' + (idx + 1) }}
+              </a>
+              <el-button text size="small" type="danger" @click="removeAttachment(idx)">
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="备注">
           <el-input
@@ -133,12 +146,20 @@
           <h3 class="detail-label">备注</h3>
           <p class="detail-text">{{ detailItem.notes }}</p>
         </div>
-        <div class="detail-section" v-if="detailItem.fileUrl">
-          <h3 class="detail-label">附件</h3>
-          <a :href="detailItem.fileUrl" target="_blank" class="file-link">
-            <el-icon><Document /></el-icon>
-            {{ detailItem.fileName || '下载附件' }}
-          </a>
+        <div class="detail-section" v-if="detailItem.attachments && detailItem.attachments.length > 0">
+          <h3 class="detail-label">附件（{{ detailItem.attachments.length }}）</h3>
+          <div class="detail-attachments">
+            <a
+              v-for="(att, idx) in detailItem.attachments"
+              :key="idx"
+              :href="att.fileUrl"
+              target="_blank"
+              class="file-link"
+            >
+              <el-icon><Document /></el-icon>
+              {{ att.fileName || '下载附件' + (idx + 1) }}
+            </a>
+          </div>
         </div>
         <div class="detail-meta">
           创建于 {{ formatDate(detailItem.createdAt) }}
@@ -151,7 +172,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit, Delete, Search, Upload, Document } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Search, Upload, Document, Close } from '@element-plus/icons-vue'
 import { MdEditor, MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import ForwardDeliveryDialog from '../components/ForwardDeliveryDialog.vue'
@@ -159,7 +180,8 @@ import {
   getBestPractices,
   createBestPractice,
   updateBestPractice,
-  deleteBestPractice
+  deleteBestPractice,
+  uploadBestPracticeFile
 } from '../api'
 
 const loading = ref(false)
@@ -171,14 +193,13 @@ const editing = ref(null)
 const detailItem = ref(null)
 const searchKeyword = ref('')
 
-const uploadUrl = '/api/best-practices/upload'
+const MAX_ATTACHMENTS = 10
 
 const emptyForm = () => ({
   title: '',
   problemDescription: '',
   keyPoints: '',
-  fileUrl: '',
-  fileName: '',
+  attachments: [],
   notes: ''
 })
 
@@ -205,8 +226,7 @@ const openDialog = (item = null) => {
       title: item.title,
       problemDescription: item.problemDescription || '',
       keyPoints: item.keyPoints || '',
-      fileUrl: item.fileUrl || '',
-      fileName: item.fileName || '',
+      attachments: (item.attachments || []).map(a => ({ ...a })),
       notes: item.notes || ''
     }
   } else {
@@ -231,8 +251,10 @@ const handleSubmit = async () => {
       title: form.value.title,
       problem_description: form.value.problemDescription,
       key_points: form.value.keyPoints,
-      file_url: form.value.fileUrl,
-      file_name: form.value.fileName,
+      attachments: form.value.attachments.map(a => ({
+        file_url: a.fileUrl,
+        file_name: a.fileName
+      })),
       notes: form.value.notes
     }
     if (editing.value) {
@@ -271,25 +293,47 @@ const handleDelete = async (item) => {
 const beforeUpload = (file) => {
   const maxSize = 10 * 1024 * 1024
   if (file.size > maxSize) {
-    ElMessage.error('文件大小不能超过 10MB')
+    ElMessage.error(`「${file.name}」超过 10MB，已跳过`)
+    return false
+  }
+  if (form.value.attachments.length >= MAX_ATTACHMENTS) {
+    ElMessage.warning(`附件最多 ${MAX_ATTACHMENTS} 个`)
     return false
   }
   return true
 }
 
-const onUploadSuccess = (response) => {
-  if (response && response.file_url) {
-    form.value.fileUrl = response.file_url
-    form.value.fileName = response.file_name || response.file_url.split('/').pop()
-    ElMessage.success('文件上传成功')
-  } else {
-    ElMessage.error('文件上传失败：服务器返回异常')
+const handleUpload = async ({ file }) => {
+  try {
+    const formData = new FormData()
+    formData.append('files', file)
+    const res = await uploadBestPracticeFile(formData)
+    if (res && res.files && res.files.length > 0) {
+      for (const f of res.files) {
+        if (form.value.attachments.length >= MAX_ATTACHMENTS) {
+          ElMessage.warning(`附件最多 ${MAX_ATTACHMENTS} 个，超出部分已忽略`)
+          break
+        }
+        form.value.attachments.push({
+          fileUrl: f.file_url,
+          fileName: f.file_name || f.file_url.split('/').pop()
+        })
+      }
+      ElMessage.success('附件上传成功')
+    } else {
+      ElMessage.error('附件上传失败')
+    }
+  } catch (err) {
+    ElMessage.error('附件上传失败')
+    console.error(err)
   }
 }
 
-const onUploadError = () => {
-  ElMessage.error('文件上传失败')
+const removeAttachment = (idx) => {
+  form.value.attachments.splice(idx, 1)
 }
+
+const attachmentCount = (item) => (item.attachments || []).length
 
 const fetchList = async () => {
   loading.value = true
@@ -301,8 +345,10 @@ const fetchList = async () => {
       title: item.title,
       problemDescription: item.problem_description || '',
       keyPoints: item.key_points || '',
-      fileUrl: item.file_url || '',
-      fileName: item.file_name || '',
+      attachments: (item.attachments || []).map(a => ({
+        fileUrl: a.file_url,
+        fileName: a.file_name || a.file_url
+      })),
       notes: item.notes || '',
       createdAt: item.created_at || ''
     }))
@@ -430,6 +476,47 @@ onMounted(() => {
 }
 
 .file-link:hover {
+  text-decoration: underline;
+}
+
+.detail-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 多附件上传（PONR-27） */
+.attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.attachment-hint {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.attachment-list {
+  margin-top: 8px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.attachment-link:hover {
   text-decoration: underline;
 }
 
