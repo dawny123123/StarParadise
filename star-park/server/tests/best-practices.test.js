@@ -52,4 +52,33 @@ describe('Best Practices API', () => {
       expect(res.status).toBe(400);
     });
   });
+
+  describe('GET /api/best-practices 历史乱码数据还原', () => {
+    it('修复前入库的 latin1 乱码 file_name 读取时应还原为中文', async () => {
+      // 模拟旧数据：直接写库（绕过上传接口），latin1 乱码形态
+      const db = require('../src/database');
+      const legacyName = Buffer.from('历史需求文档.pdf', 'utf8').toString('latin1');
+      const result = db.prepare(
+        'INSERT INTO best_practices (title, file_url, file_name) VALUES (?, ?, ?)'
+      ).run('历史乱码实践', '/uploads/legacy.pdf', legacyName);
+      const res = await agent.get('/api/best-practices');
+      const item = res.body.find(i => i.id === Number(result.lastInsertRowid));
+      expect(item.file_name).toBe('历史需求文档.pdf');
+    });
+
+    it('正常中文与英文 file_name 不受还原逻辑影响', async () => {
+      const db = require('../src/database');
+      db.prepare(
+        'INSERT INTO best_practices (title, file_url, file_name) VALUES (?, ?, ?)'
+      ).run('正常名实践A', '/uploads/a.pdf', '正常文档.pdf');
+      db.prepare(
+        'INSERT INTO best_practices (title, file_url, file_name) VALUES (?, ?, ?)'
+      ).run('正常名实践B', '/uploads/b.pdf', 'report.pdf');
+      const res = await agent.get('/api/best-practices');
+      const a = res.body.find(i => i.title === '正常名实践A');
+      const b = res.body.find(i => i.title === '正常名实践B');
+      expect(a.file_name).toBe('正常文档.pdf');
+      expect(b.file_name).toBe('report.pdf');
+    });
+  });
 });

@@ -17,6 +17,24 @@ function decodeOriginalName(name) {
   return Buffer.from(name, 'latin1').toString('utf8');
 }
 
+// 历史数据兼容：修复前入库的 file_name 是 latin1 乱码（如「测试」存成
+// 「æµ‹è¯•」）。读取时尝试 latin1→utf8 还原。判别依据：
+// - 含码点 > 0xFF 的字符 => 已是正常解码文本（中文/emoji），原样返回
+// - 纯 ASCII => 英文名，原样返回
+// - 其余（字符全部落在 0x80–0xFF 高位区，典型乱码形态）=> 还原，
+//   还原结果含替换符则放弃保持原样
+function repairLegacyFileName(name) {
+  if (!name || typeof name !== 'string') return name;
+  if (/[^\x00-\xFF]/.test(name)) return name;
+  if (!/[^\x00-\x7F]/.test(name)) return name;
+  try {
+    const decoded = Buffer.from(name, 'latin1').toString('utf8');
+    return decoded.includes('\uFFFD') ? name : decoded;
+  } catch { /* v8 ignore next */
+    return name;
+  }
+}
+
 // multer 配置：文件保存到 uploads/ 目录
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
@@ -40,6 +58,10 @@ router.get('/', (req, res) => {
       ).all(like, like);
     } else {
       rows = db.prepare('SELECT * FROM best_practices ORDER BY id DESC').all();
+    }
+    // 兼容历史乱码数据：修复前入库的中文名附件，读取时还原（PONR-26）
+    for (const row of rows) {
+      row.file_name = repairLegacyFileName(row.file_name);
     }
     res.json(rows);
   } catch (err) { /* v8 ignore next */
