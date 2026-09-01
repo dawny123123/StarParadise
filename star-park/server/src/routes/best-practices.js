@@ -11,11 +11,17 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
+// multer 默认以 latin1 解码 multipart 文件名，对于中文名会产生乱码，
+// 因此需要转换回 utf8（浏览器发送的 filename 实际为 utf8 字节）。
+function decodeOriginalName(name) {
+  return Buffer.from(name, 'latin1').toString('utf8');
+}
+
 // multer 配置：文件保存到 uploads/ 目录
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
   filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
+    const ext = path.extname(decodeOriginalName(file.originalname));
     const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
     cb(null, name);
   }
@@ -116,7 +122,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
       return res.status(400).json({ error: '请选择要上传的文件' });
     }
     const file_url = `/uploads/${req.file.filename}`;
-    const file_name = req.file.originalname;
+    const file_name = decodeOriginalName(req.file.originalname);
     res.json({ file_url, file_name });
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
