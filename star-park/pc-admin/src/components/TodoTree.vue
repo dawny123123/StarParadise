@@ -79,24 +79,30 @@
       </el-table-column>
       <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip>
         <template #default="{ row }">
-          <span v-if="row.description">{{ row.description }}</span>
-          <span v-else class="text-muted">-</span>
-          <template v-if="row.attachments && row.attachments.length > 0">
-            <a
-              v-for="(att, idx) in row.attachments"
-              :key="idx"
-              :href="att.fileUrl"
-              target="_blank"
-              class="todo-attach-link"
-              :title="att.fileName || ('附件' + (idx + 1))"
-              @click.stop
-            >
-              <el-icon><Document /></el-icon>
-            </a>
-          </template>
-          <a v-else-if="row.fileUrl" :href="row.fileUrl" target="_blank" class="todo-attach-link" title="查看附件" @click.stop>
-            <el-icon><Document /></el-icon>
-          </a>
+          <div class="todo-description-cell">
+            <span v-if="row.description" class="todo-description-text">{{ row.description }}</span>
+            <span v-else class="text-muted">-</span>
+            <div v-if="row.attachments && row.attachments.length > 0" class="todo-attachments">
+              <a
+                v-for="(att, idx) in row.attachments"
+                :key="idx"
+                :href="att.fileUrl"
+                target="_blank"
+                class="todo-attach-link"
+                :title="att.fileName || ('附件' + (idx + 1))"
+                @click.stop
+              >
+                <el-icon><Document /></el-icon>
+                <span class="todo-attach-name">{{ att.fileName || ('附件' + (idx + 1)) }}</span>
+              </a>
+            </div>
+            <div v-else-if="row.fileUrl" class="todo-attachments">
+              <a :href="row.fileUrl" target="_blank" class="todo-attach-link" :title="row.fileName || '查看附件'" @click.stop>
+                <el-icon><Document /></el-icon>
+                <span class="todo-attach-name">{{ row.fileName || '附件' }}</span>
+              </a>
+            </div>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="计划日期" width="100">
@@ -449,16 +455,40 @@ const handleDrop = (event, row) => {
   color: var(--text-light);
 }
 
+.todo-description-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.todo-description-text {
+  line-height: 1.4;
+}
+
+.todo-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .todo-attach-link {
   display: inline-flex;
   align-items: center;
-  margin-left: 6px;
+  gap: 4px;
   color: var(--primary);
   vertical-align: middle;
+  font-size: 13px;
 }
 
 .todo-attach-link:hover {
   color: var(--primary-dark, #0d8a9c);
+}
+
+.todo-attach-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.droppable-parent) {
