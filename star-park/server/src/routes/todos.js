@@ -27,7 +27,9 @@ const storage = multer.diskStorage({
     cb(null, name);
   }
 });
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+// 单个附件文件大小上限（PONR-28：目标管理任务附件支持 100M）
+const MAX_FILE_SIZE_MB = 100;
+const upload = multer({ storage, limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 } });
 
 // 解析 attachments JSON 字段，兼容旧的 file_url/file_name 单附件
 function parseAttachments(todo) {
@@ -226,6 +228,20 @@ router.post('/upload', upload.array('files', 10), (req, res) => {
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
   }
+});
+
+// multer 上传错误统一处理：超限等错误返回明确提示，不静默失败（PONR-28）
+router.use((err, _req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: `单个文件大小不能超过 ${MAX_FILE_SIZE_MB}MB` });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ error: '单次最多上传 10 个文件' });
+    }
+    return res.status(400).json({ error: `上传失败：${err.message}` });
+  }
+  next(err);
 });
 
 module.exports = router;

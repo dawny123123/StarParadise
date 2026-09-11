@@ -616,9 +616,9 @@ const deleteTodo = async (id) => {
 }
 
 const beforeTodoUpload = (file) => {
-  const maxSize = 10 * 1024 * 1024
+  const maxSize = 100 * 1024 * 1024
   if (file.size > maxSize) {
-    ElMessage.error('文件大小不能超过 10MB')
+    ElMessage.error('文件大小不能超过 100MB')
     return false
   }
   return true
