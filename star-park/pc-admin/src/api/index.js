@@ -33,6 +33,10 @@ export const getGoals = (params) => api.get('/goals', { params })
 export const createGoal = (data) => api.post('/goals', data)
 export const updateGoal = (id, data) => api.put(`/goals/${id}`, data)
 export const deleteGoal = (id) => api.delete(`/goals/${id}`)
+export const uploadGoalFiles = (formData) => api.post('/goals/upload', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' },
+  timeout: 0
+})
 
 // ========== 待办相关 ==========
 export const getTodos = (params) => api.get('/todos', { params })

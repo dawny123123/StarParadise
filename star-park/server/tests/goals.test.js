@@ -1,4 +1,11 @@
+const fs = require('fs');
+const path = require('path');
 const { createAgent, seedTestData } = require('./helpers');
+
+function removeUploadedFile(fileUrl) {
+  const filename = fileUrl.replace('/uploads/', '');
+  fs.rmSync(path.join(__dirname, '..', '..', 'uploads', filename), { force: true });
+}
 
 describe('Goals API', () => {
   let agent;
@@ -129,6 +136,46 @@ describe('Goals API', () => {
       expect(res.status).toBe(200);
       expect(res.body.child_id).toBeNull();
       expect(res.body.title).toBe('待解绑目标');
+    });
+  });
+
+  describe('目标附件', () => {
+    it('应创建、读取与清空附件列表', async () => {
+      const attachments = [
+        { file_url: '/uploads/plan.pdf', file_name: '目标计划.pdf' },
+        { file_url: '/uploads/reference.png', file_name: '参考图.png' }
+      ];
+      const created = await agent.post('/api/goals').send({ title: '带附件的目标', attachments });
+      expect(created.status).toBe(201);
+      expect(created.body.attachments).toEqual(attachments);
+
+      const listed = await agent.get('/api/goals');
+      expect(listed.status).toBe(200);
+      expect(listed.body[0].attachments).toEqual(attachments);
+
+      const updated = await agent.put(`/api/goals/${created.body.id}`).send({ attachments: [] });
+      expect(updated.status).toBe(200);
+      expect(updated.body.attachments).toEqual([]);
+    });
+
+    it('目标上传接口应支持文件并保留中文文件名', async () => {
+      const res = await agent
+        .post('/api/goals/upload')
+        .attach('files', Buffer.from('goal attachment content'), '目标说明.txt');
+      expect(res.status).toBe(200);
+      expect(res.body.files).toHaveLength(1);
+      expect(res.body.files[0].file_name).toBe('目标说明.txt');
+      removeUploadedFile(res.body.files[0].file_url);
+    });
+
+    it('目标上传接口不应沿用待办附件的100MB大小限制', async () => {
+      const oversized = Buffer.alloc(100 * 1024 * 1024 + 1);
+      const res = await agent
+        .post('/api/goals/upload')
+        .attach('files', oversized, 'over-100mb.bin');
+      expect(res.status).toBe(200);
+      expect(res.body.files).toHaveLength(1);
+      removeUploadedFile(res.body.files[0].file_url);
     });
   });
 

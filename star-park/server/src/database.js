@@ -241,6 +241,16 @@ try {
   }
 }
 
+// 迁移：给 goals 表添加附件字段（JSON 数组，支持目标描述附件，PONR-31）
+try {
+  db.exec(`ALTER TABLE goals ADD COLUMN attachments TEXT`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('goals.attachments 迁移失败:', err.message);
+    throw err;
+  }
+}
+
 // 迁移：给 todos 表添加附件字段（任务描述支持上传附件）
 try {
   db.exec(`ALTER TABLE todos ADD COLUMN file_url TEXT`);

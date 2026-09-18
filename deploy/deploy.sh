@@ -68,7 +68,7 @@ log "=== 部署 ${APP_NAME} release=${RELEASE_ID} port=${APP_PORT} ==="
 guard_port
 
 # ---------- 1. 目录准备 ----------
-mkdir -p "$RELEASES_DIR" "$SHARED_DIR/data" "$BACKUP_DIR" "$LOG_DIR"
+mkdir -p "$RELEASES_DIR" "$SHARED_DIR/data" "$SHARED_DIR/uploads" "$BACKUP_DIR" "$LOG_DIR"
 
 # ---------- 2. SQLite 备份（部署前必做） ----------
 DB_FILE="${SHARED_DIR}/data/star-park.db"
@@ -105,9 +105,10 @@ log "解包完成（制品根 ${PKG_ROOT#$UNPACK_DIR/}） -> ${RELEASE_DIR}"
 
 trap rollback ERR
 
-# ---------- 4. 数据目录软链到 shared（版本切换不丢数据） ----------
-rm -rf "${RELEASE_DIR}/server/data"
+# ---------- 4. 数据与上传目录软链到 shared（版本切换不丢数据） ----------
+rm -rf "${RELEASE_DIR}/server/data" "${RELEASE_DIR}/uploads"
 ln -sfn "${SHARED_DIR}/data" "${RELEASE_DIR}/server/data"
+ln -sfn "${SHARED_DIR}/uploads" "${RELEASE_DIR}/uploads"
 
 # ---------- 5. 安装生产依赖 ----------
 # 目标机没有 g++，better-sqlite3 一旦回退源码编译必然失败，
