@@ -859,16 +859,14 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 
+/* 描述内容按输入换行完整展示（PONR-30）：保留换行符，不再截断为2行 */
 .goal-description {
   font-size: 12px;
   color: var(--text-light);
   margin-bottom: 12px;
   line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: pre-line;
+  overflow-wrap: break-word;
 }
 
 .goal-progress {
