@@ -27,19 +27,7 @@
             <span :class="['goal-status', goal.status]">{{ getStatusLabel(goal.status) }}</span>
             <div class="goal-title">{{ goal.title }}</div>
             <div class="goal-description" v-if="goal.description">{{ goal.description }}</div>
-            <div v-if="goal.attachments?.length" class="goal-attachments">
-              <a
-                v-for="(attachment, index) in goal.attachments"
-                :key="index"
-                :href="attachment.fileUrl"
-                target="_blank"
-                class="goal-attachment-link"
-                @click.stop
-              >
-                <el-icon><Document /></el-icon>
-                {{ attachment.fileName || `附件${index + 1}` }}
-              </a>
-            </div>
+            <GoalAttachments :attachments="goal.attachments" />
             <div class="goal-progress">
               <div class="goal-progress-bar">
                 <div class="goal-progress-fill" :style="{ width: getProgressPercent(goal) + '%' }"></div>
@@ -100,27 +88,7 @@
         <el-form-item label="描述">
           <el-input v-model="goalForm.description" type="textarea" :rows="3" placeholder="请输入目标描述（可选）" />
         </el-form-item>
-        <el-form-item label="附件">
-          <div class="goal-attachment-row">
-            <el-upload :http-request="handleGoalUpload" :show-file-list="false" multiple>
-              <el-button type="info" plain>
-                <el-icon><Upload /></el-icon>
-                上传附件
-              </el-button>
-            </el-upload>
-          </div>
-          <div v-if="goalForm.attachments.length > 0" class="goal-file-list">
-            <div v-for="(attachment, index) in goalForm.attachments" :key="index" class="goal-file-item">
-              <a :href="attachment.fileUrl" target="_blank" class="goal-file-link">
-                <el-icon><Document /></el-icon>
-                {{ attachment.fileName || `附件${index + 1}` }}
-              </a>
-              <el-button text size="small" type="danger" @click="removeGoalAttachment(index)">
-                <el-icon><Close /></el-icon>
-              </el-button>
-            </div>
-          </div>
-        </el-form-item>
+        <GoalAttachments v-model:attachments="goalForm.attachments" editable />
         <el-form-item label="进度/目标">
           <div class="progress-input-row">
             <el-input-number v-model="goalForm.progress" :min="0" style="flex: 1" />
@@ -276,11 +244,12 @@ import { Plus, Edit, Delete, DocumentCopy, Upload, Document, Close } from '@elem
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   triggerGoalAutoAssociation, addPoints,
-  getGoals, createGoal, updateGoal, deleteGoal as deleteGoalApi, uploadGoalFiles,
+  getGoals, createGoal, updateGoal, deleteGoal as deleteGoalApi,
   getTodos, createTodo, updateTodo, deleteTodo as deleteTodoApi,
   uploadTodoFiles
 } from '../api'
 import { useAppStore } from '../stores/app'
+import GoalAttachments from '../components/GoalAttachments.vue'
 import TodoTree from '../components/TodoTree.vue'
 
 const route = useRoute()
@@ -304,14 +273,7 @@ const hoveredGoal = ref(null)
 const goals = ref([])
 const goalDialogVisible = ref(false)
 const editingGoal = ref(null)
-const goalForm = reactive({
-  title: '',
-  status: 'todo',
-  description: '',
-  attachments: [],
-  progress: 0,
-  target: 1
-})
+const goalForm = reactive({ title: '', status: 'todo', description: '', attachments: [], progress: 0, target: 1 })
 
 // 待办相关
 const todos = ref([])
@@ -343,12 +305,7 @@ const mapGoalFromApi = (g) => ({
   title: g.title,
   status: g.status,
   description: g.description || '',
-  attachments: Array.isArray(g.attachments)
-    ? g.attachments.map(attachment => ({
-        fileUrl: attachment.file_url || attachment.fileUrl || '',
-        fileName: attachment.file_name || attachment.fileName || ''
-      })).filter(attachment => attachment.fileUrl)
-    : [],
+  attachments: Array.isArray(g.attachments) ? g.attachments : [],
   progress: g.progress,
   target: g.target
 })
@@ -486,14 +443,7 @@ const openGoalTasks = (goal) => {
 const openGoalModal = (goal = null) => {
   if (goal) {
     editingGoal.value = goal
-    Object.assign(goalForm, {
-      title: goal.title,
-      status: goal.status,
-      description: goal.description || '',
-      attachments: goal.attachments ? goal.attachments.map(attachment => ({ ...attachment })) : [],
-      progress: goal.progress,
-      target: goal.target
-    })
+    Object.assign(goalForm, { title: goal.title, status: goal.status, description: goal.description || '', attachments: goal.attachments.map(attachment => ({ ...attachment })), progress: goal.progress, target: goal.target })
   } else {
     editingGoal.value = null
     Object.assign(goalForm, { title: '', status: 'todo', description: '', attachments: [], progress: 0, target: 1 })
@@ -510,10 +460,7 @@ const saveGoal = async () => {
     title: goalForm.title,
     status: goalForm.status,
     description: goalForm.description || '',
-    attachments: goalForm.attachments.map(attachment => ({
-      file_url: attachment.fileUrl,
-      file_name: attachment.fileName
-    })),
+    attachments: goalForm.attachments,
     progress: goalForm.progress,
     target: goalForm.target
   }
@@ -531,32 +478,6 @@ const saveGoal = async () => {
     ElMessage.error('保存失败，请重试')
     console.error(err)
   }
-}
-
-const handleGoalUpload = async ({ file }) => {
-  try {
-    const formData = new FormData()
-    formData.append('files', file)
-    const res = await uploadGoalFiles(formData)
-    if (!res?.files?.length) {
-      ElMessage.error('附件上传失败')
-      return
-    }
-    res.files.forEach(attachment => {
-      goalForm.attachments.push({
-        fileUrl: attachment.file_url,
-        fileName: attachment.file_name || attachment.file_url.split('/').pop()
-      })
-    })
-    ElMessage.success('附件上传成功')
-  } catch (err) {
-    ElMessage.error('附件上传失败')
-    console.error(err)
-  }
-}
-
-const removeGoalAttachment = (index) => {
-  goalForm.attachments.splice(index, 1)
 }
 
 const deleteGoal = async (id) => {
@@ -947,27 +868,6 @@ onMounted(async () => {
   overflow-wrap: break-word;
 }
 
-.goal-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.goal-attachment-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
-  color: var(--primary);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-
-.goal-attachment-link:hover {
-  text-decoration: underline;
-}
-
 .goal-progress {
   display: flex;
   align-items: center;
@@ -1048,36 +948,6 @@ onMounted(async () => {
 
 .progress-divider {
   color: var(--text-light);
-}
-
-.goal-attachment-row {
-  display: flex;
-  align-items: center;
-}
-
-.goal-file-list {
-  margin-top: 8px;
-}
-
-.goal-file-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 4px 0;
-}
-
-.goal-file-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--primary);
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-
-.goal-file-link:hover {
-  text-decoration: underline;
 }
 
 .todo-attachment-row {
