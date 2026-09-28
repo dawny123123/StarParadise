@@ -26,8 +26,13 @@
         已完成 <span class="tab-count">{{ completedCount }}</span>
       </el-tag>
     </div>
-
+    <TodoBatchParentDialog
+      :todos="props.todos"
+      :selected-todos="selectedTodos"
+      @success="handleBatchParentSuccess"
+    />
     <el-table
+      ref="todoTable"
       :data="treeTodos"
       stripe
       style="width: 100%"
@@ -35,7 +40,9 @@
       row-key="id"
       :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       :row-class-name="rowClassName"
+      @selection-change="handleSelectionChange"
     >
+      <el-table-column type="selection" width="44" :selectable="isBulkSelectable" />
       <el-table-column width="40">
         <template #default="{ row }">
           <span
@@ -161,7 +168,6 @@
       </el-table-column>
     </el-table>
     <el-empty v-if="treeTodos.length === 0" description="暂无待办事项" />
-
     <!-- 选择父任务对话框 -->
     <el-dialog v-model="parentDialogVisible" title="设置父任务" width="480px">
       <el-form label-width="90px">
@@ -186,35 +192,31 @@
     </el-dialog>
   </div>
 </template>
-
 <script setup>
 import { ref, computed } from 'vue'
 import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight, Document } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateTodo } from '../api'
-
+import TodoBatchParentDialog from './TodoBatchParentDialog.vue'
 const props = defineProps({
   todos: { type: Array, default: () => [] },
   goals: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false }
 })
-
 const emit = defineEmits(['refresh', 'edit', 'delete', 'clone', 'toggle', 'add-child'])
-
 const filter = ref('pending')
+const todoTable = ref(null)
+const selectedTodos = ref([])
 const pendingChildTodo = ref(null)
 const parentDialogVisible = ref(false)
 const selectedParentId = ref(null)
 const draggingTodo = ref(null)
-
 const visibleTodos = computed(() => props.todos)
 const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
 const completedCount = computed(() => visibleTodos.value.filter(t => t.completed).length)
-
 const setFilter = (value) => {
   filter.value = value
 }
-
 const buildTodoTree = (flatList) => {
   const map = new Map()
   const tree = []
@@ -233,7 +235,6 @@ const buildTodoTree = (flatList) => {
   })
   return tree
 }
-
 const filteredTodos = computed(() => {
   let list = visibleTodos.value
   if (filter.value === 'pending') {
@@ -248,15 +249,12 @@ const filteredTodos = computed(() => {
     return a.plannedDate.localeCompare(b.plannedDate)
   })
 })
-
 const treeTodos = computed(() => buildTodoTree(filteredTodos.value))
-
 const getGoalTitle = (goalId) => {
   if (!goalId) return ''
   const goal = props.goals.find(g => g.id === goalId)
   return goal ? goal.title.substring(0, 8) + (goal.title.length > 8 ? '...' : '') : ''
 }
-
 const getGoalTagType = (goalId) => {
   if (!goalId) return 'info'
   const goal = props.goals.find(g => g.id === goalId)
@@ -264,22 +262,18 @@ const getGoalTagType = (goalId) => {
   const typeMap = { todo: 'success', rest: 'info', health: '', happy: 'warning', study: 'purple' }
   return typeMap[goal.status] || 'info'
 }
-
 const getPriorityType = (priority) => {
   const typeMap = { high: 'danger', medium: 'warning', low: 'success' }
   return typeMap[priority] || 'info'
 }
-
 const getPriorityLabel = (priority) => {
   const labelMap = { high: '高', medium: '中', low: '低' }
   return labelMap[priority] || priority
 }
-
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   return dateStr.substring(5)
 }
-
 const descendantIds = (todo) => {
   const result = new Set()
   const walk = (node) => {
@@ -292,7 +286,6 @@ const descendantIds = (todo) => {
   walk(todo)
   return result
 }
-
 const canBeParent = (childTodo, parentTodo) => {
   if (!childTodo || !parentTodo) return false
   if (childTodo.id === parentTodo.id) return false
@@ -300,35 +293,39 @@ const canBeParent = (childTodo, parentTodo) => {
   if (descendantIds(childTodo).has(parentTodo.id)) return false
   return true
 }
-
+const hasDirectChildren = (todo) => props.todos.some(item => item.parentId === todo.id)
+const isBulkSelectable = (row) => !hasDirectChildren(row)
+const handleSelectionChange = (rows) => {
+  selectedTodos.value = rows
+}
 const doUpdateParent = async (childId, parentId) => {
   try {
     await updateTodo(childId, { parent_id: parentId })
     ElMessage.success(parentId ? '父子关系已设置' : '已取消父子关系')
     emit('refresh')
-  } catch (err) {
+  } catch {
     ElMessage.error('操作失败')
-    console.error(err)
   }
 }
-
 const candidateParents = computed(() => {
   if (!pendingChildTodo.value) return []
   return visibleTodos.value.filter(t => canBeParent(pendingChildTodo.value, t))
 })
-
+const handleBatchParentSuccess = () => {
+  todoTable.value?.clearSelection()
+  selectedTodos.value = []
+  emit('refresh')
+}
 const openParentDialog = (row) => {
   pendingChildTodo.value = row
   selectedParentId.value = row.parentId || null
   parentDialogVisible.value = true
 }
-
 const confirmParentFromDialog = () => {
   if (!pendingChildTodo.value) return
   doUpdateParent(pendingChildTodo.value.id, selectedParentId.value)
   parentDialogVisible.value = false
 }
-
 const removeParent = async (row) => {
   try {
     await ElMessageBox.confirm('确认取消该任务的父子关系？', '提示', { type: 'warning' })
@@ -337,14 +334,12 @@ const removeParent = async (row) => {
   }
   doUpdateParent(row.id, null)
 }
-
 const rowClassName = ({ row }) => {
   if (draggingTodo.value && canBeParent(draggingTodo.value, row)) {
     return 'droppable-parent'
   }
   return ''
 }
-
 const handleDragStart = (event, row) => {
   if (row.children?.length > 0) {
     ElMessage.warning('含有子任务的任务不能拖拽设为子任务')
@@ -355,11 +350,9 @@ const handleDragStart = (event, row) => {
   event.dataTransfer.effectAllowed = 'move'
   event.dataTransfer.setData('text/plain', String(row.id))
 }
-
 const handleDragEnd = () => {
   draggingTodo.value = null
 }
-
 const handleDragOver = (event, row) => {
   if (!draggingTodo.value || !canBeParent(draggingTodo.value, row)) {
     event.dataTransfer.dropEffect = 'none'
@@ -367,29 +360,24 @@ const handleDragOver = (event, row) => {
   }
   event.dataTransfer.dropEffect = 'move'
 }
-
 const handleDragLeave = () => {
   // 样式通过 droppable-parent 类控制，无需额外逻辑
 }
-
 const handleDrop = (event, row) => {
   if (!draggingTodo.value || !canBeParent(draggingTodo.value, row)) return
   doUpdateParent(draggingTodo.value.id, row.id)
   draggingTodo.value = null
 }
 </script>
-
 <style scoped>
 .filter-tabs {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
 }
-
 .filter-tab {
   cursor: pointer;
 }
-
 .tab-count {
   display: inline-flex;
   align-items: center;
@@ -402,27 +390,22 @@ const handleDrop = (event, row) => {
   font-size: 11px;
   margin-left: 4px;
 }
-
 .drag-handle {
   cursor: grab;
   color: var(--text-light);
   user-select: none;
   font-size: 12px;
 }
-
 .drag-handle:active {
   cursor: grabbing;
 }
-
 .todo-title-text {
   font-weight: 500;
 }
-
 .todo-title-text.completed {
   text-decoration: line-through;
   color: var(--text-light);
 }
-
 .todo-actions {
   display: flex;
   align-items: center;
@@ -430,47 +413,38 @@ const handleDrop = (event, row) => {
   gap: 8px;
   flex-wrap: nowrap;
 }
-
 .todo-actions .el-button + .el-button {
   margin-left: 0;
 }
-
 .todo-actions.drop-active {
   background: rgba(64, 158, 255, 0.12);
   border-radius: 4px;
 }
-
 .points-tag {
   color: #FF6B00;
   font-weight: 600;
 }
-
 .text-muted {
   color: var(--text-light);
   font-size: 13px;
 }
-
 .date-text {
   font-size: 13px;
   color: var(--text-light);
 }
-
 .todo-description-cell {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-
 .todo-description-text {
   line-height: 1.4;
 }
-
 .todo-attachments {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-
 .todo-attach-link {
   display: inline-flex;
   align-items: center;
@@ -479,18 +453,15 @@ const handleDrop = (event, row) => {
   vertical-align: middle;
   font-size: 13px;
 }
-
 .todo-attach-link:hover {
   color: var(--primary-dark, #0d8a9c);
 }
-
 .todo-attach-name {
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 :deep(.droppable-parent) {
   background-color: rgba(64, 158, 255, 0.08) !important;
 }

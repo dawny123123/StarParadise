@@ -139,6 +139,100 @@ router.post('/', (req, res) => {
   }
 });
 
+// PATCH /api/todos/batch-parent - 批量设置或清除父任务
+router.patch('/batch-parent', (req, res) => {
+  try {
+    const transaction = db.transaction(() => {
+      const { todo_ids: todoIds, parent_id: parentId } = req.body || {};
+      const invalidTodoIds = !Array.isArray(todoIds)
+        || todoIds.length === 0
+        || !todoIds.every(id => Number.isSafeInteger(id) && id > 0)
+        || new Set(todoIds).size !== todoIds.length;
+      if (invalidTodoIds) {
+        const err = new Error('todo_ids 必须是非空且不重复的正整数数组');
+        err.status = 400;
+        throw err;
+      }
+      if (parentId !== null && (!Number.isSafeInteger(parentId) || parentId <= 0)) {
+        const err = new Error('parent_id 必须为 null 或正整数');
+        err.status = 400;
+        throw err;
+      }
+
+      const placeholders = todoIds.map(() => '?').join(', ');
+      const selectedTodos = db.prepare(
+        `SELECT * FROM todos WHERE id IN (${placeholders})`
+      ).all(...todoIds);
+      if (selectedTodos.length !== todoIds.length) {
+        const err = new Error('部分待办不存在');
+        err.status = 404;
+        throw err;
+      }
+
+      const selectedChildIds = new Set(selectedTodos.map(todo => todo.child_id));
+      if (selectedChildIds.size !== 1) {
+        const err = new Error('待办必须属于同一个孩子');
+        err.status = 400;
+        throw err;
+      }
+
+      const selectedTodoIds = new Set(todoIds);
+      const directChild = db.prepare(
+        `SELECT id FROM todos WHERE parent_id IN (${placeholders}) LIMIT 1`
+      ).get(...todoIds);
+      if (directChild) {
+        const err = new Error('待办含有子任务，不能批量设置父任务');
+        err.status = 400;
+        throw err;
+      }
+
+      if (parentId !== null) {
+        if (selectedTodoIds.has(parentId)) {
+          const err = new Error('父任务不能包含在待办列表中');
+          err.status = 400;
+          throw err;
+        }
+        const parent = db.prepare('SELECT * FROM todos WHERE id = ?').get(parentId);
+        if (!parent) {
+          const err = new Error('父任务不存在');
+          err.status = 404;
+          throw err;
+        }
+        if (parent.parent_id !== null) {
+          const err = new Error('父任务必须是顶级任务');
+          err.status = 400;
+          throw err;
+        }
+        if (selectedTodos.some(todo => todo.child_id !== parent.child_id)) {
+          const err = new Error('待办必须与父任务属于同一个孩子');
+          err.status = 400;
+          throw err;
+        }
+      }
+
+      const updateResult = db.prepare(
+        `UPDATE todos SET parent_id = ? WHERE id IN (${placeholders})`
+      ).run(parentId, ...todoIds);
+      const updatedTodos = db.prepare(
+        `SELECT * FROM todos WHERE id IN (${placeholders})`
+      ).all(...todoIds);
+      const todosById = new Map(updatedTodos.map(todo => [todo.id, todo]));
+      return {
+        updated_count: updateResult.changes,
+        todos: todoIds.map(id => todosById.get(id))
+      };
+    });
+
+    const result = transaction();
+    res.json({
+      updated_count: result.updated_count,
+      todos: result.todos.map(parseAttachments)
+    });
+  } catch (err) { /* v8 ignore next */
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 // PUT /api/todos/:id - 更新待办
 router.put('/:id', (req, res) => {
   try {

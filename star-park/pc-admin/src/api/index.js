@@ -43,6 +43,7 @@ export const getTodos = (params) => api.get('/todos', { params })
 export const createTodo = (data) => api.post('/todos', data)
 export const updateTodo = (id, data) => api.put(`/todos/${id}`, data)
 export const deleteTodo = (id) => api.delete(`/todos/${id}`)
+export const batchUpdateTodoParent = (todoIds, parentId) => api.patch('/todos/batch-parent', { todo_ids: todoIds, parent_id: parentId })
 export const uploadTodoFile = (formData) => api.post('/todos/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 export const uploadTodoFiles = (formData) => api.post('/todos/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 
