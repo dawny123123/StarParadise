@@ -335,6 +335,7 @@ const mapTodoFromApi = (t) => {
     description: t.description,
     completed: t.completed === 1,
     parentId: t.parent_id ?? null,
+    sortOrder: t.sort_order ?? t.id,
     fileUrl: attachments[0]?.fileUrl || '',
     fileName: attachments[0]?.fileName || '',
     attachments

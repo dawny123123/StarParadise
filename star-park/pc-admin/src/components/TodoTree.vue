@@ -1,5 +1,5 @@
 <template>
-  <div class="todo-tree">
+  <div class="todo-tree" @dragover="handleSortDragOver" @drop="handleSortDrop">
     <div class="filter-tabs">
       <el-tag
         :type="filter === 'all' ? 'primary' : ''"
@@ -43,15 +43,24 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="44" :selectable="isBulkSelectable" />
-      <el-table-column width="40">
+      <el-table-column width="56">
         <template #default="{ row }">
-          <span
-            class="drag-handle"
-            draggable="true"
-            title="拖拽此任务到另一行可设置父子关系"
-            @dragstart.stop="handleDragStart($event, row)"
-            @dragend.stop="handleDragEnd"
-          >⠿</span>
+          <span class="handle-group">
+            <span
+              class="drag-handle"
+              draggable="true"
+              title="拖拽此任务到另一行可设置父子关系"
+              @dragstart.stop="handleDragStart($event, row)"
+              @dragend.stop="handleDragEnd"
+            >⠿</span>
+            <span
+              class="sort-handle"
+              draggable="true"
+              title="按住此处上下拖动可调整任务顺序"
+              @dragstart.stop="handleSortDragStart($event, row)"
+              @dragend.stop="handleSortDragEnd"
+            >⇅</span>
+          </span>
         </template>
       </el-table-column>
       <el-table-column width="50">
@@ -122,9 +131,8 @@
           <div
             class="todo-actions"
             :class="{ 'drop-active': draggingTodo && canBeParent(draggingTodo, row) }"
-            @dragover.prevent="handleDragOver($event, row)"
-            @dragleave.prevent="handleDragLeave"
-            @drop.prevent.stop="handleDrop($event, row)"
+            @dragover="handleDragOver($event, row)"
+            @drop.prevent="handleDrop($event, row)"
           >
             <el-button text size="small" title="编辑" @click.stop="emit('edit', row)">
               <el-icon><Edit /></el-icon>
@@ -198,6 +206,7 @@ import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight, Document } fro
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateTodo } from '../api'
 import TodoBatchParentDialog from './TodoBatchParentDialog.vue'
+import { useTodoSortDrag } from './todoSortDrag'
 const props = defineProps({
   todos: { type: Array, default: () => [] },
   goals: { type: Array, default: () => [] },
@@ -242,14 +251,16 @@ const filteredTodos = computed(() => {
   } else if (filter.value === 'completed') {
     list = visibleTodos.value.filter(t => t.completed)
   }
-  return [...list].sort((a, b) => {
-    if (!a.plannedDate && !b.plannedDate) return 0
-    if (!a.plannedDate) return 1
-    if (!b.plannedDate) return -1
-    return a.plannedDate.localeCompare(b.plannedDate)
-  })
+  // 手动排序优先（PONR-32），无排序值时退回创建顺序
+  return [...list].sort((a, b) => (a.sortOrder ?? a.id) - (b.sortOrder ?? b.id))
 })
 const treeTodos = computed(() => buildTodoTree(filteredTodos.value))
+// 手动排序拖动（PONR-32）：同级任务上下拖动重新排序
+const { sortDropTarget, handleSortDragStart, handleSortDragEnd, handleSortDragOver, handleSortDrop } = useTodoSortDrag({
+  treeTodos,
+  todos: computed(() => props.todos),
+  onRefresh: () => emit('refresh')
+})
 const getGoalTitle = (goalId) => {
   if (!goalId) return ''
   const goal = props.goals.find(g => g.id === goalId)
@@ -335,10 +346,14 @@ const removeParent = async (row) => {
   doUpdateParent(row.id, null)
 }
 const rowClassName = ({ row }) => {
+  const classes = [`todo-row-${row.id}`]
   if (draggingTodo.value && canBeParent(draggingTodo.value, row)) {
-    return 'droppable-parent'
+    classes.push('droppable-parent')
   }
-  return ''
+  if (sortDropTarget.value && sortDropTarget.value.todoId === row.id) {
+    classes.push(sortDropTarget.value.position === 'before' ? 'drop-before' : 'drop-after')
+  }
+  return classes.join(' ')
 }
 const handleDragStart = (event, row) => {
   if (row.children?.length > 0) {
@@ -354,14 +369,10 @@ const handleDragEnd = () => {
   draggingTodo.value = null
 }
 const handleDragOver = (event, row) => {
-  if (!draggingTodo.value || !canBeParent(draggingTodo.value, row)) {
-    event.dataTransfer.dropEffect = 'none'
-    return
-  }
-  event.dataTransfer.dropEffect = 'move'
-}
-const handleDragLeave = () => {
-  // 样式通过 droppable-parent 类控制，无需额外逻辑
+  // 排序拖动进行中时让事件冒泡给容器统一处理
+  if (!draggingTodo.value) return
+  event.preventDefault()
+  event.dataTransfer.dropEffect = canBeParent(draggingTodo.value, row) ? 'move' : 'none'
 }
 const handleDrop = (event, row) => {
   if (!draggingTodo.value || !canBeParent(draggingTodo.value, row)) return
@@ -397,6 +408,20 @@ const handleDrop = (event, row) => {
   font-size: 12px;
 }
 .drag-handle:active {
+  cursor: grabbing;
+}
+.handle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sort-handle {
+  cursor: grab;
+  color: var(--text-light);
+  user-select: none;
+  font-size: 12px;
+}
+.sort-handle:active {
   cursor: grabbing;
 }
 .todo-title-text {
@@ -464,5 +489,11 @@ const handleDrop = (event, row) => {
 }
 :deep(.droppable-parent) {
   background-color: rgba(64, 158, 255, 0.08) !important;
+}
+:deep(tr.drop-before > td.el-table__cell) {
+  box-shadow: inset 0 2px 0 0 var(--primary, #409eff);
+}
+:deep(tr.drop-after > td.el-table__cell) {
+  box-shadow: inset 0 -2px 0 0 var(--primary, #409eff);
 }
 </style>

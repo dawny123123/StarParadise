@@ -76,7 +76,7 @@ router.get('/', (req, res) => {
       }
     }
     const where = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-    const todos = db.prepare(`SELECT * FROM todos${where} ORDER BY id ASC`).all(...params);
+    const todos = db.prepare(`SELECT * FROM todos${where} ORDER BY sort_order ASC, id ASC`).all(...params);
     res.json(todos.map(parseAttachments));
   } catch (err) { /* v8 ignore next */
     res.status(500).json({ error: err.message });
@@ -114,9 +114,13 @@ router.post('/', (req, res) => {
       // 向后兼容：旧的单附件字段
       attachmentsJson = JSON.stringify([{ file_url, file_name: file_name || file_url }]);
     }
+    // 新任务追加到同级末尾（PONR-32：手动排序）
+    const nextSortOrder = db.prepare(
+      `SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order FROM todos WHERE parent_id IS ?`
+    ).get(parent_id ?? null).next_order;
     const result = db.prepare(
-      `INSERT INTO todos (goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name, attachments)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO todos (goal_id, child_id, title, creator, priority, expected_points, planned_date, description, completed, parent_id, file_url, file_name, attachments, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       goal_id ?? null,
       resolvedChildId ?? null,
@@ -130,7 +134,8 @@ router.post('/', (req, res) => {
       parent_id ?? null,
       file_url || null,
       file_name || null,
-      attachmentsJson
+      attachmentsJson,
+      nextSortOrder
     );
     const todo = db.prepare('SELECT * FROM todos WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(parseAttachments(todo));
@@ -219,6 +224,65 @@ router.patch('/batch-parent', (req, res) => {
       const todosById = new Map(updatedTodos.map(todo => [todo.id, todo]));
       return {
         updated_count: updateResult.changes,
+        todos: todoIds.map(id => todosById.get(id))
+      };
+    });
+
+    const result = transaction();
+    res.json({
+      updated_count: result.updated_count,
+      todos: result.todos.map(parseAttachments)
+    });
+  } catch (err) { /* v8 ignore next */
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/todos/reorder - 同级任务手动排序（PONR-32：任务列表上下拖动重新排序）
+router.patch('/reorder', (req, res) => {
+  try {
+    const transaction = db.transaction(() => {
+      const { parent_id: parentId, todo_ids: todoIds } = req.body || {};
+      const invalidTodoIds = !Array.isArray(todoIds)
+        || todoIds.length === 0
+        || !todoIds.every(id => Number.isSafeInteger(id) && id > 0)
+        || new Set(todoIds).size !== todoIds.length;
+      if (invalidTodoIds) {
+        const err = new Error('todo_ids 必须是非空且不重复的正整数数组');
+        err.status = 400;
+        throw err;
+      }
+      if (parentId !== null && (!Number.isSafeInteger(parentId) || parentId <= 0)) {
+        const err = new Error('parent_id 必须为 null 或正整数');
+        err.status = 400;
+        throw err;
+      }
+
+      const placeholders = todoIds.map(() => '?').join(', ');
+      const selectedTodos = db.prepare(
+        `SELECT * FROM todos WHERE id IN (${placeholders})`
+      ).all(...todoIds);
+      if (selectedTodos.length !== todoIds.length) {
+        const err = new Error('部分待办不存在');
+        err.status = 404;
+        throw err;
+      }
+
+      const declaredParentId = parentId ?? null;
+      if (selectedTodos.some(todo => (todo.parent_id ?? null) !== declaredParentId)) {
+        const err = new Error('待办必须属于同一父任务下的同级任务');
+        err.status = 400;
+        throw err;
+      }
+
+      const updateStmt = db.prepare('UPDATE todos SET sort_order = ? WHERE id = ?');
+      todoIds.forEach((id, index) => updateStmt.run(index, id));
+      const updatedTodos = db.prepare(
+        `SELECT * FROM todos WHERE id IN (${placeholders})`
+      ).all(...todoIds);
+      const todosById = new Map(updatedTodos.map(todo => [todo.id, todo]));
+      return {
+        updated_count: todoIds.length,
         todos: todoIds.map(id => todosById.get(id))
       };
     });

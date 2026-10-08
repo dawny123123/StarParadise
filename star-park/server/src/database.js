@@ -286,6 +286,33 @@ try {
   // JSON 函数不可用或数据已迁移，忽略
 }
 
+// 迁移：给 todos 表添加 sort_order 字段（任务列表手动拖动排序，PONR-32）
+try {
+  db.exec(`ALTER TABLE todos ADD COLUMN sort_order INTEGER`);
+} catch (err) {
+  if (!/duplicate column name/i.test(err.message)) {
+    console.error('todos.sort_order 迁移失败:', err.message);
+    throw err;
+  }
+}
+// 数据迁移：存量任务按既有「计划日期升序、无日期排后」展示顺序回填 sort_order（幂等）
+/* v8 ignore next 4 */
+try {
+  db.exec(`
+    WITH ranked AS (
+      SELECT id, ROW_NUMBER() OVER (
+        PARTITION BY parent_id
+        ORDER BY (planned_date IS NULL), planned_date, id
+      ) - 1 AS rank_no
+      FROM todos
+    )
+    UPDATE todos SET sort_order = (SELECT rank_no FROM ranked WHERE ranked.id = todos.id)
+    WHERE sort_order IS NULL
+  `);
+} catch (err) {
+  // 窗口函数不可用或数据已迁移，忽略
+}
+
 // 迁移：给 best_practices 表添加 attachments 字段（JSON 数组，支持多附件，PONR-27）
 try {
   db.exec(`ALTER TABLE best_practices ADD COLUMN attachments TEXT`);
