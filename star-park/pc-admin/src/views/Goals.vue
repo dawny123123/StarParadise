@@ -104,7 +104,7 @@
     </el-dialog>
 
     <!-- 待办弹窗 -->
-    <el-dialog v-model="todoDialogVisible" :title="editingTodo ? '编辑待办' : '添加待办'" width="480px">
+    <el-dialog v-model="todoDialogVisible" :title="editingTodo ? '编辑待办' : '添加待办'" width="560px">
       <el-form :model="todoForm" label-width="90px">
         <el-form-item label="父任务">
           <el-select
@@ -147,7 +147,7 @@
           <el-date-picker v-model="todoForm.plannedDate" type="date" placeholder="选择日期" style="width: 100%" value-format="YYYY-MM-DD" />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="todoForm.description" type="textarea" :rows="3" placeholder="请输入任务描述（可选）" />
+          <TodoMarkdownEditor v-model="todoForm.description" />
         </el-form-item>
         <el-form-item label="附件">
           <div class="todo-attachment-row">
@@ -251,6 +251,7 @@ import {
 import { useAppStore } from '../stores/app'
 import GoalAttachments from '../components/GoalAttachments.vue'
 import TodoTree from '../components/TodoTree.vue'
+import TodoMarkdownEditor from '../components/TodoMarkdownEditor.vue'
 
 const route = useRoute()
 const store = useAppStore()

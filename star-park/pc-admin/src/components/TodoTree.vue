@@ -96,10 +96,10 @@
           <span class="points-tag">{{ row.expectedPoints || 0 }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip>
+      <el-table-column label="描述" min-width="180">
         <template #default="{ row }">
           <div class="todo-description-cell">
-            <span v-if="row.description" class="todo-description-text">{{ row.description }}</span>
+            <MarkdownPreview v-if="row.description" :content="row.description" />
             <span v-else class="text-muted">-</span>
             <div v-if="row.attachments && row.attachments.length > 0" class="todo-attachments">
               <a
@@ -195,6 +195,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateTodo } from '../api'
 import TodoBatchParentDialog from './TodoBatchParentDialog.vue'
 import TodoParentDialog from './TodoParentDialog.vue'
+import MarkdownPreview from './MarkdownPreview.vue'
 import { useTodoSortDrag } from './todoSortDrag'
 const props = defineProps({
   todos: { type: Array, default: () => [] },
@@ -453,9 +454,6 @@ const handleDrop = (event, row) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-.todo-description-text {
-  line-height: 1.4;
 }
 .todo-attachments {
   display: flex;
