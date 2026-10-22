@@ -70,7 +70,7 @@
       </el-table-column>
       <el-table-column prop="title" label="标题" min-width="150">
         <template #default="{ row }">
-          <span :class="['todo-title-text', { completed: row.completed }]">
+          <span :class="['todo-title-text', { completed: row.completed, 'todo-child-title': isChildTodo(row) }]">
             <el-tag v-if="isParentTodo(row)" class="todo-role-tag" size="small" effect="dark">父任务</el-tag>
             <span :class="{ 'todo-parent-title': isParentTodo(row) }">{{ row.title }}</span>
           </span>
@@ -295,6 +295,7 @@ const canBeParent = (childTodo, parentTodo) => {
 }
 const hasDirectChildren = (todo) => props.todos.some(item => item.parentId === todo.id)
 const isParentTodo = (row) => !row.parentId && row.children?.length > 0
+const isChildTodo = (row) => Boolean(row.parentId)
 const isBulkSelectable = (row) => !hasDirectChildren(row)
 const handleSelectionChange = (rows) => {
   selectedTodos.value = rows
@@ -423,6 +424,9 @@ const handleDrop = (event, row) => {
 }
 .todo-parent-title {
   font-weight: 700;
+}
+.todo-child-title {
+  color: var(--primary, #409eff);
 }
 .todo-actions {
   display: flex;
