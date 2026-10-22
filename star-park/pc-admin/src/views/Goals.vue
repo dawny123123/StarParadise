@@ -378,7 +378,7 @@ const visibleTodos = computed(() => {
   return todos.value.filter(t => t.childId === currentChildId.value)
 })
 
-// 可作为父任务的候选：根任务，且排除当前编辑任务自身及其子孙任务
+// 可作为父任务的候选：根任务，且排除当前编辑任务自身及其子孙任务；已有子任务的父任务排最前
 const candidateParents = computed(() => {
   const editingId = editingTodo.value?.id
   const descendants = new Set()
@@ -389,7 +389,8 @@ const candidateParents = computed(() => {
     })
   }
   if (editingId) walk(editingId)
-  return todos.value.filter(t => {
+  const hasChildren = (id) => todos.value.some(t => t.parentId === id)
+  const candidates = todos.value.filter(t => {
     if (t.parentId) return false
     if (t.id === editingId) return false
     if (descendants.has(t.id)) return false
@@ -398,6 +399,14 @@ const candidateParents = computed(() => {
     if (todoForm.goalId && t.goalId !== todoForm.goalId) return false
     return true
   })
+  // 父任务（已有子任务）排最前，两组内部保持任务列表既有顺序
+  const parents = []
+  const others = []
+  candidates.forEach(t => {
+    if (hasChildren(t.id)) parents.push(t)
+    else others.push(t)
+  })
+  return [...parents, ...others]
 })
 
 // 切换目标分类后，若已选父任务不在新的候选列表中，则自动清空
