@@ -154,7 +154,6 @@
             <el-upload
               :http-request="handleTodoUpload"
               :show-file-list="false"
-              :before-upload="beforeTodoUpload"
               multiple
             >
               <el-button type="info" plain>
@@ -623,15 +622,6 @@ const deleteTodo = async (id) => {
     ElMessage.error('删除失败')
     console.error(err)
   }
-}
-
-const beforeTodoUpload = (file) => {
-  const maxSize = 100 * 1024 * 1024
-  if (file.size > maxSize) {
-    ElMessage.error('文件大小不能超过 100MB')
-    return false
-  }
-  return true
 }
 
 const handleTodoUpload = async ({ file }) => {

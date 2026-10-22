@@ -168,7 +168,7 @@ describe('Goals API', () => {
       removeUploadedFile(res.body.files[0].file_url);
     });
 
-    it('目标上传接口不应沿用待办附件的100MB大小限制', async () => {
+    it('目标上传接口不应限制单文件大小', async () => {
       const oversized = Buffer.alloc(100 * 1024 * 1024 + 1);
       const res = await agent
         .post('/api/goals/upload')

@@ -1,4 +1,11 @@
+const fs = require('fs');
+const path = require('path');
 const { createAgent, seedTestData } = require('./helpers');
+
+function removeUploadedFile(fileUrl) {
+  const filename = fileUrl.replace('/uploads/', '');
+  fs.rmSync(path.join(__dirname, '..', '..', 'uploads', filename), { force: true });
+}
 
 describe('Todos Upload API', () => {
   let agent;
@@ -46,12 +53,24 @@ describe('Todos Upload API', () => {
     expect(res.body).toHaveProperty('error');
   });
 
-  it('超过 100MB 的单文件应返回 413 及明确错误提示（PONR-28）', async () => {
+  it('超过 100MB 的单文件应上传成功，不再限制大小（PONR-36）', async () => {
     const oversized = Buffer.alloc(100 * 1024 * 1024 + 1);
     const res = await agent
       .post('/api/todos/upload')
       .attach('files', oversized, 'big-file.bin');
-    expect(res.status).toBe(413);
-    expect(res.body.error).toContain('100MB');
+    expect(res.status).toBe(200);
+    expect(res.body.files).toHaveLength(1);
+    expect(res.body.files[0].file_name).toBe('big-file.bin');
+    removeUploadedFile(res.body.files[0].file_url);
+  });
+
+  it('单次上传超过 10 个文件应返回数量超限错误（数量限制保留）', async () => {
+    let req = agent.post('/api/todos/upload');
+    for (let i = 1; i <= 11; i++) {
+      req = req.attach('files', Buffer.from(`file${i} content`), `file${i}.txt`);
+    }
+    const res = await req;
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('单次最多上传 10 个文件');
   });
 });
