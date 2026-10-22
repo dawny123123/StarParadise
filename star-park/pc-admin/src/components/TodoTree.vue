@@ -70,7 +70,11 @@
       </el-table-column>
       <el-table-column prop="title" label="标题" min-width="150">
         <template #default="{ row }">
-          <span :class="['todo-title-text', { completed: row.completed }]">{{ row.title }}</span>
+          <span :class="['todo-title-text', { completed: row.completed }]">
+            <el-tag v-if="isParentTodo(row)" class="todo-role-tag" size="small" effect="dark">父任务</el-tag>
+            <el-tag v-else-if="isChildTodo(row)" class="todo-role-tag" size="small" type="info" effect="plain">子任务</el-tag>
+            <span :class="{ 'todo-parent-title': isParentTodo(row), 'todo-child-title': isChildTodo(row) }">{{ row.title }}</span>
+          </span>
         </template>
       </el-table-column>
       <el-table-column label="关联目标" width="120">
@@ -177,27 +181,12 @@
     </el-table>
     <el-empty v-if="treeTodos.length === 0" description="暂无待办事项" />
     <!-- 选择父任务对话框 -->
-    <el-dialog v-model="parentDialogVisible" title="设置父任务" width="480px">
-      <el-form label-width="90px">
-        <el-form-item label="当前任务">
-          <el-tag type="info">{{ pendingChildTodo?.title }}</el-tag>
-        </el-form-item>
-        <el-form-item label="父任务">
-          <el-select v-model="selectedParentId" placeholder="选择父任务" clearable style="width: 100%">
-            <el-option
-              v-for="t in candidateParents"
-              :key="t.id"
-              :label="t.title"
-              :value="t.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="parentDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmParentFromDialog">确认</el-button>
-      </template>
-    </el-dialog>
+    <TodoParentDialog
+      :visible="parentDialogVisible"
+      :todo="pendingChildTodo"
+      :candidates="candidateParents"
+      @confirm="confirmParentFromDialog"
+    />
   </div>
 </template>
 <script setup>
@@ -206,6 +195,7 @@ import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight, Document } fro
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateTodo } from '../api'
 import TodoBatchParentDialog from './TodoBatchParentDialog.vue'
+import TodoParentDialog from './TodoParentDialog.vue'
 import { useTodoSortDrag } from './todoSortDrag'
 const props = defineProps({
   todos: { type: Array, default: () => [] },
@@ -218,7 +208,6 @@ const todoTable = ref(null)
 const selectedTodos = ref([])
 const pendingChildTodo = ref(null)
 const parentDialogVisible = ref(false)
-const selectedParentId = ref(null)
 const draggingTodo = ref(null)
 const visibleTodos = computed(() => props.todos)
 const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
@@ -305,6 +294,8 @@ const canBeParent = (childTodo, parentTodo) => {
   return true
 }
 const hasDirectChildren = (todo) => props.todos.some(item => item.parentId === todo.id)
+const isParentTodo = (row) => !row.parentId && row.children?.length > 0
+const isChildTodo = (row) => !!row.parentId
 const isBulkSelectable = (row) => !hasDirectChildren(row)
 const handleSelectionChange = (rows) => {
   selectedTodos.value = rows
@@ -329,13 +320,10 @@ const handleBatchParentSuccess = () => {
 }
 const openParentDialog = (row) => {
   pendingChildTodo.value = row
-  selectedParentId.value = row.parentId || null
   parentDialogVisible.value = true
 }
-const confirmParentFromDialog = () => {
-  if (!pendingChildTodo.value) return
-  doUpdateParent(pendingChildTodo.value.id, selectedParentId.value)
-  parentDialogVisible.value = false
+const confirmParentFromDialog = ({ todo, parentId }) => {
+  if (todo) doUpdateParent(todo.id, parentId)
 }
 const removeParent = async (row) => {
   try {
@@ -425,11 +413,20 @@ const handleDrop = (event, row) => {
   cursor: grabbing;
 }
 .todo-title-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 500;
 }
 .todo-title-text.completed {
   text-decoration: line-through;
   color: var(--text-light);
+}
+.todo-parent-title {
+  font-weight: 700;
+}
+.todo-child-title {
+  font-weight: 400;
 }
 .todo-actions {
   display: flex;
