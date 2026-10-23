@@ -2,6 +2,23 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { reorderTodos } from '../api'
 
+// 任务列表排序模式（PONR-37）：custom=自定义拖拽顺序（PONR-32）；planned=按计划时间（计划日期升序，无日期排在同级最后）
+// 仅影响列表展示顺序，不修改 sort_order；planned 模式下排序拖动由手柄的 draggable 绑定禁用
+export function useTodoSortMode() {
+  const sortMode = ref('custom')
+  const byCustomOrder = (a, b) => (a.sortOrder ?? a.id) - (b.sortOrder ?? b.id)
+  const byPlannedDate = (a, b) => {
+    const av = a.plannedDate || ''
+    const bv = b.plannedDate || ''
+    if (av === bv) return byCustomOrder(a, b)
+    if (!av) return 1
+    if (!bv) return -1
+    return av < bv ? -1 : 1
+  }
+  const sortTodos = (list) => [...list].sort(sortMode.value === 'planned' ? byPlannedDate : byCustomOrder)
+  return { sortMode, sortTodos }
+}
+
 // 任务列表手动拖动排序逻辑（PONR-32）
 // 供 TodoTree.vue 使用：按住排序手柄上下拖动，在同级任务内调整展示顺序
 // treeTodos: 展示顺序的任务树（computed）；todos: 当前视图的扁平任务列表（computed）；

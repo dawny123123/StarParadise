@@ -25,6 +25,10 @@
       >
         已完成 <span class="tab-count">{{ completedCount }}</span>
       </el-tag>
+      <el-radio-group v-model="sortMode" size="small" style="margin-left: auto">
+        <el-radio-button value="custom">自定义顺序</el-radio-button>
+        <el-radio-button value="planned">按计划时间</el-radio-button>
+      </el-radio-group>
     </div>
     <TodoBatchParentDialog
       :todos="props.todos"
@@ -54,9 +58,9 @@
               @dragend.stop="handleDragEnd"
             >⠿</span>
             <span
-              class="sort-handle"
-              draggable="true"
-              title="按住此处上下拖动可调整任务顺序"
+              class="sort-handle" :class="{ 'sort-handle-disabled': sortMode !== 'custom' }"
+              :draggable="sortMode === 'custom'"
+              :title="sortMode === 'custom' ? '按住此处上下拖动可调整任务顺序' : '按计划时间模式下不可拖动排序，请切回自定义顺序'"
               @dragstart.stop="handleSortDragStart($event, row)"
               @dragend.stop="handleSortDragEnd"
             >⇅</span>
@@ -196,7 +200,7 @@ import { updateTodo } from '../api'
 import TodoBatchParentDialog from './TodoBatchParentDialog.vue'
 import TodoParentDialog from './TodoParentDialog.vue'
 import MarkdownPreview from './MarkdownPreview.vue'
-import { useTodoSortDrag } from './todoSortDrag'
+import { useTodoSortDrag, useTodoSortMode } from './todoSortDrag'
 const props = defineProps({
   todos: { type: Array, default: () => [] },
   goals: { type: Array, default: () => [] },
@@ -209,6 +213,7 @@ const selectedTodos = ref([])
 const pendingChildTodo = ref(null)
 const parentDialogVisible = ref(false)
 const draggingTodo = ref(null)
+const { sortMode, sortTodos } = useTodoSortMode()
 const visibleTodos = computed(() => props.todos)
 const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
 const completedCount = computed(() => visibleTodos.value.filter(t => t.completed).length)
@@ -240,8 +245,8 @@ const filteredTodos = computed(() => {
   } else if (filter.value === 'completed') {
     list = visibleTodos.value.filter(t => t.completed)
   }
-  // 手动排序优先（PONR-32），无排序值时退回创建顺序
-  return [...list].sort((a, b) => (a.sortOrder ?? a.id) - (b.sortOrder ?? b.id))
+  // 排序模式（PONR-37）：自定义拖拽顺序（PONR-32）或按计划时间，仅影响展示顺序
+  return sortTodos(list)
 })
 const treeTodos = computed(() => buildTodoTree(filteredTodos.value))
 // 手动排序拖动（PONR-32）：同级任务上下拖动重新排序
@@ -412,6 +417,7 @@ const handleDrop = (event, row) => {
 .sort-handle:active {
   cursor: grabbing;
 }
+.sort-handle-disabled { cursor: not-allowed; opacity: 0.4; }
 .todo-title-text {
   display: inline-flex;
   align-items: center;
