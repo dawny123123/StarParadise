@@ -2,21 +2,27 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { reorderTodos } from '../api'
 
-// 任务列表排序模式（PONR-37）：custom=自定义拖拽顺序（PONR-32）；planned=按计划时间（计划日期升序，无日期排在同级最后）
-// 仅影响列表展示顺序，不修改 sort_order；planned 模式下排序拖动由手柄的 draggable 绑定禁用
+// 任务列表排序（PONR-37，追加调整为「计划日期」列头图标触发）：sortOrder = '' | 'ascending' | 'descending'
+// 升/降序仅影响列表展示顺序，不修改 sort_order；排序激活时排序拖动由手柄的 draggable 绑定禁用
 export function useTodoSortMode() {
-  const sortMode = ref('custom')
+  const sortOrder = ref('')
   const byCustomOrder = (a, b) => (a.sortOrder ?? a.id) - (b.sortOrder ?? b.id)
-  const byPlannedDate = (a, b) => {
+  const byPlannedDate = (desc) => (a, b) => {
     const av = a.plannedDate || ''
     const bv = b.plannedDate || ''
-    if (av === bv) return byCustomOrder(a, b)
-    if (!av) return 1
-    if (!bv) return -1
-    return av < bv ? -1 : 1
+    if (av !== bv) {
+      if (!av) return 1
+      if (!bv) return -1
+      return desc ? (av > bv ? -1 : 1) : (av < bv ? -1 : 1)
+    }
+    return byCustomOrder(a, b)
   }
-  const sortTodos = (list) => [...list].sort(sortMode.value === 'planned' ? byPlannedDate : byCustomOrder)
-  return { sortMode, sortTodos }
+  const sortTodos = (list) => {
+    if (sortOrder.value === 'ascending') return [...list].sort(byPlannedDate(false))
+    if (sortOrder.value === 'descending') return [...list].sort(byPlannedDate(true))
+    return [...list].sort(byCustomOrder)
+  }
+  return { sortOrder, sortTodos }
 }
 
 // 任务列表手动拖动排序逻辑（PONR-32）

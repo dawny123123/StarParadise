@@ -25,10 +25,6 @@
       >
         已完成 <span class="tab-count">{{ completedCount }}</span>
       </el-tag>
-      <el-radio-group v-model="sortMode" size="small" style="margin-left: auto">
-        <el-radio-button value="custom">自定义顺序</el-radio-button>
-        <el-radio-button value="planned">按计划时间</el-radio-button>
-      </el-radio-group>
     </div>
     <TodoBatchParentDialog
       :todos="props.todos"
@@ -45,6 +41,7 @@
       :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       :row-class-name="rowClassName"
       @selection-change="handleSelectionChange"
+      @sort-change="handleSortChange"
     >
       <el-table-column type="selection" width="44" :selectable="isBulkSelectable" />
       <el-table-column width="56">
@@ -58,9 +55,9 @@
               @dragend.stop="handleDragEnd"
             >⠿</span>
             <span
-              class="sort-handle" :class="{ 'sort-handle-disabled': sortMode !== 'custom' }"
-              :draggable="sortMode === 'custom'"
-              :title="sortMode === 'custom' ? '按住此处上下拖动可调整任务顺序' : '按计划时间模式下不可拖动排序，请切回自定义顺序'"
+              class="sort-handle" :class="{ 'sort-handle-disabled': sortOrder !== '' }"
+              :draggable="sortOrder === ''"
+              :title="sortOrder === '' ? '按住此处上下拖动可调整任务顺序' : '计划日期排序激活时不可拖动排序，点击计划日期列头取消排序后恢复'"
               @dragstart.stop="handleSortDragStart($event, row)"
               @dragend.stop="handleSortDragEnd"
             >⇅</span>
@@ -128,7 +125,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="计划日期" width="100">
+      <el-table-column prop="plannedDate" label="计划日期" width="110" sortable="custom">
         <template #default="{ row }">
           <span class="date-text">{{ formatDate(row.plannedDate) }}</span>
         </template>
@@ -213,12 +210,16 @@ const selectedTodos = ref([])
 const pendingChildTodo = ref(null)
 const parentDialogVisible = ref(false)
 const draggingTodo = ref(null)
-const { sortMode, sortTodos } = useTodoSortMode()
+const { sortOrder, sortTodos } = useTodoSortMode()
 const visibleTodos = computed(() => props.todos)
 const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
 const completedCount = computed(() => visibleTodos.value.filter(t => t.completed).length)
 const setFilter = (value) => {
   filter.value = value
+}
+// 计划日期列头排序（PONR-37）：sort-change 在升序/降序/取消（order 为 null）间切换
+const handleSortChange = ({ order }) => {
+  sortOrder.value = order || ''
 }
 const buildTodoTree = (flatList) => {
   const map = new Map()
@@ -245,7 +246,7 @@ const filteredTodos = computed(() => {
   } else if (filter.value === 'completed') {
     list = visibleTodos.value.filter(t => t.completed)
   }
-  // 排序模式（PONR-37）：自定义拖拽顺序（PONR-32）或按计划时间，仅影响展示顺序
+  // 排序（PONR-37）：计划日期列头升/降序仅影响展示，未排序时保持自定义拖拽顺序（PONR-32）
   return sortTodos(list)
 })
 const treeTodos = computed(() => buildTodoTree(filteredTodos.value))
