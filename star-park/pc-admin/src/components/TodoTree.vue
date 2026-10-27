@@ -1,30 +1,39 @@
 <template>
   <div class="todo-tree" @dragover="handleSortDragOver" @drop="handleSortDrop">
-    <div class="filter-tabs">
-      <el-tag
-        :type="filter === 'all' ? 'primary' : ''"
-        :effect="filter === 'all' ? 'dark' : 'plain'"
-        class="filter-tab"
-        @click="setFilter('all')"
-      >
-        全部 <span class="tab-count">{{ visibleTodos.length }}</span>
-      </el-tag>
-      <el-tag
-        :type="filter === 'pending' ? 'primary' : ''"
-        :effect="filter === 'pending' ? 'dark' : 'plain'"
-        class="filter-tab"
-        @click="setFilter('pending')"
-      >
-        进行中 <span class="tab-count">{{ pendingCount }}</span>
-      </el-tag>
-      <el-tag
-        :type="filter === 'completed' ? 'primary' : ''"
-        :effect="filter === 'completed' ? 'dark' : 'plain'"
-        class="filter-tab"
-        @click="setFilter('completed')"
-      >
-        已完成 <span class="tab-count">{{ completedCount }}</span>
-      </el-tag>
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <el-tag
+          :type="filter === 'all' ? 'primary' : ''"
+          :effect="filter === 'all' ? 'dark' : 'plain'"
+          class="filter-tab"
+          @click="setFilter('all')"
+        >
+          全部 <span class="tab-count">{{ allSearched.length }}</span>
+        </el-tag>
+        <el-tag
+          :type="filter === 'pending' ? 'primary' : ''"
+          :effect="filter === 'pending' ? 'dark' : 'plain'"
+          class="filter-tab"
+          @click="setFilter('pending')"
+        >
+          进行中 <span class="tab-count">{{ pendingSearched.length }}</span>
+        </el-tag>
+        <el-tag
+          :type="filter === 'completed' ? 'primary' : ''"
+          :effect="filter === 'completed' ? 'dark' : 'plain'"
+          class="filter-tab"
+          @click="setFilter('completed')"
+        >
+          已完成 <span class="tab-count">{{ completedSearched.length }}</span>
+        </el-tag>
+      </div>
+      <el-input
+        v-model="keyword"
+        class="todo-search"
+        placeholder="搜索任务名称"
+        clearable
+        :prefix-icon="Search"
+      />
     </div>
     <TodoBatchParentDialog
       :todos="props.todos"
@@ -40,6 +49,7 @@
       row-key="id"
       :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
       :row-class-name="rowClassName"
+      :empty-text="emptyText"
       @selection-change="handleSelectionChange"
       @sort-change="handleSortChange"
     >
@@ -179,7 +189,6 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-empty v-if="treeTodos.length === 0" description="暂无待办事项" />
     <!-- 选择父任务对话框 -->
     <TodoParentDialog
       :visible="parentDialogVisible"
@@ -191,13 +200,14 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue'
-import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight, Document } from '@element-plus/icons-vue'
+import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight, Document, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateTodo } from '../api'
 import TodoBatchParentDialog from './TodoBatchParentDialog.vue'
 import TodoParentDialog from './TodoParentDialog.vue'
 import MarkdownPreview from './MarkdownPreview.vue'
 import { useTodoSortDrag, useTodoSortMode } from './todoSortDrag'
+import { useTodoSearch, buildTodoTree, collectDescendantIds } from './todoSearch'
 const props = defineProps({
   todos: { type: Array, default: () => [] },
   goals: { type: Array, default: () => [] },
@@ -212,8 +222,21 @@ const parentDialogVisible = ref(false)
 const draggingTodo = ref(null)
 const { sortOrder, sortTodos } = useTodoSortMode()
 const visibleTodos = computed(() => props.todos)
-const pendingCount = computed(() => visibleTodos.value.filter(t => !t.completed).length)
-const completedCount = computed(() => visibleTodos.value.filter(t => t.completed).length)
+// 关键字搜索（PONR-21）：各状态视图内保留命中任务及其祖先，计数与展示保持一致
+const { keyword, isSearching, scopeTodos } = useTodoSearch(visibleTodos)
+const statusTodos = (status) => {
+  const list = visibleTodos.value
+  const byStatus = status === 'pending' ? list.filter(t => !t.completed)
+    : status === 'completed' ? list.filter(t => t.completed) : list
+  return scopeTodos(byStatus)
+}
+const allSearched = computed(() => statusTodos('all'))
+const pendingSearched = computed(() => statusTodos('pending'))
+const completedSearched = computed(() => statusTodos('completed'))
+const emptyText = computed(() => {
+  if (!isSearching.value) return '暂无待办事项'
+  return allSearched.value.length > 0 ? '当前筛选下没有匹配的任务' : '未找到匹配的任务'
+})
 const setFilter = (value) => {
   filter.value = value
 }
@@ -221,34 +244,8 @@ const setFilter = (value) => {
 const handleSortChange = ({ order }) => {
   sortOrder.value = order || ''
 }
-const buildTodoTree = (flatList) => {
-  const map = new Map()
-  const tree = []
-  flatList.forEach(item => {
-    map.set(item.id, { ...item, children: [], hasChildren: false })
-  })
-  flatList.forEach(item => {
-    const node = map.get(item.id)
-    if (item.parentId && map.has(item.parentId)) {
-      const parent = map.get(item.parentId)
-      parent.children.push(node)
-      parent.hasChildren = true
-    } else {
-      tree.push(node)
-    }
-  })
-  return tree
-}
-const filteredTodos = computed(() => {
-  let list = visibleTodos.value
-  if (filter.value === 'pending') {
-    list = visibleTodos.value.filter(t => !t.completed)
-  } else if (filter.value === 'completed') {
-    list = visibleTodos.value.filter(t => t.completed)
-  }
-  // 排序（PONR-37）：计划日期列头升/降序仅影响展示，未排序时保持自定义拖拽顺序（PONR-32）
-  return sortTodos(list)
-})
+// 排序（PONR-37）：计划日期列头升/降序仅影响展示，未排序时保持自定义拖拽顺序（PONR-32）
+const filteredTodos = computed(() => sortTodos(statusTodos(filter.value)))
 const treeTodos = computed(() => buildTodoTree(filteredTodos.value))
 // 手动排序拖动（PONR-32）：同级任务上下拖动重新排序
 const { sortDropTarget, handleSortDragStart, handleSortDragEnd, handleSortDragOver, handleSortDrop } = useTodoSortDrag({
@@ -280,23 +277,11 @@ const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   return dateStr.substring(5)
 }
-const descendantIds = (todo) => {
-  const result = new Set()
-  const walk = (node) => {
-    if (!node?.children?.length) return
-    node.children.forEach(child => {
-      result.add(child.id)
-      walk(child)
-    })
-  }
-  walk(todo)
-  return result
-}
 const canBeParent = (childTodo, parentTodo) => {
   if (!childTodo || !parentTodo) return false
   if (childTodo.id === parentTodo.id) return false
   if (parentTodo.parentId) return false
-  if (descendantIds(childTodo).has(parentTodo.id)) return false
+  if (collectDescendantIds(childTodo).has(parentTodo.id)) return false
   return true
 }
 const hasDirectChildren = (todo) => props.todos.some(item => item.parentId === todo.id)
@@ -375,10 +360,20 @@ const handleDrop = (event, row) => {
 }
 </script>
 <style scoped>
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
 .filter-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
+}
+.todo-search {
+  width: 240px;
 }
 .filter-tab {
   cursor: pointer;
