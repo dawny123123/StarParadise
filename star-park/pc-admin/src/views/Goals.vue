@@ -65,7 +65,6 @@
         @edit="openTodoModal"
         @add-child="openTodoModal(null, $event)"
         @delete="deleteTodo"
-        @clone="cloneTodo"
         @toggle="toggleTodo"
       />
     </div>
@@ -220,9 +219,6 @@
               <el-button text size="small" @click="openTodoModal(row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
-              <el-button text size="small" @click="cloneTodo(row)">
-                <el-icon><DocumentCopy /></el-icon>
-              </el-button>
               <el-button text size="small" type="danger" @click="deleteTodo(row.id)">
                 <el-icon><Delete /></el-icon>
               </el-button>
@@ -239,7 +235,7 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Plus, Edit, Delete, DocumentCopy, Upload, Document, Close } from '@element-plus/icons-vue'
+import { Plus, Edit, Delete, Upload, Document, Close } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   triggerGoalAutoAssociation, addPoints,
@@ -648,22 +644,6 @@ const handleTodoUpload = async ({ file }) => {
 
 const removeAttachment = (idx) => {
   todoForm.attachments.splice(idx, 1)
-}
-
-const cloneTodo = (todo) => {
-  Object.assign(todoForm, {
-    title: `${todo.title}（复制）`,
-    goalId: todo.goalId,
-    creator: todo.creator,
-    priority: todo.priority,
-    expectedPoints: todo.expectedPoints || 0,
-    plannedDate: todo.plannedDate,
-    description: todo.description || '',
-    attachments: todo.attachments ? todo.attachments.map(a => ({ ...a })) : []
-  })
-  editingTodo.value = null
-  todoDialogVisible.value = true
-  ElMessage.info('已填充待办信息，确认后创建副本')
 }
 
 // ========== 辅助函数 ==========

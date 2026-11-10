@@ -179,9 +179,6 @@
             >
               <el-icon><TopRight /></el-icon>
             </el-button>
-            <el-button text size="small" title="复制" @click.stop="emit('clone', row)">
-              <el-icon><DocumentCopy /></el-icon>
-            </el-button>
             <el-button text size="small" type="danger" title="删除" @click.stop="emit('delete', row.id)">
               <el-icon><Delete /></el-icon>
             </el-button>
@@ -200,7 +197,7 @@
 </template>
 <script setup>
 import { ref, computed } from 'vue'
-import { Edit, Delete, DocumentCopy, Files, BottomLeft, TopRight, Document, Search } from '@element-plus/icons-vue'
+import { Edit, Delete, Files, BottomLeft, TopRight, Document, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { updateTodo } from '../api'
 import TodoBatchParentDialog from './TodoBatchParentDialog.vue'
@@ -213,7 +210,7 @@ const props = defineProps({
   goals: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false }
 })
-const emit = defineEmits(['refresh', 'edit', 'delete', 'clone', 'toggle', 'add-child'])
+const emit = defineEmits(['refresh', 'edit', 'delete', 'toggle', 'add-child'])
 const filter = ref('pending')
 const todoTable = ref(null)
 const selectedTodos = ref([])
